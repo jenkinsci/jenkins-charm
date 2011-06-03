@@ -7,5 +7,4 @@ description: |
 provides:
   website:
     interface: http
-  master:
-    jenkins: jenkins-slave
+  jenkins: jenkins-slave
