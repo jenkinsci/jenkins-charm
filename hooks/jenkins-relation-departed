@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -ue
+
+slavehost=`relation-get slavehost`
+echo "deleting slave with hostname $slavehost"
+
+cd /opt/python-jenkins
+python delnode.py $slavehost
+
+exit 0

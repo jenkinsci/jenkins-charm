@@ -1,0 +1,51 @@
+#!/bin/bash
+
+apt-get -y install python-software-properties
+add-apt-repository ppa:hudson-ubuntu/testing
+apt-get update
+apt-get -y install jenkins
+apt-get -y install git gcc make bzr
+
+cd /opt
+if [ ! -d python-jenkins ]; then
+	bzr branch lp:~james-page/+junk/python-jenkins
+fi
+cd python-jenkins
+cat > addnode.py << EOF
+import jenkins
+import sys
+
+host=sys.argv[1]
+
+l_jenkins = jenkins.Jenkins("http://localhost:8080/")
+
+if l_jenkins.node_exists(host):
+    print "Node exists"
+    l_jenkins.delete_node(host)
+else:
+        print "Node does not exist"
+
+l_jenkins.create_node(host, 4, "Test", labels="slave")
+
+if not l_jenkins.node_exists(host):
+        print "Failed to create node"
+EOF
+
+cat > delnode.py << EOF
+import jenkins
+import sys
+
+host=sys.argv[1]
+
+l_jenkins = jenkins.Jenkins("http://localhost:8080/")
+
+if l_jenkins.node_exists(host):
+    print "Node exists"
+    l_jenkins.delete_node(host)
+else:
+    print "Node does not exist"
+
+l_jenkins.delete_node(host)
+EOF
+
+exit 0

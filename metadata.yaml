@@ -1,0 +1,11 @@
+ensemble: formula
+name: jenkins
+revision: 1
+summary: Continuous integration server
+description: |
+  Jenkins is a continuous integration (CI) server.
+provides:
+  website:
+    interface: http
+  master:
+    jenkins: jenkins-slave

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -ue
+
+slavehost=`relation-get slavehost`
+
+if [ "x$slavehost" = "x" ]; then
+	echo "slavehost not yet defined, exiting"
+	exit 0
+fi
+
+echo "adding slave with hostname $slavehost"
+
+cd /opt/python-jenkins
+python addnode.py $slavehost
+
+echo "node slave $slavehost added"
