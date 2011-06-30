@@ -3,29 +3,33 @@
 apt-get -y install python-software-properties
 add-apt-repository ppa:hudson-ubuntu/testing
 apt-get update
-apt-get -y install jenkins
+apt-get -y install jenkins jenkins-ssh-slaves-plugin
 apt-get -y install git gcc make bzr
 
+# TODO Get this packaged for Oneiric
 cd /opt
 if [ ! -d python-jenkins ]; then
-	bzr branch lp:~james-page/+junk/python-jenkins
+	bzr branch lp:python-jenkins
 fi
 cd python-jenkins
+
+# Create some helper scripts for jenkins node control
+
 cat > addnode.py << EOF
 import jenkins
 import sys
 
 host=sys.argv[1]
+executors=sys.argv[2]
+labels=sys.argv[3]
 
 l_jenkins = jenkins.Jenkins("http://localhost:8080/")
 
 if l_jenkins.node_exists(host):
-    print "Node exists"
-    l_jenkins.delete_node(host)
+    print "Node exists - not adding"
 else:
-        print "Node does not exist"
-
-l_jenkins.create_node(host, 4, "Test", labels="slave")
+	print "Adding node to Jenkins masker"
+    l_jenkins.create_node(host, int(executors), host , labels=labels)
 
 if not l_jenkins.node_exists(host):
         print "Failed to create node"
@@ -43,9 +47,8 @@ if l_jenkins.node_exists(host):
     print "Node exists"
     l_jenkins.delete_node(host)
 else:
-    print "Node does not exist"
+    print "Node does not exist - not deleting"
 
-l_jenkins.delete_node(host)
 EOF
 
 exit 0

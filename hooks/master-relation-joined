@@ -1,8 +1,4 @@
 #!/bin/sh
-# get default route
-dev=`netstat -nr | grep '^0.0.0.0' | awk '{ print $8 }'`
-# Get it's ip address
-ip=`ifconfig $dev | grep 'inet addr' | awk -F: '{ print $2 '} | awk '{ print $1 '}`
 
-relation-set url="http://$ip:8080"
-
+echo "Setting url relation to http://`hostname -f`:8080"
+relation-set url="http://`hostname -f`:8080"

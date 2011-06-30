@@ -2,16 +2,19 @@
 
 set -ue
 
-slavehost=`relation-get slavehost`
+# Grab information that remote unit has posted to relation
+slavehost=`relation-get slavehost $ENSEMBLE_REMOTE_UNIT`
+executors=`relation-get executors $ENSEMBLE_REMOTE_UNIT`
+labels=`relation-get labels $ENSEMBLE_REMOTE_UNIT`
 
+# Double check to see if this has happened yet
 if [ "x$slavehost" = "x" ]; then
-	echo "slavehost not yet defined, exiting"
+	echo "slavehost for $ENSEMBLE_REMOTE_UNIT not yet defined, exiting"
 	exit 0
 fi
 
-echo "adding slave with hostname $slavehost"
-
+echo "Adding slave with hostname $slavehost"
 cd /opt/python-jenkins
-python addnode.py $slavehost
+python addnode.py $slavehost $executors $labels
 
-echo "node slave $slavehost added"
+echo "Node slave $slavehost added"

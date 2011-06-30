@@ -1,15 +1,18 @@
 ensemble: formula
 name: jenkins
-revision: 2
-summary: Continuous integration server
+revision: 5
+summary: Jenkins Continuous Integration server
 description: |
-  Jenkins is a continuous integration (CI) server.
+  Jenkins is a Continous Integration server supporting
+  flexible continous integration and deployment methodologies
+  and more.
+  .
+  This formula provides the Jenkins master instance in a 
+  deployment
 provides:
   website:
     interface: http
-  master:
-    interface: jenkins
 requires:
-  slave:
-    interface: jenkins
+  master:
+    interface: jenkins-slave
     optional: true

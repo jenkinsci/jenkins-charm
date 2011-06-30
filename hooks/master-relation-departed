@@ -2,9 +2,11 @@
 
 set -ue
 
-slavehost=`relation-get slavehost`
-echo "deleting slave with hostname $slavehost"
+# Slave hostname is derived from unit name so
+# this is pretty safe
+slavehost=`echo $ENSEMBLE_REMOTE_UNIT | sed s,/,-,`
 
+echo "Deleting slave with hostname $slavehost"
 cd /opt/python-jenkins
 python delnode.py $slavehost
 

@@ -1,4 +1,0 @@
-#!/bin/sh
-
-apt-get -y purge jenkins
-apt-get -y install jenkins-slave
