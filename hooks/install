@@ -2,7 +2,7 @@
 
 apt-get -y install python-software-properties
 add-apt-repository ppa:hudson-ubuntu/testing
-add-apt-reposttory ppa:python-jenkins-developers/testing
+add-apt-repository ppa:python-jenkins-developers/testing
 apt-get update
 apt-get -y install jenkins jenkins-ssh-slaves-plugin python-jenkins
 apt-get -y install git gcc make bzr
@@ -25,11 +25,11 @@ l_jenkins = jenkins.Jenkins("http://localhost:8080/")
 if l_jenkins.node_exists(host):
     print "Node exists - not adding"
 else:
-	print "Adding node to Jenkins masker"
-    l_jenkins.create_node(host, int(executors), host , labels=labels)
+    print "Adding node to Jenkins masker"
+    l_jenkins.create_node(host, int(executors) * 2, host , labels=labels)
 
 if not l_jenkins.node_exists(host):
-        print "Failed to create node"
+    print "Failed to create node"
 EOF
 
 cat > delnode.py << EOF
