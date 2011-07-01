@@ -2,16 +2,13 @@
 
 apt-get -y install python-software-properties
 add-apt-repository ppa:hudson-ubuntu/testing
+add-apt-reposttory ppa:python-jenkins-developers/testing
 apt-get update
-apt-get -y install jenkins jenkins-ssh-slaves-plugin
+apt-get -y install jenkins jenkins-ssh-slaves-plugin python-jenkins
 apt-get -y install git gcc make bzr
 
-# TODO Get this packaged for Oneiric
-cd /opt
-if [ ! -d python-jenkins ]; then
-	bzr branch lp:python-jenkins
-fi
-cd python-jenkins
+mkdir -p /opt/jenkins
+cd /opt/jenkins
 
 # Create some helper scripts for jenkins node control
 

@@ -14,7 +14,7 @@ if [ "x$slavehost" = "x" ]; then
 fi
 
 echo "Adding slave with hostname $slavehost"
-cd /opt/python-jenkins
+cd /opt/jenkins
 python addnode.py $slavehost $executors $labels
 
 echo "Node slave $slavehost added"

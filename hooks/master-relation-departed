@@ -7,7 +7,7 @@ set -ue
 slavehost=`echo $ENSEMBLE_REMOTE_UNIT | sed s,/,-,`
 
 echo "Deleting slave with hostname $slavehost"
-cd /opt/python-jenkins
+cd /opt/jenkins
 python delnode.py $slavehost
 
 exit 0
