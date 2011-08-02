@@ -9,12 +9,10 @@ labels=`relation-get labels $ENSEMBLE_REMOTE_UNIT`
 
 # Double check to see if this has happened yet
 if [ "x$slavehost" = "x" ]; then
-	echo "slavehost for $ENSEMBLE_REMOTE_UNIT not yet defined, exiting"
+	ensemble-log "Slave host for $ENSEMBLE_REMOTE_UNIT not yet defined, exiting..."
 	exit 0
 fi
 
-echo "Adding slave with hostname $slavehost"
-cd /opt/jenkins
-python addnode.py $slavehost $executors $labels
-
-echo "Node slave $slavehost added"
+ensemble-log "Adding slave with hostname $slavehost..."
+$(dirname $0)/addnode $slavehost $executors "$labels"
+ensemble-log "Node slave $slavehost added..."

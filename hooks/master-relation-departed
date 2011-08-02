@@ -6,8 +6,7 @@ set -ue
 # this is pretty safe
 slavehost=`echo $ENSEMBLE_REMOTE_UNIT | sed s,/,-,`
 
-echo "Deleting slave with hostname $slavehost"
-cd /opt/jenkins
-python delnode.py $slavehost
+ensemble-log  "Deleting slave with hostname $slavehost..."
+$(dirname $0)/delnode $slavehost
 
 exit 0

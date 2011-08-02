@@ -2,11 +2,10 @@
 
 MEMBERS=`relation-list`
 
-cd /opt/jenkins
 for MEMBER in $MEMBERS
 do
-	echo "Removing node $MEMBER from Jenkins master"
-	python delnode.py `echo $MEMBER | sed s,/,-,`
+	ensemble-log "Removing node $MEMBER from Jenkins master..."
+	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,`
 done
 
 exit 0

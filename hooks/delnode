@@ -1,0 +1,14 @@
+#!/usr/bin/python
+
+import jenkins
+import sys
+
+host=sys.argv[1]
+
+l_jenkins = jenkins.Jenkins("http://localhost:8080/")
+
+if l_jenkins.node_exists(host):
+    print "Node exists"
+    l_jenkins.delete_node(host)
+else:
+    print "Node does not exist - not deleting"

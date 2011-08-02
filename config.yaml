@@ -1,0 +1,5 @@
+options:
+  tools:
+    type: str 
+    default: git gcc make bzr
+    description: Tooling to deploy alongside jenkins

@@ -1,51 +1,33 @@
 #!/bin/bash
 
-apt-get -y install python-software-properties
-add-apt-repository ppa:hudson-ubuntu/testing
-add-apt-repository ppa:python-jenkins-developers/testing
-apt-get update
-apt-get -y install jenkins jenkins-ssh-slaves-plugin python-jenkins
-apt-get -y install git gcc make bzr
+set -eu
 
-mkdir -p /opt/jenkins
-cd /opt/jenkins
+# Install jenkins
+install_jenkins () {
+    ensemble-log "Installing jenkins..."
+    apt-get -y install python-software-properties
+    add-apt-repository ppa:hudson-ubuntu/testing
+    add-apt-repository ppa:python-jenkins-developers/testing
+    apt-get update
+    apt-get -y install -qq jenkins jenkins-ssh-slaves-plugin
+}
+[[ -d /etc/init/jenkins.conf ]] || install_jenkins
 
-# Create some helper scripts for jenkins node control
+# Install helpers  - python jenkins ++
+install_python_jenkins () {
+    ensemble-log "Installing python-jenkins..."
+	# Pickup backports as required for natty
+    add-apt-repository ppa:python-jenkins-developers/backports
+    apt-get update
+    apt-get -y install -qq python-jenkins
+}
+[[ -d /usr/share/pyshared/jenkins ]] || install_python_jenkins
 
-cat > addnode.py << EOF
-import jenkins
-import sys
-
-host=sys.argv[1]
-executors=sys.argv[2]
-labels=sys.argv[3]
-
-l_jenkins = jenkins.Jenkins("http://localhost:8080/")
-
-if l_jenkins.node_exists(host):
-    print "Node exists - not adding"
-else:
-    print "Adding node to Jenkins masker"
-    l_jenkins.create_node(host, int(executors) * 2, host , labels=labels)
-
-if not l_jenkins.node_exists(host):
-    print "Failed to create node"
-EOF
-
-cat > delnode.py << EOF
-import jenkins
-import sys
-
-host=sys.argv[1]
-
-l_jenkins = jenkins.Jenkins("http://localhost:8080/")
-
-if l_jenkins.node_exists(host):
-    print "Node exists"
-    l_jenkins.delete_node(host)
-else:
-    print "Node does not exist - not deleting"
-
-EOF
+# Install some tools - can get set up deployment time
+install_tools () {
+	ensemble-log "Installing tools..."
+    apt-get -y install -qq `config-get tools`
+}
+install_tools 
 
 exit 0
