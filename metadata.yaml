@@ -1,6 +1,6 @@
 ensemble: formula
 name: jenkins
-revision: 9
+revision: 11
 summary: Jenkins Continuous Integration server
 description: |
   Jenkins is a Continous Integration server supporting

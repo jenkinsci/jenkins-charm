@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+home=`dirname $0`
+
+ensemble-log "Upgrading formula by running install hook again."
+exec $home/install

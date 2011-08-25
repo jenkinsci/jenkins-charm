@@ -30,4 +30,7 @@ install_tools () {
 }
 install_tools 
 
+ensemble-log "Opening ports"
+open-port 8080
+
 exit 0
