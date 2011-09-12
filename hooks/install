@@ -7,9 +7,9 @@ install_jenkins () {
     ensemble-log "Installing jenkins..."
     apt-get -y install python-software-properties
     add-apt-repository ppa:hudson-ubuntu/testing
-    add-apt-repository ppa:python-jenkins-developers/testing
-    apt-get update
-    apt-get -y install -qq jenkins jenkins-ssh-slaves-plugin
+    # Might not pickup for current release - so ignore errors
+    apt-get update || true
+    apt-get -y install -qq jenkins
 }
 [[ -d /etc/init/jenkins.conf ]] || install_jenkins
 
@@ -18,7 +18,8 @@ install_python_jenkins () {
     ensemble-log "Installing python-jenkins..."
 	# Pickup backports as required for natty
     add-apt-repository ppa:python-jenkins-developers/backports
-    apt-get update
+    # Might not pickup for current release - so ignore errors
+    apt-get update || true
     apt-get -y install -qq python-jenkins
 }
 [[ -d /usr/share/pyshared/jenkins ]] || install_python_jenkins
