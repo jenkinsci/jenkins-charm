@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "Setting url relation to http://`hostname -f`:8080"
+juju-log "Setting url relation to http://`hostname -f`:8080"
 relation-set url="http://`hostname -f`:8080"

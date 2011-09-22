@@ -4,9 +4,9 @@ set -ue
 
 # Slave hostname is derived from unit name so
 # this is pretty safe
-slavehost=`echo $ENSEMBLE_REMOTE_UNIT | sed s,/,-,`
+slavehost=`echo $JUJU_REMOTE_UNIT | sed s,/,-,`
 
-ensemble-log  "Deleting slave with hostname $slavehost..."
+juju-log  "Deleting slave with hostname $slavehost..."
 $(dirname $0)/delnode $slavehost
 
 exit 0

@@ -4,7 +4,7 @@ MEMBERS=`relation-list`
 
 for MEMBER in $MEMBERS
 do
-	ensemble-log "Removing node $MEMBER from Jenkins master..."
+	juju-log "Removing node $MEMBER from Jenkins master..."
 	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,`
 done
 

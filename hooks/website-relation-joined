@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "Setting website URL to `hostname -f`:8080"
+juju-log "Setting website URL to `hostname -f`:8080"
 relation-set port=8080 hostname=`hostname -f`

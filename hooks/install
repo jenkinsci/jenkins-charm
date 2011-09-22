@@ -4,7 +4,7 @@ set -eu
 
 # Install jenkins
 install_jenkins () {
-    ensemble-log "Installing jenkins..."
+    juju-log "Installing jenkins..."
     apt-get -y install python-software-properties
     add-apt-repository ppa:hudson-ubuntu/testing
     # Might not pickup for current release - so ignore errors
@@ -15,7 +15,7 @@ install_jenkins () {
 
 # Install helpers  - python jenkins ++
 install_python_jenkins () {
-    ensemble-log "Installing python-jenkins..."
+    juju-log "Installing python-jenkins..."
 	# Pickup backports as required for natty
     add-apt-repository ppa:python-jenkins-developers/backports
     # Might not pickup for current release - so ignore errors
@@ -26,12 +26,12 @@ install_python_jenkins () {
 
 # Install some tools - can get set up deployment time
 install_tools () {
-	ensemble-log "Installing tools..."
+	juju-log "Installing tools..."
     apt-get -y install -qq `config-get tools`
 }
 install_tools 
 
-ensemble-log "Opening ports"
+juju-log "Opening ports"
 open-port 8080
 
 exit 0

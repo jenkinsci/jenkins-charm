@@ -3,16 +3,16 @@
 set -ue
 
 # Grab information that remote unit has posted to relation
-slavehost=`relation-get slavehost $ENSEMBLE_REMOTE_UNIT`
-executors=`relation-get executors $ENSEMBLE_REMOTE_UNIT`
-labels=`relation-get labels $ENSEMBLE_REMOTE_UNIT`
+slavehost=$(relation-get slavehost)
+executors=$(relation-get executors)
+labels=$(relation-get labels)
 
 # Double check to see if this has happened yet
 if [ "x$slavehost" = "x" ]; then
-	ensemble-log "Slave host for $ENSEMBLE_REMOTE_UNIT not yet defined, exiting..."
+	juju-log "Slave host not yet defined, exiting..."
 	exit 0
 fi
 
-ensemble-log "Adding slave with hostname $slavehost..."
+juju-log "Adding slave with hostname $slavehost..."
 $(dirname $0)/addnode $slavehost $executors "$labels"
-ensemble-log "Node slave $slavehost added..."
+juju-log "Node slave $slavehost added..."
