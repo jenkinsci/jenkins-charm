@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+home=`dirname $0`
+
+juju-log "Upgrading charm by running install hook again."
+exec $home/install

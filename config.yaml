@@ -3,4 +3,22 @@ options:
     type: string
     default: git gcc make bzr
     description: Tooling to deploy alongside jenkins
- 
+  release:
+    type: string
+    default: distro
+    description: |
+     Source of Jenkins, options include:
+     - distro: only use the Ubuntu distribution - this
+       is the default and only works on Oneiric.
+     - lts: use the most recent Jenkins LTS release.
+     - trunk: use the most recent Jenkins release.
+  username:
+    type: string
+    default: admin
+    description: Admin user username - used to manage
+      slave nodes so please don't change in Jenkins.
+  password:
+    type: string
+    default: admin
+    description: Admin user password - used to manage
+      slave nodes so please don't change in Jenkins.

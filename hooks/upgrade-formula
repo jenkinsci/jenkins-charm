@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-
-home=`dirname $0`
-
-juju-log "Upgrading formula by running install hook again."
-exec $home/install

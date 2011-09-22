@@ -2,33 +2,95 @@
 
 set -eu
 
+RELEASE=$(config-get release)
+ADMIN_USERNAME=$(config-get username)
+ADMIN_PASSWORD=$(config-get password)
+CWD=$(dirname $0)
+JENKINS_HOME=/var/lib/jenkins
+
+setup_source () {
+  # Do something with < Oneiric releases - maybe PPA
+  #  apt-get -y install python-software-properties
+  #  add-apt-repository ppa:hudson-ubuntu/testing
+  juju-log "Configuring source of jenkins as $RELEASE"
+  # Configure to use upstream archives
+  # lts - debian-stable
+  # trunk - debian
+  case $RELEASE in
+    distro)
+      # don't setup upstream source, install from archive
+	  # only good for oneiric
+      return 0;;
+    lts)
+      SOURCE="debian-stable";;
+    trunk)
+      SOURCE="debian";;
+    *)
+      juju-log "release configuration not recognised" && exit 1;;
+  esac
+  # Setup archive to use appropriate jenkins upstream
+  wget -q -O - http://pkg.jenkins-ci.org/$SOURCE/jenkins-ci.org.key | apt-key add -
+  echo "deb http://pkg.jenkins-ci.org/$SOURCE binary/" \
+      > /etc/apt/sources.list.d/jenkins.list
+  apt-get update || true
+}
+# Only setup the source if jenkins is not already installed
+# this makes the config 'release' immutable - i.e. you 
+# can change source once deployed
+[[ -d /var/lib/jenkins ]] || setup_source
+
 # Install jenkins
 install_jenkins () {
-    juju-log "Installing jenkins..."
-    apt-get -y install python-software-properties
-    add-apt-repository ppa:hudson-ubuntu/testing
-    # Might not pickup for current release - so ignore errors
-    apt-get update || true
-    apt-get -y install -qq jenkins
+  juju-log "Installing/upgrading jenkins..."
+  apt-get -y install -qq jenkins
 }
-[[ -d /etc/init/jenkins.conf ]] || install_jenkins
+# Re-run whenever called to pickup any updates
+install_jenkins
+
+configure_jenkins_user () {
+  juju-log "Configuring user for jenkins..."
+  # Generate Salt and Hash Password for Jenkins
+  SALT="$(< /dev/urandom tr -dc A-Za-z | head -c6)"
+  PASSWORD="$SALT:$(echo -n "$ADMIN_PASSWORD{$SALT}" | shasum -a 256 | awk '{ print $1 }')"
+  mkdir -p $JENKINS_HOME/users/$ADMIN_USERNAME
+  sed -e s#__USERNAME__#$ADMIN_USERNAME# -e s#__PASSWORD__#$PASSWORD# \
+	  $CWD/../templates/user-config.xml > $JENKINS_HOME/users/$ADMIN_USERNAME/config.xml
+  chown -R jenkins:nogroup $JENKINS_HOME/users
+}
+# Always run - even if config has not changed, its safe
+configure_jenkins_user
+
+boostrap_jenkins_configuration (){
+  juju-log "Bootstrapping secure initial configuration in Jenkins..."
+  cp $CWD/../templates/jenkins-config.xml $JENKINS_HOME/config.xml
+  chown jenkins:nogroup $JENKINS_HOME/config.xml
+  touch /var/lib/jenkins/config.bootstrapped
+}
+# Only run on first invocation otherwise we blast
+# any configuration changes made
+[[ -f /var/lib/jenkins/config.bootstrapped ]] || boostrap_jenkins_configuration
+
+juju-log "Restarting jenkins to pickup configuration changes"
+service jenkins restart
 
 # Install helpers  - python jenkins ++
 install_python_jenkins () {
-    juju-log "Installing python-jenkins..."
+  juju-log "Installing python-jenkins..."
 	# Pickup backports as required for natty
-    add-apt-repository ppa:python-jenkins-developers/backports
-    # Might not pickup for current release - so ignore errors
-    apt-get update || true
-    apt-get -y install -qq python-jenkins
+  add-apt-repository ppa:python-jenkins-developers/backports
+  # Might not pickup for current release - so ignore errors
+  apt-get update || true
+  apt-get -y install -qq python-jenkins
 }
+# Only install once
 [[ -d /usr/share/pyshared/jenkins ]] || install_python_jenkins
 
 # Install some tools - can get set up deployment time
 install_tools () {
-	juju-log "Installing tools..."
-    apt-get -y install -qq `config-get tools`
+  juju-log "Installing tools..."
+  apt-get -y install -qq `config-get tools`
 }
+# Always run - tools might get re-configured
 install_tools 
 
 juju-log "Opening ports"

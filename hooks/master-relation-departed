@@ -7,6 +7,6 @@ set -ue
 slavehost=`echo $JUJU_REMOTE_UNIT | sed s,/,-,`
 
 juju-log  "Deleting slave with hostname $slavehost..."
-$(dirname $0)/delnode $slavehost
+$(dirname $0)/delnode $slavehost `config-get username` `config-get password`
 
 exit 0

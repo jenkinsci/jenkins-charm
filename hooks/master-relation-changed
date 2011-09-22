@@ -14,5 +14,5 @@ if [ "x$slavehost" = "x" ]; then
 fi
 
 juju-log "Adding slave with hostname $slavehost..."
-$(dirname $0)/addnode $slavehost $executors "$labels"
+$(dirname $0)/addnode $slavehost $executors "$labels" `config-get username` `config-get password`
 juju-log "Node slave $slavehost added..."

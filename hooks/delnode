@@ -4,8 +4,10 @@ import jenkins
 import sys
 
 host=sys.argv[1]
+username=sys.argv[2]
+password=sys.argv[3]
 
-l_jenkins = jenkins.Jenkins("http://localhost:8080/")
+l_jenkins = jenkins.Jenkins("http://localhost:8080/",username,password)
 
 if l_jenkins.node_exists(host):
     print "Node exists"

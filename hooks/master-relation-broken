@@ -5,7 +5,7 @@ MEMBERS=`relation-list`
 for MEMBER in $MEMBERS
 do
 	juju-log "Removing node $MEMBER from Jenkins master..."
-	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,`
+	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,` `config-get username` `config-get password`
 done
 
 exit 0

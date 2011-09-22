@@ -6,8 +6,10 @@ import sys
 host=sys.argv[1]
 executors=sys.argv[2]
 labels=sys.argv[3]
+username=sys.argv[4]
+password=sys.argv[5]
 
-l_jenkins = jenkins.Jenkins("http://localhost:8080/")
+l_jenkins = jenkins.Jenkins("http://localhost:8080/",username,password)
 
 if l_jenkins.node_exists(host):
     print "Node exists - not adding"
