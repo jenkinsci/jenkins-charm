@@ -1,4 +1,5 @@
 #!/bin/sh
 
-juju-log "Setting url relation to http://`hostname -f`:8080"
-relation-set url="http://`hostname -f`:8080"
+HOSTNAME=`unit-get private-address`
+juju-log "Setting url relation to http://$HOSTNAME:8080"
+relation-set url="http://$HOSTNAME:8080"
