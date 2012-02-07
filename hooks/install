@@ -79,7 +79,8 @@ install_plugins(){
   mkdir -p $JENKINS_HOME/plugins
   chmod a+rx $JENKINS_HOME/plugins
   track_dir=`mktemp -d /tmp/plugins.installed.XXXXXXXX`
-  ln -s $JENKINS_HOME/plugins/*.hpi $track_dir
+  installed_plugins=`find $JENKINS_HOME/plugins -name '*.hpi'`
+  [ -z "$installed_plugins" ] || ln -s $installed_plugins $track_dir
   local plugin=""
   local plugin_file=""
   local opts=""
@@ -105,7 +106,7 @@ install_plugins(){
   fi
 }
 
-[[ -z "$PLUGINS" ]] || install_plugins
+install_plugins
 
 juju-log "Restarting jenkins to pickup configuration changes"
 service jenkins restart
