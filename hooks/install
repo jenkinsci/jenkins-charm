@@ -5,6 +5,10 @@ set -eu
 RELEASE=$(config-get release)
 ADMIN_USERNAME=$(config-get username)
 ADMIN_PASSWORD=$(config-get password)
+PLUGINS=$(config-get plugins)
+PLUGINS_SITE=$(config-get plugins-site)
+PLUGINS_CHECK_CERT=$(config-get plugins-check-certificate)
+REMOVE_UNLISTED_PLUGINS=$(config-get remove-unlisted-plugins)
 CWD=$(dirname $0)
 JENKINS_HOME=/var/lib/jenkins
 
@@ -69,6 +73,39 @@ boostrap_jenkins_configuration (){
 # Only run on first invocation otherwise we blast
 # any configuration changes made
 [[ -f /var/lib/jenkins/config.bootstrapped ]] || boostrap_jenkins_configuration
+
+install_plugins(){
+  juju-log "Installing plugins ($PLUGINS)"
+  mkdir -p $JENKINS_HOME/plugins
+  chmod a+rx $JENKINS_HOME/plugins
+  track_dir=`mktemp -d /tmp/plugins.installed.XXXXXXXX`
+  ln -s $JENKINS_HOME/plugins/*.hpi $track_dir
+  local plugin=""
+  local plugin_file=""
+  local opts=""
+  for plugin in $PLUGINS ; do
+    plugin_file=$JENKINS_HOME/plugins/$plugin.hpi
+    # Note that by default wget verifies certificates as of 1.10.
+    if [ "$PLUGINS_CHECK_CERT" = "no" ] ; then
+      opts="--no-check-certificate"
+    fi
+    wget $opts --timestamping -q -O $plugin_file $PLUGINS_SITE/latest/$plugin.hpi
+    chmod a+r $plugin_file
+    rm -f $track_dir/$plugin.hpi
+  done
+  # Warn about undesirable plugins, or remove them.
+  unlisted_plugins=`ls $track_dir`
+  [[ -n "$unlisted_plugins" ]] || return 0
+  if [[ $REMOVE_UNLISTED_PLUGINS = "yes" ]] ; then
+    for plugin_file in `ls $track_dir` ; do
+      rm -vf $JENKINS_HOME/plugins/$plugin_file
+    done
+  else
+    juju-log -l WARNING "Unlisted plugins: (`ls $track_dir`) Not removed. Set remove-unlisted-plugins to yes to clear them away."
+  fi
+}
+
+[[ -z "$PLUGINS" ]] || install_plugins
 
 juju-log "Restarting jenkins to pickup configuration changes"
 service jenkins restart

@@ -22,3 +22,21 @@ options:
     default: admin
     description: Admin user password - used to manage
       slave nodes so please don't change in Jenkins.
+  plugins:
+    type: string
+    default: ""
+    description: Space separated list of plugins to install
+  plugins-site:
+    type: string
+    default: "https://updates.jenkins-ci.org/"
+    description: Site to download plugin .hpi files from.
+  plugins-check-certificate:
+    type: string
+    default: "yes"
+    description: Set to no to allow downloading from an invalid https site.
+  remove-unlisted-plugins:
+    type: string
+    default: "no"
+    description: |
+      Set this to yes to remove any plugins not listed in plugins
+      from the installation.
