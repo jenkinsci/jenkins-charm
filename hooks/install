@@ -84,16 +84,18 @@ install_plugins(){
   local plugin=""
   local plugin_file=""
   local opts=""
+  pushd $JENKINS_HOME/plugins
   for plugin in $PLUGINS ; do
     plugin_file=$JENKINS_HOME/plugins/$plugin.hpi
     # Note that by default wget verifies certificates as of 1.10.
     if [ "$PLUGINS_CHECK_CERT" = "no" ] ; then
       opts="--no-check-certificate"
     fi
-    wget $opts --timestamping -q -O $plugin_file $PLUGINS_SITE/latest/$plugin.hpi
+    wget $opts --timestamping $PLUGINS_SITE/latest/$plugin.hpi
     chmod a+r $plugin_file
     rm -f $track_dir/$plugin.hpi
   done
+  popd
   # Warn about undesirable plugins, or remove them.
   unlisted_plugins=`ls $track_dir`
   [[ -n "$unlisted_plugins" ]] || return 0
