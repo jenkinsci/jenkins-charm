@@ -14,7 +14,7 @@ l_jenkins = jenkins.Jenkins("http://localhost:8080/",username,password)
 if l_jenkins.node_exists(host):
     print "Node exists - not adding"
 else:
-    print "Adding node to Jenkins masker"
+    print "Adding node to Jenkins master"
     l_jenkins.create_node(host, int(executors) * 2, host , labels=labels)
 
 if not l_jenkins.node_exists(host):
