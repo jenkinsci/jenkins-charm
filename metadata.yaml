@@ -1,5 +1,6 @@
 ensemble: formula
 name: jenkins
+maintainer: James Page <james.page@ubuntu.com>
 summary: Jenkins Continuous Integration server
 description: |
   Jenkins is a Continous Integration server supporting
