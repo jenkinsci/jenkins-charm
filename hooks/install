@@ -131,9 +131,19 @@ install_tools () {
   apt-get -y install -qq `config-get tools`
 }
 # Always run - tools might get re-configured
-install_tools 
+install_tools
 
 juju-log "Opening ports"
 open-port 8080
+
+# Execute any hook overlay which may be provided
+# by forks of this charm
+if [ -d hooks/install.d ]
+then
+    for i in `ls -1 hooks/install.d/*`
+    do
+        [[ -x $i ]] && $i
+    done
+fi
 
 exit 0
