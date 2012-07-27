@@ -116,10 +116,6 @@ service jenkins restart
 # Install helpers  - python jenkins ++
 install_python_jenkins () {
   juju-log "Installing python-jenkins..."
-	# Pickup backports as required for natty
-  add-apt-repository ppa:python-jenkins-developers/backports
-  # Might not pickup for current release - so ignore errors
-  apt-get update || true
   apt-get -y install -qq python-jenkins
 }
 # Only install once
