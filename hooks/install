@@ -53,6 +53,15 @@ install_jenkins
 
 configure_jenkins_user () {
   juju-log "Configuring user for jenkins..."
+  # Check to see if password provided
+  if [ -z "$ADMIN_PASSWORD" ]
+  then
+    # Generate a random one for security
+    # User can then override using juju set
+    ADMIN_PASSWORD=$(< /dev/urandom tr -dc A-Za-z | head -c16)
+    echo $ADMIN_PASSWORD > $JENKINS_HOME/.admin_password
+    chmod 0600 $JENKINS_HOME/.admin_password 
+  fi
   # Generate Salt and Hash Password for Jenkins
   SALT="$(< /dev/urandom tr -dc A-Za-z | head -c6)"
   PASSWORD="$SALT:$(echo -n "$ADMIN_PASSWORD{$SALT}" | shasum -a 256 | awk '{ print $1 }')"

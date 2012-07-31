@@ -2,6 +2,12 @@
 
 set -ue
 
+PASSWORD=`config-get password`
+if [ -z "$PASSWORD" ]
+then
+    PASSWORD=`cat /var/lib/jenkins/.admin_password`
+fi
+
 # Grab information that remote unit has posted to relation
 slavehost=$(relation-get slavehost)
 executors=$(relation-get executors)
@@ -14,5 +20,5 @@ if [ "x$slavehost" = "x" ]; then
 fi
 
 juju-log "Adding slave with hostname $slavehost..."
-$(dirname $0)/addnode $slavehost $executors "$labels" `config-get username` `config-get password`
+$(dirname $0)/addnode $slavehost $executors "$labels" `config-get username` $PASSWORD
 juju-log "Node slave $slavehost added..."
