@@ -28,11 +28,12 @@ Extending this charm
 --------------------
 
 If you wish to perform custom configuration of either the master
-or slave servers, you can branch this charm and add install hooks
+or slave services, you can branch this charm and add install hooks
 into hooks/install.d.
 
 These will be executed when the main install, config-changed or
-upgrade charm hooks are executed.
+upgrade-charm hooks are executed (as the config-changed and
+upgrade-charm hooks just call install)..
 
 Additional hooks are executed in the context of the install hook
 so may use any variables which are defined in this hook.
