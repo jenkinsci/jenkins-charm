@@ -53,6 +53,15 @@ install_jenkins
 
 configure_jenkins_user () {
   juju-log "Configuring user for jenkins..."
+  # Check to see if password provided
+  if [ -z "$ADMIN_PASSWORD" ]
+  then
+    # Generate a random one for security
+    # User can then override using juju set
+    ADMIN_PASSWORD=$(< /dev/urandom tr -dc A-Za-z | head -c16)
+    echo $ADMIN_PASSWORD > $JENKINS_HOME/.admin_password
+    chmod 0600 $JENKINS_HOME/.admin_password 
+  fi
   # Generate Salt and Hash Password for Jenkins
   SALT="$(< /dev/urandom tr -dc A-Za-z | head -c6)"
   PASSWORD="$SALT:$(echo -n "$ADMIN_PASSWORD{$SALT}" | shasum -a 256 | awk '{ print $1 }')"
@@ -78,6 +87,7 @@ install_plugins(){
   juju-log "Installing plugins ($PLUGINS)"
   mkdir -p $JENKINS_HOME/plugins
   chmod a+rx $JENKINS_HOME/plugins
+  chown jenkins:jenkins $JENKINS_HOME/plugins
   track_dir=`mktemp -d /tmp/plugins.installed.XXXXXXXX`
   installed_plugins=`find $JENKINS_HOME/plugins -name '*.hpi'`
   [ -z "$installed_plugins" ] || ln -s $installed_plugins $track_dir
@@ -116,10 +126,6 @@ service jenkins restart
 # Install helpers  - python jenkins ++
 install_python_jenkins () {
   juju-log "Installing python-jenkins..."
-	# Pickup backports as required for natty
-  add-apt-repository ppa:python-jenkins-developers/backports
-  # Might not pickup for current release - so ignore errors
-  apt-get update || true
   apt-get -y install -qq python-jenkins
 }
 # Only install once
@@ -131,9 +137,19 @@ install_tools () {
   apt-get -y install -qq `config-get tools`
 }
 # Always run - tools might get re-configured
-install_tools 
+install_tools
 
 juju-log "Opening ports"
 open-port 8080
+
+# Execute any hook overlay which may be provided
+# by forks of this charm
+if [ -d hooks/install.d ]
+then
+    for i in `ls -1 hooks/install.d/*`
+    do
+        [[ -x $i ]] && . ./$i
+    done
+fi
 
 exit 0

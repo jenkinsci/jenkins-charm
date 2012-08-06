@@ -1,11 +1,17 @@
 #!/bin/sh
 
+PASSWORD=`config-get password`
+if [ -z "$PASSWORD" ]
+then
+    PASSWORD=`cat /var/lib/jenkins/.admin_password`
+fi
+
 MEMBERS=`relation-list`
 
 for MEMBER in $MEMBERS
 do
 	juju-log "Removing node $MEMBER from Jenkins master..."
-	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,` `config-get username` `config-get password`
+	$(dirname $0)/delnode `echo $MEMBER | sed s,/,-,` `config-get username` $PASSWORD
 done
 
 exit 0
