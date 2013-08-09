@@ -87,7 +87,7 @@ install_plugins(){
   juju-log "Installing plugins ($PLUGINS)"
   mkdir -p $JENKINS_HOME/plugins
   chmod a+rx $JENKINS_HOME/plugins
-  chown jenkins:jenkins $JENKINS_HOME/plugins
+  chown jenkins:nogroup $JENKINS_HOME/plugins
   track_dir=`mktemp -d /tmp/plugins.installed.XXXXXXXX`
   installed_plugins=`find $JENKINS_HOME/plugins -name '*.hpi'`
   [ -z "$installed_plugins" ] || ln -s $installed_plugins $track_dir
