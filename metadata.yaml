@@ -11,6 +11,10 @@ description: |
 provides:
   website:
     interface: http
+  entension:
+    interface: jenkins-extension
+    scope: container
+    optional: true
 requires:
   master:
     interface: jenkins-slave
