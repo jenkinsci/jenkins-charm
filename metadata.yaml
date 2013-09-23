@@ -11,7 +11,7 @@ description: |
 provides:
   website:
     interface: http
-  entension:
+  extension:
     interface: jenkins-extension
     scope: container
     optional: true
