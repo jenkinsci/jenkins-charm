@@ -43,11 +43,10 @@ You have already seen the password configuration in the "Usage" section. Some ot
 
     juju set jenkins plugins=htmlpublisher view-job-filters bazaar git
 
-## release config example
+## Release config example
 
     juju set jenkins release=trunk
 
- 
 You could also set these config options via a config.yaml on jenkins deploy. For example your config.yaml could look like
 
     jenkins:
