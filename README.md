@@ -32,12 +32,12 @@ The main method to use the Jenkins service at scale is to add units to the jenki
 
     juju deploy -n 5 jenkins-slave
 
-Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or you cloud provider supports. Additional information on scaling services with add-unit can be found at https://juju.ubuntu.com/docs/charms-scaling.html.
+Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or you cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
 
 
 # Configuration
 
-You have already seen the password configuration in the "Usage" section. Some other interesting config options are plugins and release. You can add config options via the command line with juju set or via a config file. More information on juju config is at: https://juju.ubuntu.com/docs/charms-config.html.
+You have already seen the password configuration in the "Usage" section. Some other interesting config options are plugins and release. You can add config options via the command line with juju set or via a config file. More information on Juju config is at [Juju Config Docs](https://juju.ubuntu.com/docs/charms-config.html).
 
 ## Plugin config example
 
@@ -71,9 +71,9 @@ upgrade-charm hooks just call install)..
 Additional hooks are executed in the context of the install hook
 so may use any variables which are defined in this hook.
 
-# Upstream Project Information 
+# Jenkins Project Information 
 
-- Upstream website: http://jenkins-ci.org/
-- Upstream bug tracker: https://wiki.jenkins-ci.org/display/JENKINS/Issue+Tracking
-- Upstream mailing list or contact information: http://jenkins-ci.org/content/mailing-lists
-- Jenkins Plugins: https://wiki.jenkins-ci.org/display/JENKINS/Plugins
+- [Jenkins Project Website](http://jenkins-ci.org/)
+- [Jenkins Bug Tracker](https://wiki.jenkins-ci.org/display/JENKINS/Issue+Tracking)
+- [Jenkins mailing lists](http://jenkins-ci.org/content/mailing-lists)
+- [Jenkins Plugins](https://wiki.jenkins-ci.org/display/JENKINS/Plugins)
