@@ -1,5 +1,5 @@
 #!/bin/bash
 
-sudo add-apt-repository ppa:juju/stable
+sudo add-apt-repository ppa:juju/stable -y
 sudo apt-get update
-sudo apt-get install amulet python3-requests python-jenkins
+sudo apt-get install amulet python3-requests python-jenkins -y
