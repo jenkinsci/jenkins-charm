@@ -5,11 +5,9 @@ options:
     description: Tooling to deploy alongside jenkins
   release:
     type: string
-    default: distro
+    default: lts
     description: |
      Source of Jenkins, options include:
-     - distro: only use the Ubuntu distribution - this
-       is the default and only works on >= Oneiric.
      - lts: use the most recent Jenkins LTS release.
      - trunk: use the most recent Jenkins release.
   username:

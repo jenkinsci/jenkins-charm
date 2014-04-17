@@ -21,10 +21,6 @@ setup_source () {
   # lts - debian-stable
   # trunk - debian
   case $RELEASE in
-    distro)
-      # don't setup upstream source, install from archive
-	  # only good for oneiric
-      return 0;;
     lts)
       SOURCE="debian-stable";;
     trunk)
@@ -46,7 +42,7 @@ setup_source () {
 # Install jenkins
 install_jenkins () {
   juju-log "Installing/upgrading jenkins..."
-  apt-get -y install -qq jenkins
+  apt-get -y install -qq jenkins default-jre-headless
 }
 # Re-run whenever called to pickup any updates
 install_jenkins
