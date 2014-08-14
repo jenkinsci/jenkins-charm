@@ -19,6 +19,7 @@ options:
     type: string
     description: Admin user password - used to manage
       slave nodes so please don't change in Jenkins.
+    default:
   plugins:
     type: string
     default: ""
