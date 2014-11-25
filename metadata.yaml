@@ -21,6 +21,9 @@ provides:
     interface: jenkins-extension
     scope: container
     optional: true
+  api:
+    interface: jenkins-api
+    optional: true
 requires:
   master:
     interface: jenkins-slave
