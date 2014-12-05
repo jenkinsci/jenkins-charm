@@ -83,6 +83,9 @@ def install():
     if not os.path.isdir(admin_user_home):
         os.makedirs(admin_user_home)
 
+    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+    nogroup_gid = grp.getgrnam('nogroup').gr_gid
+
     dst = os.path.join(JENKINS_HOME, 'users', admin_username, 'config.xml')
     with open(dst, 'w') as dst_fd:
         with open(os.path.join(TEMPLATES_DIR, 'user-config.xml')) as src_fd:
@@ -98,9 +101,6 @@ def install():
                 os.chown(dst, jenkins_uid, nogroup_gid)
 
     users_path = os.path.join(JENKINS_HOME, 'users')
-
-    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
-    nogroup_gid = grp.getgrnam('nogroup').gr_gid
     os.chown(users_path, jenkins_uid, nogroup_gid)
 
     # Only run on first invocation otherwise we blast
