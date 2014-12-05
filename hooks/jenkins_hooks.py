@@ -86,7 +86,7 @@ def install():
     dst = os.path.join(JENKINS_HOME, 'users', admin_username, 'config.xml')
     with open(dst, 'w') as dst_fd:
         with open(os.path.join(TEMPLATES_DIR, 'user-config.xml')) as src_fd:
-            lines = src_fd.readline()
+            lines = src_fd.readlines()
             for line in lines:
                 kvs = {'__USERNAME__': admin_username,
                        '__PASSWORD__': salty_password}
@@ -95,6 +95,7 @@ def install():
                     line.replace(key, val)
 
                 dst_fd.write(line)
+                os.chown(dst, jenkins_uid, nogroup_gid)
 
     users_path = os.path.join(JENKINS_HOME, 'users')
 
