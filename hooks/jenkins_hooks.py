@@ -95,7 +95,8 @@ def install():
                        '__PASSWORD__': salty_password}
 
                 for key, val in kvs.iteritems():
-                    line.replace(key, val)
+                    if key in line:
+                        line = line.replace(key, val)
 
                 dst_fd.write(line)
                 os.chown(dst, jenkins_uid, nogroup_gid)
