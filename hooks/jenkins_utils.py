@@ -18,6 +18,8 @@ from charmhelpers.fetch import (
 )
 
 JENKINS_HOME = '/var/lib/jenkins'
+JENKINS_USERS = os.path.join(JENKINS_HOME, 'users')
+JENKINS_PLUGINS = os.path.join(JENKINS_HOME, 'plugins')
 TEMPLATES_DIR = 'templates'
 
 
@@ -75,7 +77,7 @@ def setup_source(release):
     apt_update(fatal=True)
 
 
-def install_jenkins_plugins(uid, gid):
+def install_jenkins_plugins(jenkins_uid, jenkins_gid):
     plugins = config('plugins')
     if plugins:
         plugins = plugins.split()
@@ -83,36 +85,46 @@ def install_jenkins_plugins(uid, gid):
         plugins = []
 
     log("Installing plugins (%s)" % (' '.join(plugins)))
-    plugins_dir = os.path.join(JENKINS_HOME, 'plugins')
-    if not os.path.isdir(plugins_dir):
-        os.makedirs(plugins_dir)
+    if not os.path.isdir(JENKINS_PLUGINS):
+        os.makedirs(JENKINS_PLUGINS)
 
-    os.chmod(plugins_dir, 0755)
-    os.chown(plugins_dir, uid, gid)
+    os.chmod(JENKINS_PLUGINS, 0o0755)
+    os.chown(JENKINS_PLUGINS, jenkins_uid, jenkins_gid)
 
     track_dir = tempfile.mkdtemp(prefix='/tmp/plugins.installed')
     try:
-        installed_plugins = glob.glob("%s/*.hpi" % (plugins_dir))
+        installed_plugins = glob.glob("%s/*.hpi" % (JENKINS_PLUGINS))
         for plugin in installed_plugins:
             # Create a ref of installed plugin
-            with open(os.path.join(track_dir, plugin), 'w'):
+            with open(os.path.join(track_dir, os.path.basename(plugin)),
+                      'w'):
                 pass
 
         plugins_site = config('plugins-site')
-        for plugin in plugins:
-            # NOTE: by default wget verifies certificates as of 1.10.
-            if config('plugins-check-certificate') == "no":
-                opts = ["--no-check-certificate"]
-            else:
-                opts = []
+        log("Fetching plugins from %s" % (plugins_site))
+        # NOTE: by default wget verifies certificates as of 1.10.
+        if config('plugins-check-certificate') == "no":
+            opts = ["--no-check-certificate"]
+        else:
+            opts = []
 
+        for plugin in plugins:
             plugin_filename = "%s.hpi" % (plugin)
-            url = os.path.join(plugins_site, 'latest/%s' % (plugin_filename))
-            plugins_path = os.path.join(plugins_dir, plugin_filename)
-            cmd = ['wget'] + opts + ['--timestamping', url, '-O', plugins_path]
-            subprocess.check_call(cmd)
-            os.chmod(plugins_path, 0744)
+            url = os.path.join(plugins_site, 'latest', plugin_filename)
+            plugin_path = os.path.join(JENKINS_PLUGINS, plugin_filename)
             ref = os.path.join(track_dir, plugin_filename)
+            if not os.path.isfile(plugin_path):
+                log("Installing plugin %s" % (plugin_filename), level=DEBUG)
+                cmd = ['wget'] + opts + ['--timestamping', url, '-O',
+                                         plugin_path]
+                subprocess.check_call(cmd)
+                os.chmod(plugin_path, 0744)
+                os.chown(plugin_path, jenkins_uid, jenkins_gid)
+
+            else:
+                log("Plugin %s already installed" % (plugin_filename),
+                    level=DEBUG)
+
             if os.path.exists(ref):
                 log("Deleting plugin reference '%s'" % (ref), level=INFO)
                 os.remove(ref)

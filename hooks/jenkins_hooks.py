@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import grp
+import hashlib
 import os
 import pwd
 import shutil
@@ -28,6 +29,7 @@ from charmhelpers.core.host import (
 from charmhelpers.payload.execd import execd_preinstall
 from jenkins_utils import (
     JENKINS_HOME,
+    JENKINS_USERS,
     TEMPLATES_DIR,
     add_node,
     del_node,
@@ -40,6 +42,13 @@ hooks = Hooks()
 
 @hooks.hook('install')
 def install():
+    execd_preinstall('hooks/install.d')
+    config_changed()
+    open_port(8080)
+
+
+@hooks.hook('config-changed')
+def config_changed():
     # Only setup the source if jenkins is not already installed this makes the
     # config 'release' immutable - i.e. you can change source once deployed
     if not os.path.exists(JENKINS_HOME):
@@ -57,6 +66,7 @@ def install():
         # Generate a random one for security. User can then override using juju
         # set.
         admin_passwd = subprocess.check_output(['pwgen', '-N1', '15'])
+        admin_passwd = admin_passwd.strip()
 
     passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
     with open(passwd_file, 'w+') as fd:
@@ -64,31 +74,26 @@ def install():
 
     os.chmod(passwd_file, 0600)
 
-    # Generate Salt and Hash Password for Jenkins
-    salt = subprocess.check_output(['pwgen', '-N1', '6'])
-    data = "%s%s" % (admin_passwd, salt)
-    p = subprocess.Popen(['shasum', '-a', '256'], stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-    stdout, stderr = p.communicate(input=data)
-    rc = p.returncode
-    if rc:
-        errmsg = ("Failed to create salt password (rc=%s, stderr=%s)" %
-                  (rc, stderr))
-        raise Exception(errmsg)
-
-    salty_password = "%s:%s" % (salt, stdout.split(' ')[0])
-
-    admin_username = config('username')
-    admin_user_home = os.path.join(JENKINS_HOME, 'users', admin_username)
-    if not os.path.isdir(admin_user_home):
-        os.makedirs(admin_user_home)
-
     jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+    jenkins_gid = grp.getgrnam('jenkins').gr_gid
     nogroup_gid = grp.getgrnam('nogroup').gr_gid
 
-    dst = os.path.join(JENKINS_HOME, 'users', admin_username, 'config.xml')
-    with open(dst, 'w') as dst_fd:
-        with open(os.path.join(TEMPLATES_DIR, 'user-config.xml')) as src_fd:
+    # Generate Salt and Hash Password for Jenkins
+    salt = subprocess.check_output(['pwgen', '-N1', '6']).strip()
+    csum = hashlib.sha256("%s{%s}" % (admin_passwd, salt)).hexdigest()
+    salty_password = "%s:%s" % (salt, csum)
+
+    admin_username = config('username')
+    admin_user_home = os.path.join(JENKINS_USERS, admin_username)
+    if not os.path.isdir(admin_user_home):
+        os.makedirs(admin_user_home, 0o0700)
+        os.chown(JENKINS_USERS, jenkins_uid, nogroup_gid)
+        os.chown(admin_user_home, jenkins_uid, nogroup_gid)
+
+    # NOTE: overwriting will destroy any data added by jenkins or via the ui
+    admin_user_config = os.path.join(admin_user_home, 'config.xml')
+    with open(os.path.join(TEMPLATES_DIR, 'user-config.xml')) as src_fd:
+        with open(admin_user_config, 'w') as dst_fd:
             lines = src_fd.readlines()
             for line in lines:
                 kvs = {'__USERNAME__': admin_username,
@@ -99,10 +104,7 @@ def install():
                         line = line.replace(key, val)
 
                 dst_fd.write(line)
-                os.chown(dst, jenkins_uid, nogroup_gid)
-
-    users_path = os.path.join(JENKINS_HOME, 'users')
-    os.chown(users_path, jenkins_uid, nogroup_gid)
+                os.chown(admin_user_config, jenkins_uid, nogroup_gid)
 
     # Only run on first invocation otherwise we blast
     # any configuration changes made
@@ -119,23 +121,15 @@ def install():
 
     log("Stopping jenkins for plugin update(s)", level=DEBUG)
     service_stop('jenkins')
-    install_jenkins_plugins(jenkins_uid, nogroup_gid)
+    install_jenkins_plugins(jenkins_uid, jenkins_gid)
     log("Starting jenkins to pickup configuration changes", level=DEBUG)
     service_start('jenkins')
 
     apt_install(['python-jenkins'], fatal=True)
     tools = config('tools')
     if tools:
+        log("Installing tools: %s" % (tools))
         apt_install(tools.split(), fatal=True)
-
-    open_port(8080)
-    execd_preinstall('hooks/install.d')
-
-
-@hooks.hook('config-changed')
-def config_changed():
-    log("Reconfiguring charm by installing hook again.")
-    install()
 
 
 @hooks.hook('start')
