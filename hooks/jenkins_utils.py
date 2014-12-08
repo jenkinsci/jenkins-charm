@@ -29,7 +29,7 @@ def add_node(host, executors, labels, username, password):
     l_jenkins = jenkins.Jenkins("http://localhost:8080/", username, password)
 
     if l_jenkins.node_exists(host):
-        log("Node exists - not adding")
+        log("Node exists - not adding", level=DEBUG)
         return
 
     log("Adding node '%s' to Jenkins master" % (host), level=INFO)
@@ -84,7 +84,7 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
     else:
         plugins = []
 
-    log("Installing plugins (%s)" % (' '.join(plugins)))
+    log("Installing plugins (%s)" % (' '.join(plugins)), level=DEBUG)
     if not os.path.isdir(JENKINS_PLUGINS):
         os.makedirs(JENKINS_PLUGINS)
 
@@ -101,7 +101,7 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
                 pass
 
         plugins_site = config('plugins-site')
-        log("Fetching plugins from %s" % (plugins_site))
+        log("Fetching plugins from %s" % (plugins_site), level=DEBUG)
         # NOTE: by default wget verifies certificates as of 1.10.
         if config('plugins-check-certificate') == "no":
             opts = ["--no-check-certificate"]
@@ -112,7 +112,6 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
             plugin_filename = "%s.hpi" % (plugin)
             url = os.path.join(plugins_site, 'latest', plugin_filename)
             plugin_path = os.path.join(JENKINS_PLUGINS, plugin_filename)
-            ref = os.path.join(track_dir, plugin_filename)
             if not os.path.isfile(plugin_path):
                 log("Installing plugin %s" % (plugin_filename), level=DEBUG)
                 cmd = ['wget'] + opts + ['--timestamping', url, '-O',
@@ -125,8 +124,9 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
                 log("Plugin %s already installed" % (plugin_filename),
                     level=DEBUG)
 
+            ref = os.path.join(track_dir, plugin_filename)
             if os.path.exists(ref):
-                log("Deleting plugin reference '%s'" % (ref), level=INFO)
+                # Delete ref since plugin is installed.
                 os.remove(ref)
 
         installed_plugins = os.listdir(track_dir)
@@ -141,6 +141,7 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
             else:
                 log("Unlisted plugins: (%s) Not removed. Set "
                     "remove-unlisted-plugins to 'yes' to clear them away." %
-                    ' '.join(installed_plugins), level=INFO)
+                    ', '.join(installed_plugins), level=INFO)
     finally:
+        # Delete install refs
         shutil.rmtree(track_dir)
