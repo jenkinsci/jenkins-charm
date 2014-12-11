@@ -1,13 +1,13 @@
 import os
 
-from charmhelpers.fetch import apt_install
+import six
 
+from charmhelpers.fetch import apt_install
 from charmhelpers.core.hookenv import (
     log,
     ERROR,
     INFO
 )
-
 from charmhelpers.contrib.openstack.utils import OPENSTACK_CODENAMES
 
 try:
@@ -43,7 +43,7 @@ def get_loader(templates_dir, os_release):
         order by OpenStack release.
     """
     tmpl_dirs = [(rel, os.path.join(templates_dir, rel))
-                 for rel in OPENSTACK_CODENAMES.itervalues()]
+                 for rel in six.itervalues(OPENSTACK_CODENAMES)]
 
     if not os.path.isdir(templates_dir):
         log('Templates directory not found @ %s.' % templates_dir,
@@ -258,7 +258,7 @@ class OSConfigRenderer(object):
         """
         Write out all registered config files.
         """
-        [self.write(k) for k in self.templates.iterkeys()]
+        [self.write(k) for k in six.iterkeys(self.templates)]
 
     def set_release(self, openstack_release):
         """
@@ -275,5 +275,5 @@ class OSConfigRenderer(object):
         '''
         interfaces = []
         [interfaces.extend(i.complete_contexts())
-         for i in self.templates.itervalues()]
+         for i in six.itervalues(self.templates)]
         return interfaces

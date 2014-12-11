@@ -10,11 +10,13 @@ import os
 import socket
 import sys
 
+import six
+import yaml
+
 from charmhelpers.core.hookenv import (
     config,
     log as juju_log,
     charm_dir,
-    ERROR,
     INFO,
     relation_ids,
     relation_set
@@ -31,7 +33,8 @@ from charmhelpers.contrib.network.ip import (
 )
 
 from charmhelpers.core.host import lsb_release, mounts, umount
-from charmhelpers.fetch import apt_install, apt_cache
+from charmhelpers.fetch import apt_install, apt_cache, install_remote
+from charmhelpers.contrib.python.packages import pip_install
 from charmhelpers.contrib.storage.linux.utils import is_block_device, zap_disk
 from charmhelpers.contrib.storage.linux.loopback import ensure_loopback_device
 
@@ -113,7 +116,7 @@ def get_os_codename_install_source(src):
 
     # Best guess match based on deb string provided
     if src.startswith('deb') or src.startswith('ppa'):
-        for k, v in OPENSTACK_CODENAMES.iteritems():
+        for k, v in six.iteritems(OPENSTACK_CODENAMES):
             if v in src:
                 return v
 
@@ -134,7 +137,7 @@ def get_os_codename_version(vers):
 
 def get_os_version_codename(codename):
     '''Determine OpenStack version number from codename.'''
-    for k, v in OPENSTACK_CODENAMES.iteritems():
+    for k, v in six.iteritems(OPENSTACK_CODENAMES):
         if v == codename:
             return k
     e = 'Could not derive OpenStack version for '\
@@ -194,7 +197,7 @@ def get_os_version_package(pkg, fatal=True):
     else:
         vers_map = OPENSTACK_CODENAMES
 
-    for version, cname in vers_map.iteritems():
+    for version, cname in six.iteritems(vers_map):
         if cname == codename:
             return version
     # e = "Could not determine OpenStack version for package: %s" % pkg
@@ -318,7 +321,7 @@ def save_script_rc(script_path="scripts/scriptrc", **env_vars):
         rc_script.write(
             "#!/bin/bash\n")
         [rc_script.write('export %s=%s\n' % (u, p))
-         for u, p in env_vars.iteritems() if u != "script_path"]
+         for u, p in six.iteritems(env_vars) if u != "script_path"]
 
 
 def openstack_upgrade_available(package):
@@ -351,8 +354,8 @@ def ensure_block_device(block_device):
     '''
     _none = ['None', 'none', None]
     if (block_device in _none):
-        error_out('prepare_storage(): Missing required input: '
-                  'block_device=%s.' % block_device, level=ERROR)
+        error_out('prepare_storage(): Missing required input: block_device=%s.'
+                  % block_device)
 
     if block_device.startswith('/dev/'):
         bdev = block_device
@@ -368,8 +371,7 @@ def ensure_block_device(block_device):
         bdev = '/dev/%s' % block_device
 
     if not is_block_device(bdev):
-        error_out('Failed to locate valid block device at %s' % bdev,
-                  level=ERROR)
+        error_out('Failed to locate valid block device at %s' % bdev)
 
     return bdev
 
@@ -418,7 +420,7 @@ def ns_query(address):
 
     if isinstance(address, dns.name.Name):
         rtype = 'PTR'
-    elif isinstance(address, basestring):
+    elif isinstance(address, six.string_types):
         rtype = 'A'
     else:
         return None
@@ -486,8 +488,7 @@ def sync_db_with_multi_ipv6_addresses(database, database_user,
               'hostname': json.dumps(hosts)}
 
     if relation_prefix:
-        keys = kwargs.keys()
-        for key in keys:
+        for key in list(kwargs.keys()):
             kwargs["%s_%s" % (relation_prefix, key)] = kwargs[key]
             del kwargs[key]
 
@@ -508,3 +509,111 @@ def os_requires_version(ostack_release, pkg):
             f(*args)
         return wrapped_f
     return wrap
+
+
+def git_install_requested():
+    """Returns true if openstack-origin-git is specified."""
+    return config('openstack-origin-git') != "None"
+
+
+requirements_dir = None
+
+
+def git_clone_and_install(file_name, core_project):
+    """Clone/install all OpenStack repos specified in yaml config file."""
+    global requirements_dir
+
+    if file_name == "None":
+        return
+
+    yaml_file = os.path.join(charm_dir(), file_name)
+
+    # clone/install the requirements project first
+    installed = _git_clone_and_install_subset(yaml_file,
+                                              whitelist=['requirements'])
+    if 'requirements' not in installed:
+        error_out('requirements git repository must be specified')
+
+    # clone/install all other projects except requirements and the core project
+    blacklist = ['requirements', core_project]
+    _git_clone_and_install_subset(yaml_file, blacklist=blacklist,
+                                  update_requirements=True)
+
+    # clone/install the core project
+    whitelist = [core_project]
+    installed = _git_clone_and_install_subset(yaml_file, whitelist=whitelist,
+                                              update_requirements=True)
+    if core_project not in installed:
+        error_out('{} git repository must be specified'.format(core_project))
+
+
+def _git_clone_and_install_subset(yaml_file, whitelist=[], blacklist=[],
+                                  update_requirements=False):
+    """Clone/install subset of OpenStack repos specified in yaml config file."""
+    global requirements_dir
+    installed = []
+
+    with open(yaml_file, 'r') as fd:
+        projects = yaml.load(fd)
+        for proj, val in projects.items():
+            # The project subset is chosen based on the following 3 rules:
+            # 1) If project is in blacklist, we don't clone/install it, period.
+            # 2) If whitelist is empty, we clone/install everything else.
+            # 3) If whitelist is not empty, we clone/install everything in the
+            #    whitelist.
+            if proj in blacklist:
+                continue
+            if whitelist and proj not in whitelist:
+                continue
+            repo = val['repository']
+            branch = val['branch']
+            repo_dir = _git_clone_and_install_single(repo, branch,
+                                                     update_requirements)
+            if proj == 'requirements':
+                requirements_dir = repo_dir
+            installed.append(proj)
+    return installed
+
+
+def _git_clone_and_install_single(repo, branch, update_requirements=False):
+    """Clone and install a single git repository."""
+    dest_parent_dir = "/mnt/openstack-git/"
+    dest_dir = os.path.join(dest_parent_dir, os.path.basename(repo))
+
+    if not os.path.exists(dest_parent_dir):
+        juju_log('Host dir not mounted at {}. '
+                 'Creating directory there instead.'.format(dest_parent_dir))
+        os.mkdir(dest_parent_dir)
+
+    if not os.path.exists(dest_dir):
+        juju_log('Cloning git repo: {}, branch: {}'.format(repo, branch))
+        repo_dir = install_remote(repo, dest=dest_parent_dir, branch=branch)
+    else:
+        repo_dir = dest_dir
+
+    if update_requirements:
+        if not requirements_dir:
+            error_out('requirements repo must be cloned before '
+                      'updating from global requirements.')
+        _git_update_requirements(repo_dir, requirements_dir)
+
+    juju_log('Installing git repo from dir: {}'.format(repo_dir))
+    pip_install(repo_dir)
+
+    return repo_dir
+
+
+def _git_update_requirements(package_dir, reqs_dir):
+    """Update from global requirements.
+
+       Update an OpenStack git directory's requirements.txt and
+       test-requirements.txt from global-requirements.txt."""
+    orig_dir = os.getcwd()
+    os.chdir(reqs_dir)
+    cmd = "python update.py {}".format(package_dir)
+    try:
+        subprocess.check_call(cmd.split(' '))
+    except subprocess.CalledProcessError:
+        package = os.path.basename(package_dir)
+        error_out("Error updating {} from global-requirements.txt".format(package))
+    os.chdir(orig_dir)

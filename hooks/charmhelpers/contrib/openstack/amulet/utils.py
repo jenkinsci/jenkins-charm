@@ -7,6 +7,8 @@ import glanceclient.v1.client as glance_client
 import keystoneclient.v2_0 as keystone_client
 import novaclient.v1_1.client as nova_client
 
+import six
+
 from charmhelpers.contrib.amulet.utils import (
     AmuletUtils
 )
@@ -60,7 +62,7 @@ class OpenStackAmuletUtils(AmuletUtils):
            expected service catalog endpoints.
            """
         self.log.debug('actual: {}'.format(repr(actual)))
-        for k, v in expected.iteritems():
+        for k, v in six.iteritems(expected):
             if k in actual:
                 ret = self._validate_dict_data(expected[k][0], actual[k][0])
                 if ret:

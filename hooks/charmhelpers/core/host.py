@@ -14,11 +14,12 @@ import string
 import subprocess
 import hashlib
 from contextlib import contextmanager
-
 from collections import OrderedDict
 
-from hookenv import log
-from fstab import Fstab
+import six
+
+from .hookenv import log
+from .fstab import Fstab
 
 
 def service_start(service_name):
@@ -54,7 +55,9 @@ def service(action, service_name):
 def service_running(service):
     """Determine whether a system service is running"""
     try:
-        output = subprocess.check_output(['service', service, 'status'], stderr=subprocess.STDOUT)
+        output = subprocess.check_output(
+            ['service', service, 'status'],
+            stderr=subprocess.STDOUT).decode('UTF-8')
     except subprocess.CalledProcessError:
         return False
     else:
@@ -67,7 +70,9 @@ def service_running(service):
 def service_available(service_name):
     """Determine whether a system service is available"""
     try:
-        subprocess.check_output(['service', service_name, 'status'], stderr=subprocess.STDOUT)
+        subprocess.check_output(
+            ['service', service_name, 'status'],
+            stderr=subprocess.STDOUT).decode('UTF-8')
     except subprocess.CalledProcessError as e:
         return 'unrecognized service' not in e.output
     else:
@@ -96,6 +101,26 @@ def adduser(username, password=None, shell='/bin/bash', system_user=False):
     return user_info
 
 
+def add_group(group_name, system_group=False):
+    """Add a group to the system"""
+    try:
+        group_info = grp.getgrnam(group_name)
+        log('group {0} already exists!'.format(group_name))
+    except KeyError:
+        log('creating group {0}'.format(group_name))
+        cmd = ['addgroup']
+        if system_group:
+            cmd.append('--system')
+        else:
+            cmd.extend([
+                '--group',
+            ])
+        cmd.append(group_name)
+        subprocess.check_call(cmd)
+        group_info = grp.getgrnam(group_name)
+    return group_info
+
+
 def add_user_to_group(username, group):
     """Add a user to a group"""
     cmd = [
@@ -115,7 +140,7 @@ def rsync(from_path, to_path, flags='-r', options=None):
     cmd.append(from_path)
     cmd.append(to_path)
     log(" ".join(cmd))
-    return subprocess.check_output(cmd).strip()
+    return subprocess.check_output(cmd).decode('UTF-8').strip()
 
 
 def symlink(source, destination):
@@ -130,7 +155,7 @@ def symlink(source, destination):
     subprocess.check_call(cmd)
 
 
-def mkdir(path, owner='root', group='root', perms=0555, force=False):
+def mkdir(path, owner='root', group='root', perms=0o555, force=False):
     """Create a directory"""
     log("Making dir {} {}:{} {:o}".format(path, owner, group,
                                           perms))
@@ -146,7 +171,7 @@ def mkdir(path, owner='root', group='root', perms=0555, force=False):
     os.chown(realpath, uid, gid)
 
 
-def write_file(path, content, owner='root', group='root', perms=0444):
+def write_file(path, content, owner='root', group='root', perms=0o444):
     """Create or overwrite a file with the contents of a string"""
     log("Writing file {} {}:{} {:o}".format(path, owner, group, perms))
     uid = pwd.getpwnam(owner).pw_uid
@@ -177,7 +202,7 @@ def mount(device, mountpoint, options=None, persist=False, filesystem="ext3"):
     cmd_args.extend([device, mountpoint])
     try:
         subprocess.check_output(cmd_args)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         log('Error mounting {} at {}\n{}'.format(device, mountpoint, e.output))
         return False
 
@@ -191,7 +216,7 @@ def umount(mountpoint, persist=False):
     cmd_args = ['umount', mountpoint]
     try:
         subprocess.check_output(cmd_args)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         log('Error unmounting {}\n{}'.format(mountpoint, e.output))
         return False
 
@@ -218,8 +243,8 @@ def file_hash(path, hash_type='md5'):
     """
     if os.path.exists(path):
         h = getattr(hashlib, hash_type)()
-        with open(path, 'r') as source:
-            h.update(source.read())  # IGNORE:E1101 - it does have update
+        with open(path, 'rb') as source:
+            h.update(source.read())
         return h.hexdigest()
     else:
         return None
@@ -297,7 +322,7 @@ def pwgen(length=None):
     if length is None:
         length = random.choice(range(35, 45))
     alphanumeric_chars = [
-        l for l in (string.letters + string.digits)
+        l for l in (string.ascii_letters + string.digits)
         if l not in 'l0QD1vAEIOUaeiou']
     random_chars = [
         random.choice(alphanumeric_chars) for _ in range(length)]
@@ -306,14 +331,14 @@ def pwgen(length=None):
 
 def list_nics(nic_type):
     '''Return a list of nics of given type(s)'''
-    if isinstance(nic_type, basestring):
+    if isinstance(nic_type, six.string_types):
         int_types = [nic_type]
     else:
         int_types = nic_type
     interfaces = []
     for int_type in int_types:
         cmd = ['ip', 'addr', 'show', 'label', int_type + '*']
-        ip_output = subprocess.check_output(cmd).split('\n')
+        ip_output = subprocess.check_output(cmd).decode('UTF-8').split('\n')
         ip_output = (line for line in ip_output if line)
         for line in ip_output:
             if line.split()[1].startswith(int_type):
@@ -335,7 +360,7 @@ def set_nic_mtu(nic, mtu):
 
 def get_nic_mtu(nic):
     cmd = ['ip', 'addr', 'show', nic]
-    ip_output = subprocess.check_output(cmd).split('\n')
+    ip_output = subprocess.check_output(cmd).decode('UTF-8').split('\n')
     mtu = ""
     for line in ip_output:
         words = line.split()
@@ -346,7 +371,7 @@ def get_nic_mtu(nic):
 
 def get_nic_hwaddr(nic):
     cmd = ['ip', '-o', '-0', 'addr', 'show', nic]
-    ip_output = subprocess.check_output(cmd)
+    ip_output = subprocess.check_output(cmd).decode('UTF-8')
     hwaddr = ""
     words = ip_output.split()
     if 'link/ether' in words:
@@ -363,8 +388,8 @@ def cmp_pkgrevno(package, revno, pkgcache=None):
 
     '''
     import apt_pkg
-    from charmhelpers.fetch import apt_cache
     if not pkgcache:
+        from charmhelpers.fetch import apt_cache
         pkgcache = apt_cache()
     pkg = pkgcache[package]
     return apt_pkg.version_compare(pkg.current_ver.ver_str, revno)

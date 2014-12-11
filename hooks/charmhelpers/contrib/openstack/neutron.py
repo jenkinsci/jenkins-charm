@@ -14,7 +14,7 @@ from charmhelpers.contrib.openstack.utils import os_release
 def headers_package():
     """Ensures correct linux-headers for running kernel are installed,
     for building DKMS package"""
-    kver = check_output(['uname', '-r']).strip()
+    kver = check_output(['uname', '-r']).decode('UTF-8').strip()
     return 'linux-headers-%s' % kver
 
 QUANTUM_CONF_DIR = '/etc/quantum'
@@ -22,7 +22,7 @@ QUANTUM_CONF_DIR = '/etc/quantum'
 
 def kernel_version():
     """ Retrieve the current major kernel version as a tuple e.g. (3, 13) """
-    kver = check_output(['uname', '-r']).strip()
+    kver = check_output(['uname', '-r']).decode('UTF-8').strip()
     kver = kver.split('.')
     return (int(kver[0]), int(kver[1]))
 
@@ -177,7 +177,8 @@ def neutron_plugin_attribute(plugin, attr, net_manager=None):
     elif manager == 'neutron':
         plugins = neutron_plugins()
     else:
-        log('Error: Network manager does not support plugins.')
+        log("Network manager '%s' does not support plugins." % (manager),
+            level=ERROR)
         raise Exception
 
     try:

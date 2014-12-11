@@ -4,7 +4,8 @@ from charmhelpers.core import host
 from charmhelpers.core import hookenv
 
 
-def render(source, target, context, owner='root', group='root', perms=0444, templates_dir=None):
+def render(source, target, context, owner='root', group='root',
+           perms=0o444, templates_dir=None):
     """
     Render a template.
 
