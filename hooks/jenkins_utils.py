@@ -87,7 +87,7 @@ def setup_source(release):
         # deb-src entries but pkg.jenkins-ci.org has no deb-src.
         add_source(None, key=key)
         with open("/etc/apt/sources.list", 'a') as fd:
-            fd.write(deb)
+            fd.write("%s\n" % deb)
 
     apt_update(fatal=True)
 
