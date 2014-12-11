@@ -73,7 +73,22 @@ def setup_source(release):
     with open(target, 'r') as fd:
         key = fd.read()
 
-    add_source("deb http://pkg.jenkins-ci.org/%s binary/" % (source), key=key)
+    deb = "deb http://pkg.jenkins-ci.org/%s binary/" % (source)
+
+    found = False
+    with open("/etc/apt/sources.list", 'r') as fd:
+        for line in fd:
+            if deb in line:
+                found = True
+                break
+
+    if not found:
+        # NOTE: don't use add_source for adding source since it adds deb and
+        # deb-src entries but pkg.jenkins-ci.org has no deb-src.
+        add_source(None, key=key)
+        with open("/etc/apt/sources.list", 'a') as fd:
+            fd.write(deb)
+
     apt_update(fatal=True)
 
 
