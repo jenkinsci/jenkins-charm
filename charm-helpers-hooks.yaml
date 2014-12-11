@@ -3,6 +3,5 @@ destination: hooks/charmhelpers
 include:
     - __init__
     - core
-    - contrib.openstack|inc=*
     - fetch
     - payload.execd

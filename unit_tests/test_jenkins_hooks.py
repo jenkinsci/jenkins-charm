@@ -1,6 +1,6 @@
 import unittest
 
 
-class JekinsHooksTests(unittest.TestCase):
+class JenkinsHooksTests(unittest.TestCase):
     def setUp(self):
-        super(JekinsHooksTests, self).setUp()
+        super(JenkinsHooksTests, self).setUp()
