@@ -161,14 +161,21 @@ def master_relation_changed():
         with open('/var/lib/jenkins/.admin_password', 'r') as fd:
             PASSWORD = fd.read()
 
-    # Grab information that remote unit has posted to relation
-    slavehost = relation_get('slavehost')
-    executors = relation_get('executors')
-    labels = relation_get('labels')
+    required_settings = ['executors', 'labels', 'slavehost']
+    settings = relation_get()
+    missing = [s for s in required_settings if s not in settings]
+    if missing:
+        log("Not all required relation settings received yet (missing=%s) - "
+            "skipping" % (', '.join(missing)), level=INFO)
+        return
+
+    slavehost = settings['slavehost']
+    executors = settings['executors']
+    labels = settings['labels']
 
     # Double check to see if this has happened yet
     if "x%s" % (slavehost) == "x":
-        log("Slave host not yet defined, exiting...")
+        log("Slave host not yet defined - skipping", level=INFO)
         return
 
     log("Adding slave with hostname %s." % (slavehost), level=DEBUG)
