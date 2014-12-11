@@ -85,7 +85,7 @@ def setup_source(release):
     if not found:
         # NOTE: don't use add_source for adding source since it adds deb and
         # deb-src entries but pkg.jenkins-ci.org has no deb-src.
-        add_source(None, key=key)
+        add_source("#dummy-source", key=key)
         with open("/etc/apt/sources.list", 'a') as fd:
             fd.write("%s\n" % deb)
 
