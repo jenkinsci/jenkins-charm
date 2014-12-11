@@ -1,6 +1,7 @@
 branch: lp:charm-helpers
 destination: hooks/charmhelpers
 include:
+    - __init__
     - core
     - contrib.openstack|inc=*
     - fetch
