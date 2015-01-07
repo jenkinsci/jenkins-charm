@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ue
+ 
+juju-log "Updating API interface with up-to-date Jenkins information."
+ 
+relation-set admin_username="$(config-get username)"               \
+             admin_password="$(config-get password)"               \
+             jenkins_url="http://$(unit-get private-address):8080" \
