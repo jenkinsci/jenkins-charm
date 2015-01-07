@@ -12,7 +12,7 @@ seconds = 900
 ###
 # Deployment Setup
 ###
-d = amulet.Deployment()
+d = amulet.Deployment(series='trusty')
 
 d.add('haproxy')  # website-relation
 d.add('jenkins')  # Subject matter
