@@ -17,6 +17,10 @@ from charmhelpers.fetch import (
     add_source,
 )
 
+from charmhelpers.core.decorators import (
+    retry_on_exception,
+)
+
 JENKINS_HOME = '/var/lib/jenkins'
 JENKINS_USERS = os.path.join(JENKINS_HOME, 'users')
 JENKINS_PLUGINS = os.path.join(JENKINS_HOME, 'plugins')
@@ -26,17 +30,22 @@ TEMPLATES_DIR = 'templates'
 def add_node(host, executors, labels, username, password):
     import jenkins
 
-    l_jenkins = jenkins.Jenkins("http://localhost:8080/", username, password)
+    @retry_on_exception(2, 2, exc_type=jenkins.JenkinsException)
+    def _add_node(*args, **kwargs):
+        l_jenkins = jenkins.Jenkins("http://localhost:8080/", username,
+                                    password)
 
-    if l_jenkins.node_exists(host):
-        log("Node exists - not adding", level=DEBUG)
-        return
+        if l_jenkins.node_exists(host):
+            log("Node exists - not adding", level=DEBUG)
+            return
 
-    log("Adding node '%s' to Jenkins master" % (host), level=INFO)
-    l_jenkins.create_node(host, int(executors) * 2, host, labels=labels)
+        log("Adding node '%s' to Jenkins master" % (host), level=INFO)
+        l_jenkins.create_node(host, int(executors) * 2, host, labels=labels)
 
-    if not l_jenkins.node_exists(host):
-        log("Failed to create node '%s'" % (host), level=WARNING)
+        if not l_jenkins.node_exists(host):
+            log("Failed to create node '%s'" % (host), level=WARNING)
+
+    return _add_node()
 
 
 def del_node(host, username, password):
