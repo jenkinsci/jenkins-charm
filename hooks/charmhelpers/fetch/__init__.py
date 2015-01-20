@@ -64,9 +64,16 @@ CLOUD_ARCHIVE_POCKETS = {
     'trusty-juno/updates': 'trusty-updates/juno',
     'trusty-updates/juno': 'trusty-updates/juno',
     'juno/proposed': 'trusty-proposed/juno',
-    'juno/proposed': 'trusty-proposed/juno',
     'trusty-juno/proposed': 'trusty-proposed/juno',
     'trusty-proposed/juno': 'trusty-proposed/juno',
+    # Kilo
+    'kilo': 'trusty-updates/kilo',
+    'trusty-kilo': 'trusty-updates/kilo',
+    'trusty-kilo/updates': 'trusty-updates/kilo',
+    'trusty-updates/kilo': 'trusty-updates/kilo',
+    'kilo/proposed': 'trusty-proposed/kilo',
+    'trusty-kilo/proposed': 'trusty-proposed/kilo',
+    'trusty-proposed/kilo': 'trusty-proposed/kilo',
 }
 
 # The order of this list is very important. Handlers should be listed in from
