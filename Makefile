@@ -5,7 +5,7 @@ lint:
 	@flake8 --exclude hooks/charmhelpers hooks unit_tests tests
 	@charm proof
 
-test:
+functional_test:
 	@echo Starting Amulet tests...
 	# coreycb note: The -v should only be temporary until Amulet sends
 	# raise_status() messages to stderr:
@@ -13,7 +13,7 @@ test:
 	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 \
 	00-setup 100-deploy-precise 100-deploy-trusty
 
-unit_test:
+test:
 	@echo Starting unit tests...
 	@$(PYTHON) /usr/bin/nosetests --nologcapture --with-coverage unit_tests
 
