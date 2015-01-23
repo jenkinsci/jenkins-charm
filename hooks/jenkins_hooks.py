@@ -21,7 +21,10 @@ from charmhelpers.core.hookenv import (
     DEBUG,
     INFO,
 )
-from charmhelpers.fetch import apt_install
+from charmhelpers.fetch import (
+    apt_install,
+    apt_update,
+)
 from charmhelpers.core.host import (
     service_start,
     service_stop,
@@ -52,6 +55,7 @@ def install():
 
 @hooks.hook('config-changed')
 def config_changed():
+    apt_update()
     # Re-run whenever called to pickup any updates
     log("Installing/upgrading jenkins.", level=DEBUG)
     apt_install(['jenkins', 'default-jre-headless', 'pwgen'], fatal=True)
