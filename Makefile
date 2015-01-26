@@ -1,9 +1,20 @@
 #!/usr/bin/make
 PYTHON := /usr/bin/env python
 
-lint:
-	@flake8 --exclude hooks/charmhelpers hooks unit_tests tests
-	@charm proof
+ensure_venv:
+ifeq ("$(shell which virtualenv)","")
+	@sudo apt-get install -y python-virtualenv
+endif
+	@virtualenv .venv --no-site-packages
+	@. .venv/bin/activate; \
+	pip install -q -I -r test-requirements.txt; \
+	deactivate
+
+lint: ensure_venv
+	@. .venv/bin/activate; \
+	.venv/bin/flake8 --exclude hooks/charmhelpers hooks unit_tests tests; \
+	charm proof; \
+	deactivate
 
 functional_test:
 	@echo Starting Amulet tests...
@@ -13,9 +24,11 @@ functional_test:
 	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 \
 	00-setup 100-deploy-precise 100-deploy-trusty
 
-test:
+test: ensure_venv
 	@echo Starting unit tests...
-	@$(PYTHON) /usr/bin/nosetests --nologcapture --with-coverage unit_tests
+	@. .venv/bin/activate; \
+	.venv/bin/nosetests --nologcapture --with-coverage unit_tests; \
+	deactivate
 
 bin/charm_helpers_sync.py:
 	@mkdir -p bin
