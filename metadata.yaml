@@ -13,16 +13,13 @@ description: |
   and when paired with the jenkins-slave charm 
   provides an easy way to deploy Jenkins on Ubuntu
   server, and scale out Jenkins slaves.
-categories: ["applications","operational"]
+tags: ["application_development","ops"]
 provides:
   website:
     interface: http
   extension:
     interface: jenkins-extension
     scope: container
-    optional: true
-  api:
-    interface: jenkins-api
     optional: true
 requires:
   master:

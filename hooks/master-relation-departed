@@ -1,12 +1,1 @@
-#!/bin/bash
-
-set -ue
-
-# Slave hostname is derived from unit name so
-# this is pretty safe
-slavehost=`echo $JUJU_REMOTE_UNIT | sed s,/,-,`
-
-juju-log  "Deleting slave with hostname $slavehost..."
-$(dirname $0)/delnode $slavehost `config-get username` `config-get password`
-
-exit 0
+jenkins_hooks.py

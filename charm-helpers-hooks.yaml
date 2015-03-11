@@ -1,0 +1,8 @@
+branch: lp:charm-helpers
+destination: hooks/charmhelpers
+include:
+    - __init__
+    - contrib.python.packages
+    - core
+    - fetch
+    - payload.execd

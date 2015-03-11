@@ -1,0 +1,4 @@
+distribute
+flake8
+nose
+--allow-external python-apt

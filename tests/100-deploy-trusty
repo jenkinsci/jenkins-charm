@@ -12,11 +12,13 @@ seconds = 900
 ###
 # Deployment Setup
 ###
-d = amulet.Deployment()
+d = amulet.Deployment(series='trusty')
 
 d.add('haproxy')  # website-relation
 d.add('jenkins')  # Subject matter
-d.add('jenkins-slave')  # Job Runner
+# TODO(hopem): we don't yet have a precise version of jenkins-slave
+# so use the precise version for now.
+d.add('jenkins-slave', 'cs:precise/jenkins-slave')  # Job Runner
 
 
 d.relate('jenkins:website', 'haproxy:reverseproxy')

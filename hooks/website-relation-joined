@@ -1,5 +1,1 @@
-#!/bin/sh
-
-HOSTNAME=`unit-get private-address`
-juju-log "Setting website URL to $HOSTNAME:8080"
-relation-set port=8080 hostname=$HOSTNAME
+jenkins_hooks.py

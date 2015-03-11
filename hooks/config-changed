@@ -1,7 +1,1 @@
-#!/bin/sh
-set -e
-
-home=`dirname $0`
-
-juju-log "Reconfiguring charm by installing hook again."
-exec $home/install
+jenkins_hooks.py
