@@ -2,7 +2,7 @@ name: jenkins
 maintainer: James Page <james.page@ubuntu.com>
 summary: Jenkins Continuous Integration Server
 description: |
-  Jenkins is an extenable open source continuous
+  Jenkins is an extendable open source continuous
   integration server that monitors executions of
   repeated jobs. The focus of Jenkins is the 
   building/testing of software project continuously, 
