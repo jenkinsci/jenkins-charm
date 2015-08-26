@@ -60,6 +60,21 @@ def del_node(host, username, password):
         log("Node '%s' does not exist - not deleting" % (host), level=INFO)
 
 
+def install_from_bundle():
+    """Install Jenkins from bundled package."""
+    # Check bundled package exists.
+    bundle_path = os.path.join(charm_dir(), 'files', 'jenkins.deb')
+    if not os.path.isfile(bundle_path):
+        errmsg = "'%s' doesn't exist. No package bundled." % (bundle_path)
+        raise Exception(errmsg)
+    log('Installing from bundled Jenkins package: %s' % bundle_path)
+    # Install bundle deps.
+    apt_install(['daemon', 'adduser', 'psmisc', 'default-jre'], fatal=True)
+    # Run dpkg to install bundled deb.
+    env = os.environ.copy()
+    subprocess.call(['dpkg', '-i', bundle_path], env=env)
+
+
 def setup_source(release):
     """Install Jenkins archive."""
     log("Configuring source of jenkins as %s" % release, level=INFO)

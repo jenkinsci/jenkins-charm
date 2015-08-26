@@ -10,6 +10,7 @@ options:
      Source of Jenkins, options include:
      - lts: use the most recent Jenkins LTS release.
      - trunk: use the most recent Jenkins release.
+     - bundle: use a bundled deb package.
   username:
     type: string
     default: admin

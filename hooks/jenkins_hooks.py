@@ -37,6 +37,7 @@ from jenkins_utils import (
     add_node,
     del_node,
     setup_source,
+    install_from_bundle,
     install_jenkins_plugins,
 )
 
@@ -46,9 +47,12 @@ hooks = Hooks()
 @hooks.hook('install')
 def install():
     execd_preinstall('hooks/install.d')
-    # Only setup the source if jenkins is not already installed i.e. makes the
-    # config 'release' immutable so you can't change source once deployed
-    setup_source(config('release'))
+    if config('release') == 'bundle':
+        install_from_bundle()
+    else:
+        # Only setup the source if jenkins is not already installed i.e. makes the
+        # config 'release' immutable so you can't change source once deployed
+        setup_source(config('release'))
     config_changed()
     open_port(8080)
 
