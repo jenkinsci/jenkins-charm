@@ -206,13 +206,13 @@ def master_relation_broken():
     password = config('password')
     if not password:
         passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
-        with open(passwd_file, 'w+') as fd:
-            PASSWORD = fd.read()
+        with open(passwd_file, 'r') as fd:
+            password = fd.read()
 
     for member in relation_ids():
         member = member.replace('/', '-')
         log("Removing node %s from Jenkins master." % (member), level=DEBUG)
-        del_node(member, config('username'), PASSWORD)
+        del_node(member, config('username'), password)
 
 
 @hooks.hook('website-relation-joined')
