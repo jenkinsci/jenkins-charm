@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 
 from charmhelpers.core.hookenv import (
+    charm_dir,
     config,
     log,
     DEBUG,
@@ -13,6 +14,7 @@ from charmhelpers.core.hookenv import (
     WARNING,
 )
 from charmhelpers.fetch import (
+    apt_install,
     apt_update,
     add_source,
 )
