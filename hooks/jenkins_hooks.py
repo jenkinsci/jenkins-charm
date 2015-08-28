@@ -165,10 +165,15 @@ def master_relation_joined():
 
 @hooks.hook('master-relation-changed')
 def master_relation_changed():
-    PASSWORD = config('password')
-    if PASSWORD:
+    password = config('password')
+    if password:
         with open('/var/lib/jenkins/.admin_password', 'r') as fd:
-            PASSWORD = fd.read()
+            password = fd.read()
+    # Once we have the password, export credentials to the slave so it can 
+    # download slave-agent.jnlp from the master.
+    username = config('username')
+    relation_set(username=username)
+    relation_set(password=password)
 
     required_settings = ['executors', 'labels', 'slavehost']
     settings = relation_get()
@@ -188,7 +193,7 @@ def master_relation_changed():
         return
 
     log("Adding slave with hostname %s." % (slavehost), level=DEBUG)
-    add_node(slavehost, executors, labels, config('username'), PASSWORD)
+    add_node(slavehost, executors, labels, username, password)
     log("Node slave %s added." % (slavehost), level=DEBUG)
 
 
