@@ -250,6 +250,20 @@ def extension_relation_joined():
             relation_set(relation_id=rid, zuul_address=zuul_address)
 
 
+@hooks.hook('extension-relation-changed')
+def extension_relation_changed():
+    # extension subordinates may request the principle service install
+    # specified jenkins plugins
+    if relation_get('required_plugins'):
+        log("Installing required plugins as requested by jenkins-extension "
+            "subordinate.")
+        jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+        jenkins_gid = grp.getgrnam('jenkins').gr_gid
+        install_jenkins_plugins(
+            jenkins_uid, jenkins_gid,
+            plugins=relation_get('required_plugins'))
+
+
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)

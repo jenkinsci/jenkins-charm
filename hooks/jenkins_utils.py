@@ -125,8 +125,8 @@ def setup_source(release):
     apt_update(fatal=True)
 
 
-def install_jenkins_plugins(jenkins_uid, jenkins_gid):
-    plugins = config('plugins')
+def install_jenkins_plugins(jenkins_uid, jenkins_gid, plugins=None):
+    plugins = plugins or config('plugins')
     if plugins:
         plugins = plugins.split()
     else:
