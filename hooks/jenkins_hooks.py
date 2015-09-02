@@ -12,6 +12,7 @@ from charmhelpers.core.hookenv import (
     UnregisteredHookError,
     config,
     remote_unit,
+    related_units,
     relation_get,
     relation_set,
     relation_ids,
@@ -225,6 +226,28 @@ def website_relation_joined():
     hostname = unit_get('private-address')
     log("Setting website URL to %s:8080" % (hostname), level=DEBUG)
     relation_set(port=8080, hostname=hostname)
+
+@hooks.hook('extension-relation-joined')
+def extension_relation_joined():
+    log("Updating extension interface with up-to-date data.")
+    # Fish out the current zuul address from any relation we have.
+    zuul_address = ""
+    for rid in relation_ids('zuul'):
+        for unit in related_units(rid):
+            zuul_address = relation_get(
+                rid=rid, unit=unit, attribute='private-address')
+
+    for rid in relation_ids('extension'):
+        r_settings = {
+            'admin_username': config('username'),
+            'admin_password': config('password'),
+            'jenkins_url': 'http://%s:8080' % unit_get('private-address'),
+            'jenkins-admin-user': config('jenkins-admin-user'),
+            'jenkins-token': config('jenkins-token')
+        }
+        relation_set(relation_id=rid, relation_settings=r_settings)
+        if zuul_address:
+            relation_set(relation_id=rid, zuul_address=zuul_address)
 
 
 if __name__ == '__main__':
