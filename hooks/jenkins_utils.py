@@ -193,3 +193,13 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid, plugins=None):
     finally:
         # Delete install refs
         shutil.rmtree(track_dir)
+
+
+def get_jenkins_password():
+    """Return password from the config or the one saved on file."""
+    password = config('password')
+    if not password:
+        passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
+        with open(passwd_file, 'r') as fd:
+            password = fd.read()
+    return password

@@ -25,3 +25,6 @@ requires:
   master:
     interface: jenkins-slave
     optional: true
+  zuul:
+    interface: zuul
+    optional: true

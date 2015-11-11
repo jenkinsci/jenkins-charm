@@ -10,7 +10,10 @@ options:
      Source of Jenkins, options include:
      - lts: use the most recent Jenkins LTS release.
      - trunk: use the most recent Jenkins release.
-     - bundle: use a bundled deb package.
+     - bundle: use a bundled deb package. The jenkins deb package needs to be
+               manually copied over to the charm files/ dir before deployment
+               and named jenkins.deb. It can be downloaded from
+               http://pkg.jenkins-ci.org/debian/
   username:
     type: string
     default: admin

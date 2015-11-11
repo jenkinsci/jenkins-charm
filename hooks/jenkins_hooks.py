@@ -37,6 +37,7 @@ from jenkins_utils import (
     TEMPLATES_DIR,
     add_node,
     del_node,
+    get_jenkins_password,
     setup_source,
     install_from_bundle,
     install_jenkins_plugins,
@@ -166,11 +167,8 @@ def master_relation_joined():
 
 @hooks.hook('master-relation-changed')
 def master_relation_changed():
-    password = config('password')
-    if password:
-        with open('/var/lib/jenkins/.admin_password', 'r') as fd:
-            password = fd.read()
-    # Once we have the password, export credentials to the slave so it can 
+    password = get_jenkins_password()
+    # Once we have the password, export credentials to the slave so it can
     # download slave-agent.jnlp from the master.
     username = config('username')
     relation_set(username=username)
@@ -209,11 +207,7 @@ def master_relation_departed():
 
 @hooks.hook('master-relation-broken')
 def master_relation_broken():
-    password = config('password')
-    if not password:
-        passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
-        with open(passwd_file, 'r') as fd:
-            password = fd.read()
+    password = get_jenkins_password()
 
     for member in relation_ids():
         member = member.replace('/', '-')
@@ -226,6 +220,7 @@ def website_relation_joined():
     hostname = unit_get('private-address')
     log("Setting website URL to %s:8080" % (hostname), level=DEBUG)
     relation_set(port=8080, hostname=hostname)
+
 
 @hooks.hook('extension-relation-joined')
 def extension_relation_joined():
@@ -240,7 +235,7 @@ def extension_relation_joined():
     for rid in relation_ids('extension'):
         r_settings = {
             'admin_username': config('username'),
-            'admin_password': config('password'),
+            'admin_password': get_jenkins_password(),
             'jenkins_url': 'http://%s:8080' % unit_get('private-address'),
             'jenkins-admin-user': config('jenkins-admin-user'),
             'jenkins-token': config('jenkins-token')
