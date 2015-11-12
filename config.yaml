@@ -27,7 +27,7 @@ options:
     description: Space separated list of plugins to install
   plugins-site:
     type: string
-    default: "https://updates.jenkins-ci.org/"
+    default: "https://updates.jenkins-ci.org/latest/"
     description: Site to download plugin .hpi files from.
   plugins-check-certificate:
     type: string

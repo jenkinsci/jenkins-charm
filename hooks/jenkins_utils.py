@@ -158,7 +158,7 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid, plugins=None):
 
         for plugin in plugins:
             plugin_filename = "%s.hpi" % (plugin)
-            url = os.path.join(plugins_site, 'latest', plugin_filename)
+            url = os.path.join(plugins_site, plugin_filename)
             plugin_path = os.path.join(JENKINS_PLUGINS, plugin_filename)
             if not os.path.isfile(plugin_path):
                 log("Installing plugin %s" % (plugin_filename), level=DEBUG)
