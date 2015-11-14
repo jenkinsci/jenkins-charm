@@ -27,6 +27,7 @@ from charmhelpers.fetch import (
     apt_update,
 )
 from charmhelpers.core.host import (
+    service_restart,
     service_start,
     service_stop,
 )
@@ -257,6 +258,51 @@ def extension_relation_changed():
         install_jenkins_plugins(
             jenkins_uid, jenkins_gid,
             plugins=relation_get('required_plugins'))
+
+
+ZUUL_CONFIG_SNIPPET = """
+<hudson.plugins.gearman.GearmanPluginConfig>
+  <enablePlugin>true</enablePlugin>
+    <host>{}</host>
+    <port>4730</port>
+</hudson.plugins.gearman.GearmanPluginConfig>
+"""
+
+
+@hooks.hook('zuul-relation-joined')
+def zuul_relation_joined():
+    log("Installing and configuring gearman-plugin for Zuul communication")
+    # zuul relation requires we install the required plugins and set the
+    # address of the remote zuul/gearman service in the plugin setting.
+    required_plugins = [
+        "credentials",
+        "ssh-credentials",
+        "ssh-agent",
+        "gearman-plugin",
+        "git-client",
+        "git"
+    ]
+
+    log("Installing and configuring gearman-plugin for Zuul communication")
+    install_jenkins_plugins(required_plugins)
+    # Generate plugin config with address of remote unit.
+    zuul_config = ZUUL_CONFIG_SNIPPET.format(relation_get('private-address'))
+    config_path = os.path.join(
+        JENKINS_HOME, "hudson.plugins.gearman.GearmanPluginConfig.xml")
+    with open(config_path, 'w') as f:
+        f.write(zuul_config)
+
+    # Change permission of config file.
+    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+    nogroup_gid = grp.getgrnam('nogroup').gr_gid
+    os.chown(config_path, jenkins_uid, nogroup_gid)
+
+    # Restart jenkins so changes will take efect.
+    service_restart('jenkins')
+
+    # Trigger the extension hook to update it with zuul relation data, if its
+    # coded to do so.
+    hooks.execute('extension-relation-joined')
 
 
 if __name__ == '__main__':
