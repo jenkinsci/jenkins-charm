@@ -283,8 +283,12 @@ def zuul_relation_joined():
         "git"
     ]
 
+    # Grab jenkins uid and gid.
+    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+    jenkins_gid = grp.getgrnam('jenkins').gr_gid
     log("Installing and configuring gearman-plugin for Zuul communication")
-    install_jenkins_plugins(required_plugins)
+    install_jenkins_plugins(
+        jenkins_uid, jenkins_gid, plugins=required_plugins)
     # Generate plugin config with address of remote unit.
     zuul_config = ZUUL_CONFIG_SNIPPET.format(relation_get('private-address'))
     config_path = os.path.join(
@@ -293,7 +297,6 @@ def zuul_relation_joined():
         f.write(zuul_config)
 
     # Change permission of config file.
-    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
     nogroup_gid = grp.getgrnam('nogroup').gr_gid
     os.chown(config_path, jenkins_uid, nogroup_gid)
 
