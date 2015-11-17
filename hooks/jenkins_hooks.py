@@ -274,14 +274,8 @@ def zuul_relation_joined():
     log("Installing and configuring gearman-plugin for Zuul communication")
     # zuul relation requires we install the required plugins and set the
     # address of the remote zuul/gearman service in the plugin setting.
-    required_plugins = [
-        "credentials",
-        "ssh-credentials",
-        "ssh-agent",
-        "gearman-plugin",
-        "git-client",
-        "git"
-    ]
+    required_plugins = (
+        "credentials ssh-credentials ssh-agent gearman-plugin git-client git")
 
     # Grab jenkins uid and gid.
     jenkins_uid = pwd.getpwnam('jenkins').pw_uid
