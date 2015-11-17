@@ -299,7 +299,7 @@ def zuul_relation_joined():
 
     # Trigger the extension hook to update it with zuul relation data, if its
     # coded to do so.
-    hooks.execute('extension-relation-joined')
+    hooks.execute(['extension-relation-joined'])
 
 
 if __name__ == '__main__':
