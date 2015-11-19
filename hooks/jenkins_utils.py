@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 
 from charmhelpers.core.hookenv import (
+    charm_dir,
     config,
     log,
     DEBUG,
@@ -13,6 +14,7 @@ from charmhelpers.core.hookenv import (
     WARNING,
 )
 from charmhelpers.fetch import (
+    apt_install,
     apt_update,
     add_source,
 )
@@ -58,6 +60,21 @@ def del_node(host, username, password):
         l_jenkins.delete_node(host)
     else:
         log("Node '%s' does not exist - not deleting" % (host), level=INFO)
+
+
+def install_from_bundle():
+    """Install Jenkins from bundled package."""
+    # Check bundled package exists.
+    bundle_path = os.path.join(charm_dir(), 'files', 'jenkins.deb')
+    if not os.path.isfile(bundle_path):
+        errmsg = "'%s' doesn't exist. No package bundled." % (bundle_path)
+        raise Exception(errmsg)
+    log('Installing from bundled Jenkins package: %s' % bundle_path)
+    # Install bundle deps.
+    apt_install(['daemon', 'adduser', 'psmisc', 'default-jre'], fatal=True)
+    # Run dpkg to install bundled deb.
+    env = os.environ.copy()
+    subprocess.call(['dpkg', '-i', bundle_path], env=env)
 
 
 def setup_source(release):
@@ -108,8 +125,8 @@ def setup_source(release):
     apt_update(fatal=True)
 
 
-def install_jenkins_plugins(jenkins_uid, jenkins_gid):
-    plugins = config('plugins')
+def install_jenkins_plugins(jenkins_uid, jenkins_gid, plugins=None):
+    plugins = plugins or config('plugins')
     if plugins:
         plugins = plugins.split()
     else:
@@ -176,3 +193,13 @@ def install_jenkins_plugins(jenkins_uid, jenkins_gid):
     finally:
         # Delete install refs
         shutil.rmtree(track_dir)
+
+
+def get_jenkins_password():
+    """Return password from the config or the one saved on file."""
+    password = config('password')
+    if not password:
+        passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
+        with open(passwd_file, 'r') as fd:
+            password = fd.read()
+    return password

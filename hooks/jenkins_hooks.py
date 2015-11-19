@@ -12,6 +12,7 @@ from charmhelpers.core.hookenv import (
     UnregisteredHookError,
     config,
     remote_unit,
+    related_units,
     relation_get,
     relation_set,
     relation_ids,
@@ -26,6 +27,7 @@ from charmhelpers.fetch import (
     apt_update,
 )
 from charmhelpers.core.host import (
+    service_restart,
     service_start,
     service_stop,
 )
@@ -36,7 +38,9 @@ from jenkins_utils import (
     TEMPLATES_DIR,
     add_node,
     del_node,
+    get_jenkins_password,
     setup_source,
+    install_from_bundle,
     install_jenkins_plugins,
 )
 
@@ -46,9 +50,13 @@ hooks = Hooks()
 @hooks.hook('install')
 def install():
     execd_preinstall('hooks/install.d')
-    # Only setup the source if jenkins is not already installed i.e. makes the
-    # config 'release' immutable so you can't change source once deployed
-    setup_source(config('release'))
+    if config('release') == 'bundle':
+        install_from_bundle()
+    else:
+        # Only setup the source if jenkins is not already installed i.e. makes
+        # the config 'release' immutable so you can't change source once
+        # deployed.
+        setup_source(config('release'))
     config_changed()
     open_port(8080)
 
@@ -160,10 +168,12 @@ def master_relation_joined():
 
 @hooks.hook('master-relation-changed')
 def master_relation_changed():
-    PASSWORD = config('password')
-    if PASSWORD:
-        with open('/var/lib/jenkins/.admin_password', 'r') as fd:
-            PASSWORD = fd.read()
+    password = get_jenkins_password()
+    # Once we have the password, export credentials to the slave so it can
+    # download slave-agent.jnlp from the master.
+    username = config('username')
+    relation_set(username=username)
+    relation_set(password=password)
 
     required_settings = ['executors', 'labels', 'slavehost']
     settings = relation_get()
@@ -183,7 +193,7 @@ def master_relation_changed():
         return
 
     log("Adding slave with hostname %s." % (slavehost), level=DEBUG)
-    add_node(slavehost, executors, labels, config('username'), PASSWORD)
+    add_node(slavehost, executors, labels, username, password)
     log("Node slave %s added." % (slavehost), level=DEBUG)
 
 
@@ -198,16 +208,12 @@ def master_relation_departed():
 
 @hooks.hook('master-relation-broken')
 def master_relation_broken():
-    password = config('password')
-    if not password:
-        passwd_file = os.path.join(JENKINS_HOME, '.admin_password')
-        with open(passwd_file, 'w+') as fd:
-            PASSWORD = fd.read()
+    password = get_jenkins_password()
 
     for member in relation_ids():
         member = member.replace('/', '-')
         log("Removing node %s from Jenkins master." % (member), level=DEBUG)
-        del_node(member, config('username'), PASSWORD)
+        del_node(member, config('username'), password)
 
 
 @hooks.hook('website-relation-joined')
@@ -215,6 +221,85 @@ def website_relation_joined():
     hostname = unit_get('private-address')
     log("Setting website URL to %s:8080" % (hostname), level=DEBUG)
     relation_set(port=8080, hostname=hostname)
+
+
+@hooks.hook('extension-relation-joined')
+def extension_relation_joined():
+    log("Updating extension interface with up-to-date data.")
+    # Fish out the current zuul address from any relation we have.
+    zuul_address = ""
+    for rid in relation_ids('zuul'):
+        for unit in related_units(rid):
+            zuul_address = relation_get(
+                rid=rid, unit=unit, attribute='private-address')
+
+    for rid in relation_ids('extension'):
+        r_settings = {
+            'admin_username': config('username'),
+            'admin_password': get_jenkins_password(),
+            'jenkins_url': 'http://%s:8080' % unit_get('private-address'),
+            'jenkins-admin-user': config('jenkins-admin-user'),
+            'jenkins-token': config('jenkins-token')
+        }
+        relation_set(relation_id=rid, relation_settings=r_settings)
+        if zuul_address:
+            relation_set(relation_id=rid, zuul_address=zuul_address)
+
+
+@hooks.hook('extension-relation-changed')
+def extension_relation_changed():
+    # extension subordinates may request the principle service install
+    # specified jenkins plugins
+    if relation_get('required_plugins'):
+        log("Installing required plugins as requested by jenkins-extension "
+            "subordinate.")
+        jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+        jenkins_gid = grp.getgrnam('jenkins').gr_gid
+        install_jenkins_plugins(
+            jenkins_uid, jenkins_gid,
+            plugins=relation_get('required_plugins'))
+
+
+ZUUL_CONFIG_SNIPPET = """
+<hudson.plugins.gearman.GearmanPluginConfig>
+  <enablePlugin>true</enablePlugin>
+    <host>{}</host>
+    <port>4730</port>
+</hudson.plugins.gearman.GearmanPluginConfig>
+"""
+
+
+@hooks.hook('zuul-relation-joined')
+def zuul_relation_joined():
+    log("Installing and configuring gearman-plugin for Zuul communication")
+    # zuul relation requires we install the required plugins and set the
+    # address of the remote zuul/gearman service in the plugin setting.
+    required_plugins = (
+        "credentials ssh-credentials ssh-agent gearman-plugin git-client git")
+
+    # Grab jenkins uid and gid.
+    jenkins_uid = pwd.getpwnam('jenkins').pw_uid
+    jenkins_gid = grp.getgrnam('jenkins').gr_gid
+    log("Installing and configuring gearman-plugin for Zuul communication")
+    install_jenkins_plugins(
+        jenkins_uid, jenkins_gid, plugins=required_plugins)
+    # Generate plugin config with address of remote unit.
+    zuul_config = ZUUL_CONFIG_SNIPPET.format(relation_get('private-address'))
+    config_path = os.path.join(
+        JENKINS_HOME, "hudson.plugins.gearman.GearmanPluginConfig.xml")
+    with open(config_path, 'w') as f:
+        f.write(zuul_config)
+
+    # Change permission of config file.
+    nogroup_gid = grp.getgrnam('nogroup').gr_gid
+    os.chown(config_path, jenkins_uid, nogroup_gid)
+
+    # Restart jenkins so changes will take efect.
+    service_restart('jenkins')
+
+    # Trigger the extension hook to update it with zuul relation data, if its
+    # coded to do so.
+    hooks.execute(['extension-relation-joined'])
 
 
 if __name__ == '__main__':
