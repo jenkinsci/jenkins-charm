@@ -39,6 +39,7 @@ from jenkins_utils import (
     del_node,
     setup_source,
     install_from_bundle,
+    install_from_remote_deb,
     install_jenkins_plugins,
 )
 
@@ -50,6 +51,8 @@ def install():
     execd_preinstall('hooks/install.d')
     if config('release') == 'bundle':
         install_from_bundle()
+    elif config('release').startswith('http'):
+        install_from_remote_deb(config('release'))
     else:
         # Only setup the source if jenkins is not already installed i.e. makes
         # the config 'release' immutable so you can't change source once
@@ -170,7 +173,7 @@ def master_relation_changed():
     if password:
         with open('/var/lib/jenkins/.admin_password', 'r') as fd:
             password = fd.read()
-    # Once we have the password, export credentials to the slave so it can 
+    # Once we have the password, export credentials to the slave so it can
     # download slave-agent.jnlp from the master.
     username = config('username')
     relation_set(username=username)

@@ -11,6 +11,7 @@ options:
      - lts: use the most recent Jenkins LTS release.
      - trunk: use the most recent Jenkins release.
      - bundle: use a bundled deb package.
+     - http(s)://...: http(s) link to a retrievable jenkins deb
   username:
     type: string
     default: admin

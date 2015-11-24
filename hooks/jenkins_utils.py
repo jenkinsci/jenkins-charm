@@ -62,6 +62,15 @@ def del_node(host, username, password):
         log("Node '%s' does not exist - not deleting" % (host), level=INFO)
 
 
+def install_local_deb(filename):
+    """Install the given local jenkins deb"""
+    # Install jenkins deps.
+    apt_install(['daemon', 'adduser', 'psmisc', 'default-jre'], fatal=True)
+    # Run dpkg to install bundled deb.
+    env = os.environ.copy()
+    subprocess.call(['dpkg', '-i', filename], env=env)
+
+
 def install_from_bundle():
     """Install Jenkins from bundled package."""
     # Check bundled package exists.
@@ -70,11 +79,17 @@ def install_from_bundle():
         errmsg = "'%s' doesn't exist. No package bundled." % (bundle_path)
         raise Exception(errmsg)
     log('Installing from bundled Jenkins package: %s' % bundle_path)
-    # Install bundle deps.
-    apt_install(['daemon', 'adduser', 'psmisc', 'default-jre'], fatal=True)
-    # Run dpkg to install bundled deb.
-    env = os.environ.copy()
-    subprocess.call(['dpkg', '-i', bundle_path], env=env)
+    install_local_deb(bundle_path)
+
+
+def install_from_remote_deb(link):
+    """Install Jenkins from http(s) deb file."""
+    log('Getting remote jenkins package: %s' % link)
+    tempdir = tempfile.mkdtemp()
+    target = os.path.join(tempdir, 'jenkins.deb')
+    subprocess.check_call(['wget', '-q', '-O', target, link])
+    install_local_deb(target)
+    shutil.rmtree(tempdir)
 
 
 def setup_source(release):
