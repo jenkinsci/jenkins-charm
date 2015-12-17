@@ -40,3 +40,8 @@ options:
     description: |
       Set this to yes to remove any plugins not listed in plugins
       from the installation.
+  executors:
+    type: int
+    default: 1
+    description: |
+      Number of executors to configure for jenkins master.

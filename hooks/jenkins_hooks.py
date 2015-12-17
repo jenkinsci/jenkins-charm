@@ -31,6 +31,7 @@ from charmhelpers.core.host import (
     service_stop,
 )
 from charmhelpers.payload.execd import execd_preinstall
+from charmhelpers.core.templating import render
 from jenkins_utils import (
     JENKINS_HOME,
     JENKINS_USERS,
@@ -123,10 +124,10 @@ def config_changed():
     if not os.path.exists(jenkins_bootstrap_flag):
         log("Bootstrapping secure initial configuration in Jenkins.",
             level=DEBUG)
-        src = os.path.join(TEMPLATES_DIR, 'jenkins-config.xml')
         dst = os.path.join(JENKINS_HOME, 'config.xml')
-        shutil.copy(src, dst)
-        os.chown(dst, jenkins_uid, nogroup_gid)
+        context = {'executors': config('executors')}
+        render('jenkins-config.xml', dst, context, owner='jenkins',
+               group='nogroup')
         # Touch
         with open(jenkins_bootstrap_flag, 'w'):
             pass
