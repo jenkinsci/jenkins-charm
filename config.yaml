@@ -14,6 +14,7 @@ options:
                manually copied over to the charm files/ dir before deployment
                and named jenkins.deb. It can be downloaded from
                http://pkg.jenkins-ci.org/debian/
+     - http(s)://...: http(s) link to a retrievable jenkins deb
   username:
     type: string
     default: admin
@@ -30,7 +31,7 @@ options:
     description: Space separated list of plugins to install
   plugins-site:
     type: string
-    default: "https://updates.jenkins-ci.org/"
+    default: "https://updates.jenkins-ci.org/latest/"
     description: Site to download plugin .hpi files from.
   plugins-check-certificate:
     type: string
@@ -42,3 +43,8 @@ options:
     description: |
       Set this to yes to remove any plugins not listed in plugins
       from the installation.
+  executors:
+    type: int
+    default: 1
+    description: |
+      Number of executors to configure for jenkins master.
