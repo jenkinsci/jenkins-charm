@@ -43,7 +43,7 @@ options:
     description: |
       Set this to yes to remove any plugins not listed in plugins
       from the installation.
-  executors:
+  master-executors:
     type: int
     default: 1
     description: |

@@ -127,7 +127,7 @@ def config_changed():
         log("Bootstrapping secure initial configuration in Jenkins.",
             level=DEBUG)
         dst = os.path.join(JENKINS_HOME, 'config.xml')
-        context = {'executors': config('executors')}
+        context = {'master-executors': config('master-executors')}
         render('jenkins-config.xml', dst, context, owner='jenkins',
                group='nogroup')
         # Touch
