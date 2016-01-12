@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <hudson>
   <useSecurity>true</useSecurity>
-  <numExecutors>{{master-executors}}</numExecutors>
+  <numExecutors>{{master_executors}}</numExecutors>
   <authorizationStrategy class="hudson.security.FullControlOnceLoggedInAuthorizationStrategy"/>
   <securityRealm class="hudson.security.HudsonPrivateSecurityRealm">
     <disableSignup>true</disableSignup>
