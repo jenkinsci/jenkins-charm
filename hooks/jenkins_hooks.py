@@ -32,6 +32,7 @@ from charmhelpers.core.host import (
     service_stop,
 )
 from charmhelpers.payload.execd import execd_preinstall
+from charmhelpers.core.templating import render
 from jenkins_utils import (
     JENKINS_HOME,
     JENKINS_USERS,
@@ -41,6 +42,7 @@ from jenkins_utils import (
     get_jenkins_password,
     setup_source,
     install_from_bundle,
+    install_from_remote_deb,
     install_jenkins_plugins,
 )
 
@@ -52,6 +54,8 @@ def install():
     execd_preinstall('hooks/install.d')
     if config('release') == 'bundle':
         install_from_bundle()
+    elif config('release').startswith('http'):
+        install_from_remote_deb(config('release'))
     else:
         # Only setup the source if jenkins is not already installed i.e. makes
         # the config 'release' immutable so you can't change source once
@@ -122,10 +126,10 @@ def config_changed():
     if not os.path.exists(jenkins_bootstrap_flag):
         log("Bootstrapping secure initial configuration in Jenkins.",
             level=DEBUG)
-        src = os.path.join(TEMPLATES_DIR, 'jenkins-config.xml')
         dst = os.path.join(JENKINS_HOME, 'config.xml')
-        shutil.copy(src, dst)
-        os.chown(dst, jenkins_uid, nogroup_gid)
+        context = {'master_executors': config('master-executors')}
+        render('jenkins-config.xml', dst, context, owner='jenkins',
+               group='nogroup')
         # Touch
         with open(jenkins_bootstrap_flag, 'w'):
             pass
