@@ -1,6 +1,6 @@
 name: jenkins
-maintainer: James Page <james.page@ubuntu.com>
 summary: Jenkins Continuous Integration Server
+maintainer: Free Ekanayaka <free.ekanayaka@canonical.com>
 description: |
   Jenkins is an extendable open source continuous
   integration server that monitors executions of
@@ -13,7 +13,10 @@ description: |
   and when paired with the jenkins-slave charm 
   provides an easy way to deploy Jenkins on Ubuntu
   server, and scale out Jenkins slaves.
-tags: ["application_development","ops"]
+tags:
+  - application_development
+  - ops
+subordinate: false
 provides:
   website:
     interface: http

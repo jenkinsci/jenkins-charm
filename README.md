@@ -6,7 +6,7 @@ This charm provides a Jenkins Server which can be accessed, after exposing, on h
 
 # Usage
 
-To deploy Jenkins server you will also need to deploy the jenkins-slave charm. This can be done as follows:
+If you want to run jobs on separate nodes you will also need to deploy the jenkins-slave charm:
 
     juju deploy jenkins
     juju deploy -n 5 jenkins-slave
@@ -33,7 +33,6 @@ The main method to use the Jenkins service at scale is to add units to the jenki
     juju deploy -n 5 jenkins-slave
 
 Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or you cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
-
 
 # Configuration
 

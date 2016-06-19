@@ -1,0 +1,3 @@
+includes:
+  - layer:basic
+repo: https://github.com/freeekanayaka/layer-jenkins.git
