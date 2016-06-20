@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <user>
-  <fullName>__USERNAME__</fullName>
+  <fullName>{{username}}</fullName>
   <properties>
     <hudson.model.MyViewsProperty>
       <primaryViewName>All</primaryViewName>
@@ -15,7 +15,7 @@
       </views>
     </hudson.model.MyViewsProperty>
     <hudson.security.HudsonPrivateSecurityRealm_-Details>
-      <passwordHash>__PASSWORD__</passwordHash>
+      <passwordHash>{{password}}</passwordHash>
     </hudson.security.HudsonPrivateSecurityRealm_-Details>
     <hudson.tasks.Mailer_-UserProperty>
       <emailAddress>changeme@changeme.com</emailAddress>

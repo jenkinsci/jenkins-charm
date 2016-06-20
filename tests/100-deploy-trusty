@@ -13,21 +13,28 @@ seconds = 990
 
 
 class TestDeployment(unittest.TestCase):
-    '''A unittest class to test the results of deploying the tls layer.'''
+    """A unittest class to test the results of deploying the tls layer."""
 
     @classmethod
     def setUpClass(cls):
         '''Set up the deployment in the class.'''
         cls.deployment = amulet.Deployment(series='trusty')
         charm_name = cls.deployment.charm_name
-        print('Starting tests for {0}'.format(charm_name))
+        print("Starting tests for {0}".format(charm_name))
         # Specify charm_name because this layer could be named something else.
         cls.deployment.add(charm_name, units=1)
+        cls.deployment.configure(
+            "jenkins", {"tools": "git gcc make",
+                        "release": "lts",
+                        "username": "amulet",
+                        "password": "testautomation",
+                        "plugins": "groovy",
+                        "plugins-check-certificate": "no"})
         try:
             cls.deployment.setup(timeout=seconds)
             cls.deployment.sentry.wait()
         except amulet.helpers.TimeoutError:
-            msg = 'The model did not set up in {0} seconds!'.format(seconds)
+            msg = "The model did not set up in {0} seconds!".format(seconds)
             amulet.raise_status(amulet.SKIP, msg=msg)
         except:
             raise
@@ -36,5 +43,5 @@ class TestDeployment(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
