@@ -1,125 +1,40 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
+# This is a functional test for the tls layer.  It verifies the keys and
+# certificates are generated correctly.  This test is written without hard
+# coding the charm name so this will work with charms that are created from
+# the tls layer.
 
 import amulet
-import json
-import requests
+import os
+import unittest
 
-###
-# Quick Config
-###
-seconds = 900
-
-###
-# Deployment Setup
-###
-d = amulet.Deployment(series='trusty')
-
-d.add('haproxy')  # website-relation
-d.add('jenkins')  # Subject matter
-# TODO(hopem): we don't yet have a precise version of jenkins-slave
-# so use the precise version for now.
-d.add('jenkins-slave', 'cs:precise/jenkins-slave')  # Job Runner
+seconds = 990
 
 
-d.relate('jenkins:website', 'haproxy:reverseproxy')
-d.relate('jenkins:master', 'jenkins-slave:slave')
+class TestDeployment(unittest.TestCase):
+    '''A unittest class to test the results of deploying the tls layer.'''
 
-d.configure('jenkins', {'tools': 'git gcc make bzr vim-tiny',
-                        'release': 'lts',
-                        'username': 'amulet',
-                        'password': 'testautomation',
-                        'plugins': 'groovy',
-                        'plugins-check-certificate': 'no'})
+    @classmethod
+    def setUpClass(cls):
+        '''Set up the deployment in the class.'''
+        cls.deployment = amulet.Deployment(series='trusty')
+        charm_name = cls.deployment.charm_name
+        print('Starting tests for {0}'.format(charm_name))
+        # Specify charm_name because this layer could be named something else.
+        cls.deployment.add(charm_name, units=1)
+        try:
+            cls.deployment.setup(timeout=seconds)
+            cls.deployment.sentry.wait()
+        except amulet.helpers.TimeoutError:
+            msg = 'The model did not set up in {0} seconds!'.format(seconds)
+            amulet.raise_status(amulet.SKIP, msg=msg)
+        except:
+            raise
 
-d.expose('jenkins')
-d.expose('haproxy')
-
-try:
-    d.setup(timeout=seconds)
-    d.sentry.wait()
-except amulet.helpers.TimeoutError:
-    amulet.raise_status(amulet.SKIP, msg="Environment wasn't stood up in time")
-except:
-    raise
-
-
-###
-# Define reconfiguration routine
-###
+    def test_all_units(self):
+        pass
 
 
-###
-# Define sentries for quick access
-###
-jenkins = d.sentry.unit['jenkins/0']
-haproxy = d.sentry.unit['haproxy/0']
-slave = d.sentry.unit['jenkins-slave/0']
-
-
-###
-# Validate Jenkins configuration options exercised
-# Validate jenkins tool installation
-###
-def validate_tools():
-    output, code = jenkins.run('dpkg -l vim-tiny')
-    if not output:
-        amulet.raise_status(amulet.FAIL, msg="No tool installation found")
-
-
-def validate_release():
-    list_present = jenkins.file_stat('/etc/apt/sources.list.d/jenkins.list')
-    if not list_present:
-        amulet.raise_status(amulet.FAIL, msg="No sources.list update")
-    lc = jenkins.file_contents('/etc/apt/sources.list.d/jenkins.list')
-    if not 'debian-stable' in lc:
-        amulet.raise_status(amulet.FAIL, msg="LTS not found in sources.list")
-
-
-def validate_login():
-    #First off, validate that we have the jenkins user on the machine
-    output, code = jenkins.run('id -u jenkins')
-    if code:
-        amulet.raise_status(amulet.FAIL, msg="Jenkins system user not found")
-    #validate we have a running service of jenkins to execute the test against
-    output, code = jenkins.run('service jenkins status')
-    if code:
-        amulet.raise_status(amulet.FAIL, msg="No Jenkins Service Running")
-    payload = {'j_username': 'amulet',
-               'j_password': 'testautomation',
-               'from': '/'}
-    jenkins_url = "http://%s:8080/j_acegi_security_check" % jenkins.info['public-address']
-    r = requests.post(jenkins_url, data=payload)
-    if r.status_code is not 200:
-        amulet.raise_status(amulet.FAIL, msg="Failed to login")
-
-
-#TODO: Figure out how to test installation of NonHTTPS plugin
-# This is called as a flag to pyjenkins, and I dont know of any non https
-# plugin repositories. Pinned here for reference later.
-def validate_plugins():
-    ds = jenkins.directory_stat('/var/lib/jenkins/plugins/groovy')
-    if ds['size'] <= 0:
-        amulet.raise_status(amulet.FAIL, msg="Failed to locate plugin")
-
-
-def validate_website_relation():
-    jenkins_url = "http://%s/" % haproxy.info['public-address']
-    r = requests.get(jenkins_url)
-    if r.status_code is not 200:
-        amulet.raise_status(amulet.FAIL,
-                            msg="Failed to reach jenkins through proxy")
-
-
-def validate_slave_relation():
-    jenkins_url = "http://%s:8080/computer/api/json" % jenkins.info['public-address']
-    r = requests.get(jenkins_url)
-    data = json.loads(r.text)
-    if not data['computer'][1]['displayName'] == "jenkins-slave-0":
-        amulet.raise_status(amulet.FAIL, msg="Failed to locate slave")
-
-validate_tools()
-validate_release()
-validate_login()
-validate_plugins()
-validate_website_relation()
-validate_slave_relation()
+if __name__ == '__main__':
+    unittest.main()

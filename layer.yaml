@@ -1,3 +1,4 @@
 includes:
   - layer:basic
+  - layer:apt
 repo: https://github.com/freeekanayaka/layer-jenkins.git

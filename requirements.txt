@@ -1,4 +1,4 @@
 flake8
 pytest
 charmhelpers
-fixtures
+testtools
