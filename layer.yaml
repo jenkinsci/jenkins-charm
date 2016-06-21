@@ -1,6 +1,7 @@
 includes:
   - layer:basic
   - layer:apt
+  - interface:http
 options:
   basic:
     packages: ['python3-testtools', 'pwgen']

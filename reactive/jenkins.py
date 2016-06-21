@@ -12,7 +12,10 @@ from charms.reactive import (
 from charms.layer.execd import execd_preinstall
 
 from packages import APT_DEPENDENCIES, Packages
-from configuration import Configuration
+from configuration import (
+    PORT,
+    Configuration,
+)
 from users import Users
 from plugins import Plugins
 
@@ -75,3 +78,8 @@ def start():
 @when("stop")
 def stop():
     service_stop("jenkins")
+
+
+@when("website.available")
+def configure_website(website):
+    website.configure(port=PORT)
