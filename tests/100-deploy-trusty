@@ -8,6 +8,7 @@
 import amulet
 import os
 import unittest
+import requests
 
 seconds = 990
 
@@ -23,6 +24,8 @@ class TestDeployment(unittest.TestCase):
         print("Starting tests for {0}".format(charm_name))
         # Specify charm_name because this layer could be named something else.
         cls.deployment.add(charm_name, units=1)
+        cls.deployment.add("haproxy")  # website-relation
+        cls.deployment.relate("jenkins:website", "haproxy:reverseproxy")
         cls.deployment.configure(
             "jenkins", {"tools": "git gcc make",
                         "release": "lts",
@@ -30,6 +33,8 @@ class TestDeployment(unittest.TestCase):
                         "password": "testautomation",
                         "plugins": "groovy",
                         "plugins-check-certificate": "no"})
+        cls.deployment.expose("jenkins")
+        cls.deployment.expose("haproxy")
         try:
             cls.deployment.setup(timeout=seconds)
             cls.deployment.sentry.wait()
@@ -38,10 +43,57 @@ class TestDeployment(unittest.TestCase):
             amulet.raise_status(amulet.SKIP, msg=msg)
         except:
             raise
+        cls.jenkins = cls.deployment.sentry.unit["jenkins"][0]
+        cls.haproxy = cls.deployment.sentry.unit["haproxy"][0]
 
-    def test_all_units(self):
-        pass
+    def test_tools_installed(self):
+        """Validate jenkins tool installation."""
+        output, _ = self.jenkins.run("dpkg -l git")
+        if not output:
+            amulet.raise_status(amulet.FAIL, msg="No tool installation found")
 
+    def test_release(self):
+        """Validate APT sources."""
+        sources_list = self.jenkins.file_contents("/etc/apt/sources.list")
+        if not "debian-stable" in sources_list:
+            amulet.raise_status(amulet.FAIL, msg="LTS not in sources.list")
+
+    def test_login(self):
+        """Validate users."""
+        # First off, validate that we have the jenkins user on the machine
+        _, code = self.jenkins.run("id -u jenkins")
+        if code:
+            amulet.raise_status(amulet.FAIL, msg="No Jenkins system user")
+        # Validate we have a running jenkins service
+        _, code = self.jenkins.run("service jenkins status")
+        if code:
+            amulet.raise_status(amulet.FAIL, msg="No Jenkins Service Running")
+        payload = {
+            "j_username": "amulet",
+            "j_password": "testautomation",
+            "from": "/"}
+        jenkins_address = self.jenkins.info['public-address']
+        jenkins_url = "http://%s:8080/j_acegi_security_check" % jenkins_address
+        response = requests.post(jenkins_url, data=payload)
+        if response.status_code is not 200:
+            amulet.raise_status(amulet.FAIL, msg="Failed to login")
+
+
+    def test_plugins():
+        """Validate that configured plugins are installed."""
+        # TODO: Figure out how to test installation of NonHTTPS plugins.
+        # This is called as a flag to pyjenkins, and I dont know of any non https
+        # plugin repositories. Pinned here for reference later.
+        stat = self.jenkins.directory_stat("/var/lib/jenkins/plugins/groovy")
+        if stat["size"] <= 0:
+            amulet.raise_status(amulet.FAIL, msg="Failed to locate plugin")
+
+    def test_website_relation():
+        """Validate that Jenkins is correctly reverse-proxied by HAProxy."""
+        jenkins_url = "http://%s/" % self.haproxy.info["public-address"]
+        response = requests.get(jenkins_url)
+        if response.status_code is not 200:
+            amulet.raise_status(amulet.FAIL, msg="Not reachable through proxy")
 
 if __name__ == "__main__":
     unittest.main()

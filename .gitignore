@@ -1,6 +1,6 @@
-
 .tox
 .cache
+.coverage
 .unit-state.db
 *__pycache__
 *.pyc
