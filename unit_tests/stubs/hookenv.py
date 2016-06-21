@@ -15,6 +15,7 @@ class HookenvStub(object):
 
     def __init__(self, charm_dir):
         self.messages = []
+        self.port = None
         self._config = Config()
         self._charm_dir = charm_dir
 
@@ -28,3 +29,6 @@ class HookenvStub(object):
         if level is not None:
             assert level in LEVELS
         self.messages.append((message, level))
+
+    def open_port(self, port):
+        self.port = port

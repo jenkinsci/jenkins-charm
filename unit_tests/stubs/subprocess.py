@@ -1,3 +1,8 @@
+from collections import namedtuple
+
+Call = namedtuple("Call", ["command", "kwargs"])
+
+
 class SubprocessStub(object):
     """Testable stub for C{subprocess}.
 
@@ -9,8 +14,8 @@ class SubprocessStub(object):
         self.outputs = {}
 
     def check_call(self, command, **kwargs):
-        self.calls.append((command, kwargs))
+        self.calls.append(Call(command, kwargs))
 
     def check_output(self, command, **kwargs):
-        self.calls.append((command, kwargs))
+        self.calls.append(Call(command, kwargs))
         return self.outputs.get(command, b"")
