@@ -19,8 +19,17 @@ APT_KEY = "http://pkg.jenkins-ci.org/%s/jenkins-ci.org.key"
 
 
 class Packages(object):
+    """Manage Jenkins package dependencies."""
 
     def __init__(self, subprocess=subprocess, hookenv=hookenv, apt=apt):
+        """
+        @param subprocess: An object implementing the subprocess API (for
+            testing).
+        @param hookenv: An object implementing the charmhelpers.core.hookenv
+            API from charmhelpers (for testing).
+        @param apt: An object implementing the charms.apt API from the apt
+            charm layer (for testing).
+        """
         self._subprocess = subprocess
         self._apt = apt
         self._hookenv = hookenv

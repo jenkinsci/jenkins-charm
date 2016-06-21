@@ -1,3 +1,5 @@
+"""Jenkins-related file system paths."""
+
 import os
 
 HOME = "/var/lib/jenkins"

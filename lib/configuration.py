@@ -7,8 +7,15 @@ PORT = 8080
 
 
 class Configuration(object):
+    """Manage global Jenkins configuration."""
 
     def __init__(self, hookenv=hookenv, templating=templating):
+        """
+        @param hookenv: An object implementing the charmhelpers.core.hookenv
+            API from charmhelpers (for testing).
+        @param templating: An object implementing the
+            charmhelpers.core.templating API from charmhelpers (for testing).
+        """
         self._hookenv = hookenv
         self._templating = templating
 

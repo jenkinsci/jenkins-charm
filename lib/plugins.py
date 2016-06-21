@@ -9,15 +9,26 @@ from paths import PLUGINS
 
 
 class Plugins(object):
+    """Manage Jenkins plugins."""
 
     def __init__(self, subprocess=subprocess, hookenv=hookenv, host=host,
                  plugins_dir=PLUGINS):
+        """
+        @param subprocess: An object implementing the subprocess API (for
+            testing).
+        @param hookenv: An object implementing the charmhelpers.core.hookenv
+            API from charmhelpers (for testing).
+        @param host: An object implementing the charmhelpers.fetcher.archiveurl
+            API from charmhelpers (for testing).
+        @param plugins_dir: Path to Jenkins' plugins dir (for testing).
+        """
         self._subprocess = subprocess
         self._hookenv = hookenv
         self._host = host
         self._plugins_dir = plugins_dir
 
     def install_configured_plugins(self):
+        """Install all plugins requested via the charm config option."""
         self._hookenv.log("Stopping jenkins for plugin update(s)")
         self._host.service_stop("jenkins")
         plugins = self._hookenv.config()["plugins"].split()
@@ -26,6 +37,7 @@ class Plugins(object):
         self._host.service_start("jenkins")
 
     def install_plugins(self, plugins):
+        """Install the given plugins, optionally removing unlisted ones."""
         self._hookenv.log("Installing plugins (%s)" % " ".join(plugins))
 
         self._host.mkdir(
@@ -64,6 +76,7 @@ class Plugins(object):
                     "away." % ", ".join(unlisted_plugins))
 
     def _install_plugin(self, plugins_site, plugin, wget_options):
+        """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
         url = os.path.join(plugins_site, plugin_filename)
         plugin_path = os.path.join(self._plugins_dir, plugin_filename)

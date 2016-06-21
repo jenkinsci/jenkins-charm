@@ -15,8 +15,17 @@ from paths import (
 
 
 class Users(object):
+    """Manage Jenkins users."""
 
     def __init__(self, hookenv=hookenv, host=host, templating=templating):
+        """
+        @param hookenv: An object implementing the charmhelpers.core.hookenv
+            API from charmhelpers (for testing).
+        @param host: An object implementing the charmhelpers.fetcher.archiveurl
+            API from charmhelpers (for testing).
+        @param templating: An object implementing the
+            charmhelpers.core.templating API from charmhelpers (for testing).
+        """
         self._hookenv = hookenv
         self._host = host
         self._templating = templating
@@ -45,6 +54,7 @@ class Users(object):
             group="nogroup")
 
     def _admin_data(self):
+        """Get a named tuple holding configuration data for the admin user."""
         config = self._hookenv.config()
         username = config["username"]
         password = config["password"] or self._host.pwgen(length=15)
