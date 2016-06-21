@@ -43,8 +43,8 @@ class TestDeployment(unittest.TestCase):
             amulet.raise_status(amulet.SKIP, msg=msg)
         except:
             raise
-        cls.jenkins = cls.deployment.sentry.unit["jenkins"][0]
-        cls.haproxy = cls.deployment.sentry.unit["haproxy"][0]
+        cls.jenkins = cls.deployment.sentry["jenkins"][0]
+        cls.haproxy = cls.deployment.sentry["haproxy"][0]
 
     def test_tools_installed(self):
         """Validate jenkins tool installation."""

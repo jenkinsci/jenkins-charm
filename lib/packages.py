@@ -13,7 +13,7 @@ from charmhelpers.core.hookenv import DEBUG
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
 
-APT_DEPENDENCIES = ["python-jenkins", "daemon", "default-jre-headless"]
+APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
 APT_SOURCE = "deb http://pkg.jenkins-ci.org/%s binary/"
 APT_KEY = "http://pkg.jenkins-ci.org/%s/jenkins-ci.org.key"
 

@@ -1,0 +1,2 @@
+# The 0.4.11 version currently in Ubuntu/Debian is buggy, see LP #1500898
+python-jenkins>=0.4.13
