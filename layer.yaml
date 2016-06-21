@@ -2,6 +2,7 @@ includes:
   - layer:basic
   - layer:apt
   - interface:http
+  - interface:jenkins-slave
 options:
   basic:
     packages: ['python3-testtools', 'pwgen']

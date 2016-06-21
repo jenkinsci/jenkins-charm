@@ -78,7 +78,6 @@ class TestDeployment(unittest.TestCase):
         if response.status_code is not 200:
             amulet.raise_status(amulet.FAIL, msg="Failed to login")
 
-
     def test_plugins():
         """Validate that configured plugins are installed."""
         # TODO: Figure out how to test installation of NonHTTPS plugins.
