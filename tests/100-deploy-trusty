@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-# This is a functional test for the tls layer.  It verifies the keys and
-# certificates are generated correctly.  This test is written without hard
-# coding the charm name so this will work with charms that are created from
-# the tls layer.
+# This is a functional test for the jenkins charm.
 
 import amulet
 import os
 import unittest
 import requests
 
-seconds = 990
+SECONDS = 990
+
+JENKINS_SLAVE_URI = "cs:~juju-qa/trusty/jenkins-slave-2"
 
 
 class TestDeployment(unittest.TestCase):
@@ -18,13 +17,14 @@ class TestDeployment(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        '''Set up the deployment in the class.'''
-        cls.deployment = amulet.Deployment(series='trusty')
+        """Set up the deployment in the class."""
+        cls.deployment = amulet.Deployment(series="trusty")
         charm_name = cls.deployment.charm_name
         print("Starting tests for {0}".format(charm_name))
         # Specify charm_name because this layer could be named something else.
         cls.deployment.add(charm_name, units=1)
         cls.deployment.add("haproxy")  # website-relation
+        cls.deployment.add('jenkins-slave', JENKINS_SLAVE_URI)
         cls.deployment.relate("jenkins:website", "haproxy:reverseproxy")
         cls.deployment.configure(
             "jenkins", {"tools": "git gcc make",
@@ -36,10 +36,10 @@ class TestDeployment(unittest.TestCase):
         cls.deployment.expose("jenkins")
         cls.deployment.expose("haproxy")
         try:
-            cls.deployment.setup(timeout=seconds)
+            cls.deployment.setup(timeout=SECONDS)
             cls.deployment.sentry.wait()
         except amulet.helpers.TimeoutError:
-            msg = "The model did not set up in {0} seconds!".format(seconds)
+            msg = "The model did not set up in {0} seconds!".format(SECONDS)
             amulet.raise_status(amulet.SKIP, msg=msg)
         except:
             raise
@@ -78,7 +78,7 @@ class TestDeployment(unittest.TestCase):
         if response.status_code is not 200:
             amulet.raise_status(amulet.FAIL, msg="Failed to login")
 
-    def test_plugins():
+    def test_plugins(self):
         """Validate that configured plugins are installed."""
         # TODO: Figure out how to test installation of NonHTTPS plugins.
         # This is called as a flag to pyjenkins, and I dont know of any non https
@@ -87,12 +87,21 @@ class TestDeployment(unittest.TestCase):
         if stat["size"] <= 0:
             amulet.raise_status(amulet.FAIL, msg="Failed to locate plugin")
 
-    def test_website_relation():
+    def test_website_relation(self):
         """Validate that Jenkins is correctly reverse-proxied by HAProxy."""
         jenkins_url = "http://%s/" % self.haproxy.info["public-address"]
         response = requests.get(jenkins_url)
         if response.status_code is not 200:
             amulet.raise_status(amulet.FAIL, msg="Not reachable through proxy")
+
+    def test_slave_relation(self):
+        address = self.jenkins.info["public-address"]
+        url = "http://%s:8080/computer/api/json" % address
+        response = requests.get(url)
+        data = json.loads(r.text)
+        if not data["computer"][1]["displayName"] == "jenkins-slave-0":
+            amulet.raise_status(amulet.FAIL, msg="Failed to locate slave")
+
 
 if __name__ == "__main__":
     unittest.main()

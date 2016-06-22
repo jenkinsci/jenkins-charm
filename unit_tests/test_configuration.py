@@ -51,3 +51,14 @@ class ConfigurationTest(TestCase):
         self.templating.renders.pop()
         self.configuration.bootstrap()
         self.assertEqual([], self.templating.renders)
+
+    def test_migrate(self):
+        """
+        The legacy bootstrap flag file gets migrated to a local state flag.
+        """
+        jenkins_home = self.useFixture(TempDir())
+        self.configuration._legacy_bootstrap_flag = jenkins_home.join("flag")
+        with open(self.configuration._legacy_bootstrap_flag, "w"):
+            pass
+        self.configuration.migrate()
+        self.assertTrue(self.hookenv.config()["_config-bootstrapped"])

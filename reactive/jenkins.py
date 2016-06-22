@@ -83,3 +83,12 @@ def stop():
 @when("website.available")
 def configure_website(website):
     website.configure(port=PORT)
+
+
+@when("upgrade-charm")
+def migrate_charm_data():
+    configuration = Configuration()
+    configuration.migrate()
+
+    users = Users()
+    users.migrate()

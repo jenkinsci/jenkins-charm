@@ -1,3 +1,5 @@
+import os
+
 from paths import CONFIG_FILE
 
 from charmhelpers.core import hookenv
@@ -8,6 +10,9 @@ PORT = 8080
 
 class Configuration(object):
     """Manage global Jenkins configuration."""
+
+    # Legacy flag file used by former versions of this charm
+    _legacy_bootstrap_flag = "/var/lib/jenkins/config.bootstrapped"
 
     def __init__(self, hookenv=hookenv, templating=templating):
         """
@@ -38,3 +43,10 @@ class Configuration(object):
         config["_config-bootstrapped"] = True
 
         self._hookenv.open_port(PORT)
+
+    def migrate(self):
+        """Migrate the boostrap flag from the legacy file to local state."""
+        config = self._hookenv.config()
+        if os.path.exists(self._legacy_bootstrap_flag):
+            config["_config-bootstrapped"] = True
+            os.unlink(self._legacy_bootstrap_flag)

@@ -10,12 +10,15 @@ from charmhelpers.core.hookenv import DEBUG
 
 from paths import (
     USERS,
-    PASSWORD_FILE,
+    HOME,
 )
 
 
 class Users(object):
     """Manage Jenkins users."""
+
+    # Legacy password file used by former versions of this charm
+    _legacy_password_file = os.path.join(HOME, ".admin_password")
 
     def __init__(self, hookenv=hookenv, host=host, templating=templating):
         """
@@ -37,12 +40,9 @@ class Users(object):
 
         admin = self._admin_data()
 
-        self._host.write_file(
-            PASSWORD_FILE, admin.password.encode("utf-8"), perms=0o0600)
+        admin_home = os.path.join(USERS, admin.username)
 
         self._host.mkdir(USERS, owner="jenkins", group="nogroup")
-
-        admin_home = os.path.join(USERS, admin.username)
         self._host.mkdir(admin_home, owner="jenkins", group="nogroup")
 
         # NOTE: overwriting will destroy any data added by jenkins or the user.
@@ -53,11 +53,27 @@ class Users(object):
             "user-config.xml", admin_config, context, owner="jenkins",
             group="nogroup")
 
+    def migrate(self):
+        """Migrate the legacy password file to local state."""
+        config = self._hookenv.config()
+        if os.path.exists(self._legacy_password_file):
+            if not config["password"]:
+                with open(self._legacy_password_file, "r") as fd:
+                    config["_generated-password"] = fd.read()
+            os.unlink(self._legacy_password_file)
+
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
         config = self._hookenv.config()
         username = config["username"]
-        password = config["password"] or self._host.pwgen(length=15)
+        password = config["password"]
+
+        if not password:
+            password = self._host.pwgen(length=15)
+            # Save the generated password to the local state, for later
+            # reference (e.g. it will be passed through the jenkins-slave
+            # relation interface).
+            config["_generated-password"] = password
 
         # Generate Salt and Hash Password for Jenkins
         salt = self._host.pwgen(length=6)

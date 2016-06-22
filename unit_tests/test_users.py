@@ -12,7 +12,6 @@ from stubs.host import HostStub
 from stubs.templating import TemplatingStub
 
 from users import (
-    PASSWORD_FILE,
     USERS,
     Users,
 )
@@ -43,21 +42,16 @@ class UsersTest(TestCase):
         self.hookenv.config()["username"] = "admin"
         self.hookenv.config()["password"] = "sekret"
         self.users.configure_admin()
-        password_file = self.host.files[0]
-        self.assertEqual(PASSWORD_FILE, password_file.path)
-        self.assertEqual(b"sekret", password_file.content)
-        self.assertEqual(0o600, password_file.perms)
 
     def test_configure_admin_random_password(self):
         """
         If a password is not provided, a random one will be generated.
         """
-        self.hookenv.config()["username"] = "admin"
-        self.hookenv.config()["password"] = ""
+        config = self.hookenv.config()
+        config["username"] = "admin"
+        config["password"] = ""
         self.users.configure_admin()
-        password_file = self.host.files[0]
-        self.assertEqual(
-            self.host.password.encode("utf-8"), password_file.content)
+        self.assertEqual(self.host.password, config["_generated-password"])
 
     def test_configure_admin_make_users_dir(self):
         """
@@ -94,3 +88,17 @@ class UsersTest(TestCase):
             render.context)
         self.assertEqual("jenkins", render.owner)
         self.assertEqual("nogroup", render.group)
+
+    def test_migrate(self):
+        """
+        Password stored in the custom .admin_password gets migrated to local
+        state.
+        """
+        home = self.useFixture(TempDir())
+        self.users._legacy_password_file = home.join(".admin_password")
+        with open(self.users._legacy_password_file, "w") as fd:
+            fd.write("xyz")
+        self.hookenv.config()["username"] = "admin"
+        self.hookenv.config()["password"] = ""
+        self.users.migrate()
+        self.assertEqual("xyz", self.hookenv.config()["_generated-password"])

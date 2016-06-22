@@ -4,3 +4,4 @@ charmhelpers
 fixtures
 coverage
 testtools
+python-jenkins
