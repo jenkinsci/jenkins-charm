@@ -11,7 +11,7 @@ from stubs.hookenv import HookenvStub
 from stubs.host import HostStub
 from stubs.subprocess import SubprocessStub
 
-from plugins import Plugins
+from jenkinslib.plugins import Plugins
 
 
 class PluginsTest(TestCase):

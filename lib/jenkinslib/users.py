@@ -8,7 +8,7 @@ from charmhelpers.core import host
 from charmhelpers.core import templating
 from charmhelpers.core.hookenv import DEBUG
 
-from paths import (
+from jenkinslib.paths import (
     USERS,
     HOME,
 )

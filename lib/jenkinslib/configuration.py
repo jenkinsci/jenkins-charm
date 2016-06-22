@@ -1,9 +1,9 @@
 import os
 
-from paths import CONFIG_FILE
-
 from charmhelpers.core import hookenv
 from charmhelpers.core import templating
+
+from jenkinslib.paths import CONFIG_FILE
 
 PORT = 8080
 

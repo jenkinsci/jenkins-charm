@@ -2,10 +2,12 @@
 
 # This is a functional test for the jenkins charm.
 
-import amulet
 import os
+import json
 import unittest
 import requests
+
+import amulet
 
 SECONDS = 990
 

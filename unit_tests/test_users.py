@@ -11,7 +11,7 @@ from stubs.hookenv import HookenvStub
 from stubs.host import HostStub
 from stubs.templating import TemplatingStub
 
-from users import (
+from jenkinslib.users import (
     USERS,
     Users,
 )

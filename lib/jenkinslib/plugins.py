@@ -5,7 +5,7 @@ import subprocess
 from charmhelpers.core import hookenv
 from charmhelpers.core import host
 
-from paths import PLUGINS
+from jenkinslib.paths import PLUGINS
 
 
 class Plugins(object):

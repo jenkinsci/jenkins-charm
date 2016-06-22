@@ -11,13 +11,13 @@ from charms.reactive import (
 )
 from charms.layer.execd import execd_preinstall
 
-from packages import APT_DEPENDENCIES, Packages
-from configuration import (
+from jenkinslib.packages import APT_DEPENDENCIES, Packages
+from jenkinslib.configuration import (
     PORT,
     Configuration,
 )
-from users import Users
-from plugins import Plugins
+from jenkinslib.users import Users
+from jenkinslib.plugins import Plugins
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 

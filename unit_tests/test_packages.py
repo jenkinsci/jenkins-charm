@@ -11,7 +11,7 @@ from stubs.subprocess import SubprocessStub
 from stubs.hookenv import HookenvStub
 from stubs.apt import AptStub
 
-from packages import (
+from jenkinslib.packages import (
     APT_DEPENDENCIES,
     APT_KEY,
     APT_SOURCE,
