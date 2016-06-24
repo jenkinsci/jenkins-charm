@@ -25,6 +25,27 @@ class NodesTest(TestCase):
         self.jenkins = JenkinsStub()
         self.nodes = Nodes(hookenv=self.hookenv, jenkins=self.jenkins)
 
+    def test_wait_transient_failure(self):
+        """
+        Wait for Jenkins to be fully up, even in spite of transient failures.
+        """
+        self.useFixture(MonkeyPatch("time.sleep", lambda _: None))
+
+        get_version = self.jenkins.get_version
+        tries = []
+
+        def transient_failure():
+            try:
+                if not tries:
+                    raise JenkinsException("error")
+                get_version()
+            finally:
+                tries.append(True)
+
+        self.jenkins.get_version = transient_failure
+        self.hookenv.config()["password"] = "sekret"
+        self.assertIsNone(self.nodes.wait())
+
     def test_add(self):
         """
         A slave node can be added by specifying executors and labels.
@@ -91,7 +112,7 @@ class NodesTest(TestCase):
         self.hookenv.config()["password"] = "sekret"
         self.nodes.add("slave-0", 1, labels=["python"])
         self.assertEqual(
-            ("Failed to create node 'slave-0'", "WARNING"),
+            ("Failed to create node 'slave-0'", "ERROR"),
             self.hookenv.messages[-1])
 
     def test_deleted(self):

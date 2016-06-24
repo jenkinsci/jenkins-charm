@@ -3,6 +3,8 @@ includes:
   - layer:apt
   - interface:http
   - interface:jenkins-slave
+  - interface:jenkins-extension
+  - interface:jenkins-zuul
 options:
   basic:
     packages: ['python3-testtools', 'pwgen']

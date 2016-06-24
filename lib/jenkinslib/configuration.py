@@ -31,10 +31,10 @@ class Configuration(object):
         # Only run on first invocation otherwise we blast
         # any configuration changes made
         if config.get("_config-bootstrapped"):
+            self._hookenv.log("Jenkins was already configured, skipping")
             return
 
-        self._hookenv.log(
-            "Bootstrapping secure initial configuration in Jenkins.")
+        self._hookenv.log("Bootstrapping initial Jenkins configuration")
         context = {"master_executors": config["master-executors"]}
         self._templating.render(
             "jenkins-config.xml", CONFIG_FILE, context,

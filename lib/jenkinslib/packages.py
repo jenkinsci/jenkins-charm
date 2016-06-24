@@ -6,9 +6,8 @@ import subprocess
 from testtools import try_import
 
 from charmhelpers.core import hookenv
-from charmhelpers.core.hookenv import DEBUG
 
-# XXX Wrap these imports with try_import since layers code won't be available
+# XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
@@ -36,13 +35,13 @@ class Packages(object):
 
     def install_dependencies(self):
         """Install the deb dependencies of the Jenkins package."""
-        self._hookenv.log("Installing jenkins dependencies.", level=DEBUG)
+        self._hookenv.log("Installing jenkins dependencies and desired tools")
         tools = self._hookenv.config()["tools"]
         self._apt.queue_install(APT_DEPENDENCIES + tools.split())
 
     def install_jenkins(self):
         """Install the Jenkins package."""
-        self._hookenv.log("Installing jenkins.", level=DEBUG)
+        self._hookenv.log("Installing jenkins")
         config = self._hookenv.config()
         release = config["release"]
         if release == "bundle":
@@ -81,7 +80,7 @@ class Packages(object):
 
     def _setup_source(self, release):
         """Install Jenkins archive."""
-        self._hookenv.log("Configuring source of jenkins as %s" % release)
+        self._hookenv.log("Adding upstream '%s' Jenkins APT source " % release)
 
         # Configure to use upstream archives
         # lts - debian-stable

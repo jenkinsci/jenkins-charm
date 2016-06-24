@@ -27,17 +27,16 @@ class Plugins(object):
         self._host = host
         self._plugins_dir = plugins_dir
 
-    def install_configured_plugins(self):
-        """Install all plugins requested via the charm config option."""
+    def install(self, plugins):
+        """Install the given plugins, optionally removing unlisted ones.
+
+        @params plugins: A whitespace-separated list of plugins to install.
+        """
+        plugins = plugins or ""
+        plugins = plugins.split()
         self._hookenv.log("Stopping jenkins for plugin update(s)")
         self._host.service_stop("jenkins")
-        plugins = self._hookenv.config()["plugins"].split()
-        self.install_plugins(plugins)
-        self._hookenv.log("Starting jenkins to pickup configuration changes")
-        self._host.service_start("jenkins")
 
-    def install_plugins(self, plugins):
-        """Install the given plugins, optionally removing unlisted ones."""
         self._hookenv.log("Installing plugins (%s)" % " ".join(plugins))
 
         self._host.mkdir(
@@ -74,6 +73,9 @@ class Plugins(object):
                     "Unlisted plugins: (%s) Not removed. Set "
                     "remove-unlisted-plugins to 'yes' to clear them "
                     "away." % ", ".join(unlisted_plugins))
+
+        self._hookenv.log("Starting jenkins to pickup configuration changes")
+        self._host.service_start("jenkins")
 
     def _install_plugin(self, plugins_site, plugin, wget_options):
         """Download and install a given plugin."""

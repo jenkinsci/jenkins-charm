@@ -33,12 +33,11 @@ class PluginsTest(TestCase):
         config["plugins-site"] = "https://updates.jenkins-ci.org/latest/"
         config["plugins-check-certificate"] = "yes"
 
-    def test_install_configured_plugins(self):
+    def test_install(self):
         """
-        The configured plugins are downloaded from the Jenkins site.
+        The given plugins are downloaded from the Jenkins site.
         """
-        self.hookenv.config()["plugins"] = "plugin1 plugin2"
-        self.plugins.install_configured_plugins()
+        self.plugins.install("plugin1 plugin2")
         [action1, action2] = self.host.actions
         self.assertEqual("stop", action1.name)
         self.assertEqual("jenkins", action1.service)
@@ -52,17 +51,17 @@ class PluginsTest(TestCase):
             "wget -q -O - https://updates.jenkins-ci.org/latest/plugin2.hpi",
             " ".join(call2.command))
 
-    def test_install_plugins_no_certificate_check(self):
+    def test_install_no_certificate_check(self):
         """
         If plugins-check-certificate is set to 'no', the plugins site
         certificate won't be validated.
         """
         self.hookenv.config()["plugins-check-certificate"] = "no"
-        self.plugins.install_plugins(["plugin"])
+        self.plugins.install("plugin")
         [call] = self.subprocess.calls
         self.assertIn("--no-check-certificate", call.command)
 
-    def test_install_plugins_dont_remove_unlisted(self):
+    def test_install_dont_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
@@ -71,10 +70,10 @@ class PluginsTest(TestCase):
         unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
-        self.plugins.install_plugins(["plugin"])
+        self.plugins.install("plugin")
         self.assertFalse(os.path.exists(unlisted_plugin))
 
-    def test_install_plugins_do_remove_unlisted(self):
+    def test_install_do_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'no', then unlisted plugins
         will be left on disk.
@@ -83,10 +82,10 @@ class PluginsTest(TestCase):
         unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
-        self.plugins.install_plugins(["plugin"])
+        self.plugins.install("plugin")
         self.assertTrue(os.path.exists(unlisted_plugin))
 
-    def test_install_plugins_skip_non_file_unlisted(self):
+    def test_install_skip_non_file_unlisted(self):
         """
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
@@ -94,10 +93,10 @@ class PluginsTest(TestCase):
         self.hookenv.config()["remove-unlisted-plugins"] = "yes"
         unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
         os.mkdir(unlisted_plugin)
-        self.plugins.install_plugins(["plugin"])
+        self.plugins.install("plugin")
         self.assertTrue(os.path.exists(unlisted_plugin))
 
-    def test_install_plugins_already_installed(self):
+    def test_install_already_installed(self):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
@@ -105,5 +104,5 @@ class PluginsTest(TestCase):
         plugin_path = self.plugins_dir.join("plugin.hpi")
         with open(plugin_path, "w"):
             pass
-        self.plugins.install_plugins(["plugin"])
+        self.plugins.install("plugin")
         self.assertEqual([], self.subprocess.calls)

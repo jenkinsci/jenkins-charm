@@ -1,3 +1,5 @@
+from urllib.error import URLError
+
 from jenkins import Jenkins, JenkinsException
 
 from charmhelpers.core import hookenv
@@ -6,14 +8,13 @@ from charmhelpers.core.decorators import (
 )
 
 from charmhelpers.core.hookenv import (
-    WARNING,
-    INFO,
-    DEBUG,
+    ERROR,
 )
 
 from jenkinslib.credentials import Credentials
 
 URL = "http://localhost:8080/"
+RETRIABLE = (URLError, JenkinsException)
 
 
 class Nodes(object):
@@ -28,25 +29,29 @@ class Nodes(object):
         self._hookenv = hookenv
         self._jenkins = jenkins
 
+    # Wait up to 140 seconds for Jenkins to be fully up.
+    @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
+    def wait(self):
+        client = self._make_client()
+        client.get_version()
+
     def add(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
+        self.wait()
+
         client = self._make_client()
 
-        @retry_on_exception(2, 2, exc_type=JenkinsException)
-        def _add_node(*args, **kwargs):
-
+        @retry_on_exception(3, 3, exc_type=RETRIABLE)
+        def _add_node():
             if client.node_exists(host):
-                self._hookenv.log("Node exists - not adding", level=DEBUG)
+                self._hookenv.log("Node exists - not adding")
                 return
 
-            self._hookenv.log(
-                "Adding node '%s' to Jenkins master" % host, level=INFO)
-
+            self._hookenv.log("Adding node '%s' to Jenkins master" % host)
             client.create_node(host, int(executors) * 2, host, labels=labels)
-
             if not client.node_exists(host):
                 self._hookenv.log(
-                    "Failed to create node '%s'" % host, level=WARNING)
+                    "Failed to create node '%s'" % host, level=ERROR)
 
         return _add_node()
 
@@ -54,11 +59,10 @@ class Nodes(object):
         """Delete the slave node with the given host name."""
         client = self._make_client()
         if client.node_exists(host):
-            self._hookenv.log("Node '%s' exists" % host, level=DEBUG)
+            self._hookenv.log("Node '%s' exists" % host)
             client.delete_node(host)
         else:
-            self._hookenv.log(
-                "Node '%s' does not exist - not deleting" % host, level=INFO)
+            self._hookenv.log("Node '%s' does not exist - not deleting" % host)
 
     def _make_client(self):
         """Build a Jenkins client instance."""

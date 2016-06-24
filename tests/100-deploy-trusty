@@ -9,9 +9,17 @@ import requests
 
 import amulet
 
+import jenkins
+
+import retrying
+
 SECONDS = 990
+USER = "amulet"
+PASSWORD = "testautomation"
 
 JENKINS_SLAVE_URI = "cs:~juju-qa/trusty/jenkins-slave-2"
+CI_CONFIGURATOR_URI = "cs:~matsubara/trusty/ci-configurator-3"
+CI_CONFIGURATOR_CONFIG_REPO = "lp:~free.ekanayaka/txlongpoll/config"
 
 
 class TestDeployment(unittest.TestCase):
@@ -26,15 +34,21 @@ class TestDeployment(unittest.TestCase):
         # Specify charm_name because this layer could be named something else.
         cls.deployment.add(charm_name, units=1)
         cls.deployment.add("haproxy")  # website-relation
-        cls.deployment.add('jenkins-slave', JENKINS_SLAVE_URI)
+        cls.deployment.add("jenkins-slave", JENKINS_SLAVE_URI)
+        cls.deployment.add("ci-configurator", CI_CONFIGURATOR_URI)
         cls.deployment.relate("jenkins:website", "haproxy:reverseproxy")
+        cls.deployment.relate("jenkins:master", "jenkins-slave:slave")
+        cls.deployment.relate(
+            "jenkins:extension", "ci-configurator:jenkins-configurator")
         cls.deployment.configure(
-            "jenkins", {"tools": "git gcc make",
+            "jenkins", {"tools": "git gcc make python-paramiko",
                         "release": "lts",
-                        "username": "amulet",
-                        "password": "testautomation",
+                        "username": USER,
+                        "password": PASSWORD,
                         "plugins": "groovy",
                         "plugins-check-certificate": "no"})
+        cls.deployment.configure(
+            "ci-configurator", {"config-repo":  CI_CONFIGURATOR_CONFIG_REPO})
         cls.deployment.expose("jenkins")
         cls.deployment.expose("haproxy")
         try:
@@ -45,8 +59,16 @@ class TestDeployment(unittest.TestCase):
             amulet.raise_status(amulet.SKIP, msg=msg)
         except:
             raise
+        cls.deployment.sentry.wait()
         cls.jenkins = cls.deployment.sentry["jenkins"][0]
+        cls.jenkins_slave = cls.deployment.sentry["jenkins-slave"][0]
         cls.haproxy = cls.deployment.sentry["haproxy"][0]
+
+        # Wait for Jenkins to be fully up
+#        jenkins_host = "http://%s:8080" % cls.jenkins.info["public-address"]
+#        client = jenkins.Jenkins(jenkins_host, USER, PASSWORD)
+#        retrier = retrying.retry(stop_max_delay=600 * 1000, wait_fixed=5 * 1000)
+#        retrier(client.get_version)()
 
     def test_tools_installed(self):
         """Validate jenkins tool installation."""
@@ -74,7 +96,7 @@ class TestDeployment(unittest.TestCase):
             "j_username": "amulet",
             "j_password": "testautomation",
             "from": "/"}
-        jenkins_address = self.jenkins.info['public-address']
+        jenkins_address = self.jenkins.info["public-address"]
         jenkins_url = "http://%s:8080/j_acegi_security_check" % jenkins_address
         response = requests.post(jenkins_url, data=payload)
         if response.status_code is not 200:
@@ -97,11 +119,14 @@ class TestDeployment(unittest.TestCase):
             amulet.raise_status(amulet.FAIL, msg="Not reachable through proxy")
 
     def test_slave_relation(self):
+        """Validate that the slave is correctly registered."""
         address = self.jenkins.info["public-address"]
         url = "http://%s:8080/computer/api/json" % address
         response = requests.get(url)
-        data = json.loads(r.text)
-        if not data["computer"][1]["displayName"] == "jenkins-slave-0":
+        data = json.loads(response.text)
+
+        host = self.jenkins_slave.info["unit_name"].replace("/", "-")
+        if not data["computer"][1]["displayName"] == host:
             amulet.raise_status(amulet.FAIL, msg="Failed to locate slave")
 
 
