@@ -16,14 +16,14 @@ from charms.reactive.helpers import data_changed
 from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
 
-from jenkinslib.packages import APT_DEPENDENCIES, Packages
-from jenkinslib.configuration import (
+from charms.layer.jenkins.packages import APT_DEPENDENCIES, Packages
+from charms.layer.jenkins.configuration import (
     PORT,
     Configuration,
 )
-from jenkinslib.users import Users
-from jenkinslib.plugins import Plugins
-from jenkinslib.nodes import Nodes
+from charms.layer.jenkins.users import Users
+from charms.layer.jenkins.plugins import Plugins
+from charms.layer.jenkins.nodes import Nodes
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 

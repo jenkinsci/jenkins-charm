@@ -7,7 +7,7 @@ from fixtures import (
 
 from stubs.hookenv import HookenvStub
 
-from jenkinslib.credentials import Credentials
+from charms.layer.jenkins.credentials import Credentials
 
 
 class CredentialsTest(TestCase):

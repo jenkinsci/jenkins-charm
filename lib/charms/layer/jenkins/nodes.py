@@ -11,7 +11,7 @@ from charmhelpers.core.hookenv import (
     ERROR,
 )
 
-from jenkinslib.credentials import Credentials
+from charms.layer.jenkins.credentials import Credentials
 
 URL = "http://localhost:8080/"
 RETRIABLE = (URLError, JenkinsException)

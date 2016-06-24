@@ -13,8 +13,3 @@ fi
 if ! dpkg -s python3-jenkins; then
     sudo apt-get install -y python3-jenkins
 fi
-
-# Check that python retrying is available
-if ! dpkg -s python3-retrying; then
-    sudo apt-get install python3-retrying
-fi

@@ -8,7 +8,7 @@ from fixtures import (
 from stubs.hookenv import HookenvStub
 from stubs.templating import TemplatingStub
 
-from jenkinslib.configuration import (
+from charms.layer.jenkins.configuration import (
     CONFIG_FILE,
     Configuration,
 )

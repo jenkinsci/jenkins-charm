@@ -3,7 +3,7 @@ import os
 from charmhelpers.core import hookenv
 from charmhelpers.core import templating
 
-from jenkinslib.paths import CONFIG_FILE
+from charms.layer.jenkins.paths import CONFIG_FILE
 
 PORT = 8080
 

@@ -11,7 +11,7 @@ from stubs.hookenv import HookenvStub
 from stubs.host import HostStub
 from stubs.subprocess import SubprocessStub
 
-from jenkinslib.plugins import Plugins
+from charms.layer.jenkins.plugins import Plugins
 
 
 class PluginsTest(TestCase):

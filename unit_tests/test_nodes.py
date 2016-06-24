@@ -11,7 +11,7 @@ from jenkins import JenkinsException
 from stubs.hookenv import HookenvStub
 from stubs.jenkins import JenkinsStub
 
-from jenkinslib.nodes import Nodes
+from charms.layer.jenkins.nodes import Nodes
 
 
 class NodesTest(TestCase):

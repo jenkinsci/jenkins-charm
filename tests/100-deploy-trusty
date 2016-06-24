@@ -11,8 +11,6 @@ import amulet
 
 import jenkins
 
-import retrying
-
 SECONDS = 990
 USER = "amulet"
 PASSWORD = "testautomation"
@@ -63,12 +61,6 @@ class TestDeployment(unittest.TestCase):
         cls.jenkins = cls.deployment.sentry["jenkins"][0]
         cls.jenkins_slave = cls.deployment.sentry["jenkins-slave"][0]
         cls.haproxy = cls.deployment.sentry["haproxy"][0]
-
-        # Wait for Jenkins to be fully up
-#        jenkins_host = "http://%s:8080" % cls.jenkins.info["public-address"]
-#        client = jenkins.Jenkins(jenkins_host, USER, PASSWORD)
-#        retrier = retrying.retry(stop_max_delay=600 * 1000, wait_fixed=5 * 1000)
-#        retrier(client.get_version)()
 
     def test_tools_installed(self):
         """Validate jenkins tool installation."""
