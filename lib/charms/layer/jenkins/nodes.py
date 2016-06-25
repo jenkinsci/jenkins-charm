@@ -15,6 +15,11 @@ from charms.layer.jenkins.credentials import Credentials
 
 URL = "http://localhost:8080/"
 RETRIABLE = (URLError, JenkinsException)
+TOKEN_SCRIPT = """
+user = hudson.model.User.get('{}')
+prop = user.getProperty(jenkins.security.ApiTokenProperty.class)
+println(prop.getApiToken())
+"""
 
 
 class Nodes(object):
@@ -29,11 +34,8 @@ class Nodes(object):
         self._hookenv = hookenv
         self._jenkins = jenkins
 
-    # Wait up to 140 seconds for Jenkins to be fully up.
-    @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def wait(self):
-        client = self._make_client()
-        client.get_version()
+        self._make_client()
 
     def add(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
@@ -64,7 +66,20 @@ class Nodes(object):
         else:
             self._hookenv.log("Node '%s' does not exist - not deleting" % host)
 
+    # Wait up to 140 seconds for Jenkins to be fully up.
+    @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def _make_client(self):
         """Build a Jenkins client instance."""
         creds = Credentials(hookenv=self._hookenv)
-        return self._jenkins(URL, creds.username(), creds.password())
+        user = creds.username()
+        token = creds.token()
+
+        # TODO: also handle regenerated tokens
+        if token is None:
+            client = self._jenkins(URL, user, creds.password())
+            token = client.run_script(TOKEN_SCRIPT.format(user)).strip()
+            creds.token(token)
+
+        client = self._jenkins(URL, user, token)
+        client.get_version()
+        return client

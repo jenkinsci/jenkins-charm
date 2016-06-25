@@ -11,7 +11,10 @@ from jenkins import JenkinsException
 from stubs.hookenv import HookenvStub
 from stubs.jenkins import JenkinsStub
 
-from charms.layer.jenkins.nodes import Nodes
+from charms.layer.jenkins.nodes import (
+    TOKEN_SCRIPT,
+    Nodes,
+)
 
 
 class NodesTest(TestCase):
@@ -23,6 +26,7 @@ class NodesTest(TestCase):
         self.hookenv = HookenvStub(self.charm_dir.path)
         self.hookenv.config()["username"] = "admin"
         self.jenkins = JenkinsStub()
+        self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
         self.nodes = Nodes(hookenv=self.hookenv, jenkins=self.jenkins)
 
     def test_wait_transient_failure(self):

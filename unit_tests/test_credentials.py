@@ -40,3 +40,18 @@ class CredentialsTest(TestCase):
         self.hookenv.config()["password"] = ""
         self.hookenv.config()["_generated-password"] = "aodlaod"
         self.assertEqual("aodlaod", self.credentials.password())
+
+    def test_token(self):
+        """
+        The user's API token is initially None.
+        """
+        self.assertIsNone(self.credentials.token())
+
+    def test_token_set(self):
+        """
+        The user's API token can be set, and will be saved in the local
+        state.
+        """
+        self.assertEqual("abc", self.credentials.token("abc"))
+        self.assertEqual("abc", self.hookenv.config()["_api-token"])
+        self.assertEqual("abc", self.credentials.token())

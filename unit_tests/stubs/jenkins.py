@@ -8,6 +8,7 @@ class JenkinsStub(object):
 
     def __init__(self):
         self.nodes = []
+        self.scripts = {}
 
     def __call__(self, url, username, password):
         self.url = url
@@ -31,3 +32,6 @@ class JenkinsStub(object):
         for node in self.nodes[:]:
             if node.host == host:
                 self.nodes.remove(node)
+
+    def run_script(self, script):
+        return self.scripts[script]

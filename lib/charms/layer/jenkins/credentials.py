@@ -21,3 +21,10 @@ class Credentials(object):
         if not password:
             password = self._hookenv.config()["_generated-password"]
         return password
+
+    def token(self, value=None):
+        """Get or set the admin token from/to the local state."""
+        config = self._hookenv.config()
+        if value is not None:
+            config["_api-token"] = value
+        return config.get("_api-token")
