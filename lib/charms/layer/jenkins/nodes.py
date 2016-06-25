@@ -50,7 +50,7 @@ class Nodes(object):
                 return
 
             self._hookenv.log("Adding node '%s' to Jenkins master" % host)
-            client.create_node(host, int(executors) * 2, host, labels=labels)
+            client.create_node(host, int(executors), host, labels=labels)
             if not client.node_exists(host):
                 self._hookenv.log(
                     "Failed to create node '%s'" % host, level=ERROR)

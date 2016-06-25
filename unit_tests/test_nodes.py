@@ -58,7 +58,7 @@ class NodesTest(TestCase):
         self.nodes.add("slave-0", 1, labels=["python"])
         [node] = self.jenkins.nodes
         self.assertEqual("slave-0", node.host)
-        self.assertEqual(2, node.executors)
+        self.assertEqual(1, node.executors)
         self.assertEqual("slave-0", node.description)
         self.assertEqual(["python"], node.labels)
 
