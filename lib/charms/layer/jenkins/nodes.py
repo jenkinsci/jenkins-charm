@@ -81,5 +81,5 @@ class Nodes(object):
             creds.token(token)
 
         client = self._jenkins(URL, user, token)
-        client.get_version()
+        client.get_whoami()
         return client

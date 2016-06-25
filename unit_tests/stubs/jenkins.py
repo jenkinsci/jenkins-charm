@@ -16,8 +16,8 @@ class JenkinsStub(object):
         self.password = password
         return self
 
-    def get_version(self):
-        return "1.2.3"
+    def get_whoami(self):
+        return {"id": "admin"}
 
     def node_exists(self, host):
         for node in self.nodes:

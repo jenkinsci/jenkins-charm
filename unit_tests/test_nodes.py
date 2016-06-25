@@ -35,18 +35,18 @@ class NodesTest(TestCase):
         """
         self.useFixture(MonkeyPatch("time.sleep", lambda _: None))
 
-        get_version = self.jenkins.get_version
+        get_whoami = self.jenkins.get_whoami
         tries = []
 
         def transient_failure():
             try:
                 if not tries:
                     raise JenkinsException("error")
-                get_version()
+                get_whoami()
             finally:
                 tries.append(True)
 
-        self.jenkins.get_version = transient_failure
+        self.jenkins.get_whoami = transient_failure
         self.hookenv.config()["password"] = "sekret"
         self.assertIsNone(self.nodes.wait())
 
