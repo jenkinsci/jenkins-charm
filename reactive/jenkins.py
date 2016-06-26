@@ -11,10 +11,10 @@ from charms.reactive import (
     when,
     when_not,
     only_once,
-    get_state,
     set_state,
     remove_state,
 )
+from charms.reactive.bus import get_state
 from charms.reactive.helpers import data_changed
 from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
