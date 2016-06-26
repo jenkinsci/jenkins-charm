@@ -1,0 +1,7 @@
+bootstrap: false
+reset: false
+tests: "[0-9]*"
+packages:
+  - amulet
+  - python3-jenkins
+  - python3-requests
