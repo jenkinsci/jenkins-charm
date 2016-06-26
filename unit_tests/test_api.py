@@ -11,23 +11,23 @@ from jenkins import JenkinsException
 from stubs.hookenv import HookenvStub
 from stubs.jenkins import JenkinsStub
 
-from charms.layer.jenkins.nodes import (
+from charms.layer.jenkins.api import (
     TOKEN_SCRIPT,
-    Nodes,
+    Api,
 )
 
 
-class NodesTest(TestCase):
+class ApiTest(TestCase):
 
     def setUp(self):
-        super(NodesTest, self).setUp()
+        super(ApiTest, self).setUp()
         self.charm_dir = self.useFixture(TempDir())
         self.useFixture(EnvironmentVariable("CHARM_DIR", self.charm_dir.path))
         self.hookenv = HookenvStub(self.charm_dir.path)
         self.hookenv.config()["username"] = "admin"
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
-        self.nodes = Nodes(hookenv=self.hookenv, jenkins=self.jenkins)
+        self.api = Api(hookenv=self.hookenv, jenkins=self.jenkins)
 
     def test_wait_transient_failure(self):
         """
@@ -48,14 +48,14 @@ class NodesTest(TestCase):
 
         self.jenkins.get_whoami = transient_failure
         self.hookenv.config()["password"] = "sekret"
-        self.assertIsNone(self.nodes.wait())
+        self.assertIsNone(self.api.wait())
 
     def test_add(self):
         """
         A slave node can be added by specifying executors and labels.
         """
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.add("slave-0", 1, labels=["python"])
+        self.api.add_node("slave-0", 1, labels=["python"])
         [node] = self.jenkins.nodes
         self.assertEqual("slave-0", node.host)
         self.assertEqual(1, node.executors)
@@ -68,7 +68,7 @@ class NodesTest(TestCase):
         """
         self.jenkins.create_node("slave-0", 1, "slave-0")
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.add("slave-0", 1, labels=["python"])
+        self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(1, len(self.jenkins.nodes))
 
     def test_add_transient_failure(self):
@@ -90,7 +90,7 @@ class NodesTest(TestCase):
 
         self.jenkins.create_node = transient_failure
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.add("slave-0", 1, labels=["python"])
+        self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(1, len(self.jenkins.nodes))
 
     def test_add_retry_give_up(self):
@@ -105,7 +105,7 @@ class NodesTest(TestCase):
         self.jenkins.create_node = failure
         self.hookenv.config()["password"] = "sekret"
         self.assertRaises(
-            JenkinsException, self.nodes.add, "slave-0", 1)
+            JenkinsException, self.api.add_node, "slave-0", 1)
 
     def test_add_spurious(self):
         """
@@ -114,7 +114,7 @@ class NodesTest(TestCase):
         """
         self.jenkins.create_node = lambda *args, **kwargs: None
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.add("slave-0", 1, labels=["python"])
+        self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(
             ("Failed to create node 'slave-0'", "ERROR"),
             self.hookenv.messages[-1])
@@ -124,8 +124,8 @@ class NodesTest(TestCase):
         A slave node can be deleted by specifyng its host name.
         """
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.add("slave-0", 1, labels=["python"])
-        self.nodes.delete("slave-0")
+        self.api.add_node("slave-0", 1, labels=["python"])
+        self.api.delete_node("slave-0")
         self.assertEqual([], self.jenkins.nodes)
 
     def test_deleted_no_present(self):
@@ -133,5 +133,5 @@ class NodesTest(TestCase):
         If a slave node doesn't exists, deleting it is a no-op.
         """
         self.hookenv.config()["password"] = "sekret"
-        self.nodes.delete("slave-0")
+        self.api.delete_node("slave-0")
         self.assertEqual([], self.jenkins.nodes)

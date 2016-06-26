@@ -25,7 +25,7 @@ from charms.layer.jenkins.configuration import (
 )
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.plugins import Plugins
-from charms.layer.jenkins.nodes import Nodes
+from charms.layer.jenkins.api import Api
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 
@@ -94,8 +94,8 @@ def configure_plugins():
     remove_state("jenkins.configured.plugins")
     plugins = Plugins()
     plugins.install(config("plugins"))
-    nodes = Nodes()
-    nodes.wait()  # Wait for the service to be fully up
+    api = Api()
+    api.wait()  # Wait for the service to be fully up
     set_state("jenkins.configured.plugins")
 
 
@@ -116,9 +116,9 @@ def add_slaves(master):
     if not data_changed("master.slaves", slaves):
         log("Slaves are unchanged - no need to do anything")
         return
-    nodes = Nodes()
+    api = Api()
     for slave in slaves:
-        nodes.add(
+        api.add_node(
             slave["slavehost"], slave["executors"],
             labels=slave["labels"] or ())
 

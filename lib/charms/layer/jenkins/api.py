@@ -22,7 +22,7 @@ println(prop.getApiToken())
 """
 
 
-class Nodes(object):
+class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
     def __init__(self, hookenv=hookenv, jenkins=Jenkins):
@@ -37,7 +37,7 @@ class Nodes(object):
     def wait(self):
         self._make_client()
 
-    def add(self, host, executors, labels=()):
+    def add_node(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
         self.wait()
 
@@ -57,7 +57,7 @@ class Nodes(object):
 
         return _add_node()
 
-    def delete(self, host):
+    def delete_node(self, host):
         """Delete the slave node with the given host name."""
         client = self._make_client()
         if client.node_exists(host):
