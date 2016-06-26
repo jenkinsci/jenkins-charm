@@ -1,5 +1,5 @@
 bootstrap: false
-reset: false
+reset: true
 tests: "[0-9]*"
 packages:
   - amulet
