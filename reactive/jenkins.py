@@ -10,7 +10,9 @@ from charms.reactive import (
     hook,
     when,
     when_not,
+    only_once,
     set_state,
+    remove_state,
 )
 from charms.reactive.helpers import data_changed
 from charms.layer.execd import execd_preinstall
@@ -51,40 +53,55 @@ for event in DEPENDENCIES_EVENTS:
 
 # When all dependencies have been installed, we install the jenkins package
 # from the desired source.
-@when(*DEPENDENCIES_EVENTS)
 @when_not("apt.installed.jenkins")
+@when(*DEPENDENCIES_EVENTS)
 def install_jenkins():
     status_set("maintenance", "Installing Jenkins")
     packages = Packages()
     packages.install_jenkins()
 
 
-# Called within the install hook once the jenkins package has been installed,
-# but we didn't perform any configuration yet.
+# Called once the jenkins package has been installed, but we didn't
+# perform any configuration yet. We'll not touch config.xml ever again,
+# since from this point it should be managed by the user (or by some
+# subordinate charm via the 'jenkins-extension' interface).
+@only_once()
 @when("apt.installed.jenkins")
-@when_not("jenkins.configured")
-def configure_jenkins():
-    status_set("maintenance", "Configuring Jenkins")
+def bootstrap_jenkins():
+    status_set("maintenance", "Bootstrapping Jenkins configuration")
     configuration = Configuration()
     configuration.bootstrap()
-    set_state("jenkins.configured")
+    set_state("jenkins.bootstrapped")
 
 
-# Called both within the installed hook after the global configuration has
-# been bootstrapped and after any service config changes.
-@when("jenkins.configured", "config.changed")
-def configure_users_and_plugins():
-    status_set("maintenance", "Configuring users and plugins")
-
+# Called once we're bootstrapped and every time the configured user
+# changes.
+@when("jenkins.bootstrapped", "config.changed.username")
+@when("jenkins.bootstrapped", "config.changed.password")
+def configure_admin():
+    remove_state("jenkins.configured.admin")
+    status_set("maintenance", "Configuring admin user")
     users = Users()
     users.configure_admin()
+    set_state("jenkins.configured.admin")
 
+
+# Called once we're bootstrapped and every time the configured plugins
+# change.
+@when("jenkins.configured.admin", "config.changed.plugins")
+def configure_plugins():
+    status_set("maintenance", "Configuring plugins")
+    remove_state("jenkins.configured.plugins")
     plugins = Plugins()
     plugins.install(config("plugins"))
-
     nodes = Nodes()
     nodes.wait()  # Wait for the service to be fully up
+    set_state("jenkins.configured.plugins")
 
+
+@when("jenkins.configured.admin",
+      "jenkins.configured.plugins")
+def ready():
     status_set("active", "Jenkins is running")
 
 
