@@ -43,7 +43,22 @@ class Plugins(object):
             self._plugins_dir, owner="jenkins", group="jenkins", perms=0o0755)
 
         existing_plugins = set(glob.glob("%s/*.hpi" % self._plugins_dir))
+        installed_plugins = self._install_plugins(plugins)
+        unlisted_plugins = existing_plugins - installed_plugins
+        if unlisted_plugins:
+            if self._hookenv.config()["remove-unlisted-plugins"] == "yes":
+                self._remove_plugins(unlisted_plugins)
+            else:
+                self._hookenv.log(
+                    "Unlisted plugins: (%s) Not removed. Set "
+                    "remove-unlisted-plugins to 'yes' to clear them "
+                    "away." % ", ".join(unlisted_plugins))
 
+        self._hookenv.log("Starting jenkins to pickup configuration changes")
+        self._host.service_start("jenkins")
+
+    def _install_plugins(self, plugins):
+        """Install the plugins with the given names."""
         config = self._hookenv.config()
         plugins_site = config["plugins-site"]
 
@@ -54,28 +69,11 @@ class Plugins(object):
             wget_options = ("--no-check-certificate",)
         else:
             wget_options = ()
-
-        installed_plugins = set()
+        paths = set()
         for plugin in plugins:
             path = self._install_plugin(plugins_site, plugin, wget_options)
-            installed_plugins.add(path)
-
-        unlisted_plugins = existing_plugins - installed_plugins
-        if unlisted_plugins:
-            if config["remove-unlisted-plugins"] == "yes":
-                for plugin_path in unlisted_plugins:
-                    if not os.path.isfile(plugin_path):
-                        continue
-                    self._hookenv.log("Deleting unlisted plugin '%s'" % path)
-                    os.remove(plugin_path)
-            else:
-                self._hookenv.log(
-                    "Unlisted plugins: (%s) Not removed. Set "
-                    "remove-unlisted-plugins to 'yes' to clear them "
-                    "away." % ", ".join(unlisted_plugins))
-
-        self._hookenv.log("Starting jenkins to pickup configuration changes")
-        self._host.service_start("jenkins")
+            paths.add(path)
+        return paths
 
     def _install_plugin(self, plugins_site, plugin, wget_options):
         """Download and install a given plugin."""
@@ -92,3 +90,15 @@ class Plugins(object):
         else:
             self._hookenv.log("Plugin %s already installed" % plugin_filename)
         return plugin_path
+
+    def _remove_plugins(self, paths):
+        """Remove the plugins at the given paths."""
+        for path in paths:
+            self._remove_plugin(path)
+
+    def _remove_plugin(self, path):
+        """Remove the plugin at the given path."""
+        if not os.path.isfile(path):
+            return
+        self._hookenv.log("Deleting unlisted plugin '%s'" % path)
+        os.remove(path)

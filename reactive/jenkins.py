@@ -105,6 +105,7 @@ def configure_plugins():
     if get_state("extension.connected"):
         # We've been driven by an extension, let it take control over
         # plugin.
+        log("External relation detected - skip configuring plugins")
         return
     status_set("maintenance", "Configuring plugins")
     remove_state("jenkins.configured.plugins")

@@ -19,7 +19,21 @@ class BasicDeploymentSpec(DeploymentSpec):
 
     def plugin_dir_stat(self, plugin):
         """Get the file system stat of the directory of the given plugin."""
-        return self.jenkins.directory_stat(os.path.join(PLUGINS_DIR, plugin))
+        path = os.path.join(PLUGINS_DIR, plugin)
+        try:
+            stat = self.jenkins.directory_stat(path)
+        except IOError:
+            stat = None
+        return stat
+
+    def plugins_list(self):
+        """Get the list of currently installed plugins."""
+        contents = self.jenkins.directory_listing(PLUGINS_DIR)
+        plugins = []
+        for name in contents["files"]:
+            if name.endswith(".hpi"):
+                plugins.append(name[:-len(".hpi")])
+        return plugins
 
     def _init_00_basic(self):
         self.jenkins_config = {
@@ -88,6 +102,14 @@ class BasicDeploymentTest(DeploymentTest):
         stat = self.spec.plugin_dir_stat("groovy")
         self.assertGreater(stat["size"], 0, "Failed to locate plugin")
 
+    def test_10_change_tools(self):
+        """Validate that tools are updated after a config change."""
+        charm_name = self.spec.deployment.charm_name
+        self.spec.deployment.configure(charm_name, {"tools": "python3-lxml"})
+        self.spec.deployment.sentry.wait()
+        output, _ = self.spec.jenkins.run("dpkg -l python3-testtools")
+        self.assertIn("ii", output, "No tool installation found")
+
     def test_10_change_password(self):
         """Validate that after changing the password we can still login."""
         charm_name = self.spec.deployment.charm_name
@@ -105,6 +127,7 @@ class BasicDeploymentTest(DeploymentTest):
         plugins = "groovy greenballs"
         charm_name = self.spec.deployment.charm_name
         self.spec.deployment.configure(charm_name, {"plugins": plugins})
+        self.spec.deployment.sentry.wait()
         stat = self.spec.plugin_dir_stat("groovy")
         self.assertGreater(stat["size"], 0, "Failed to locate groovy")
         stat = self.spec.plugin_dir_stat("greenballs")
