@@ -13,6 +13,7 @@ from stubs.templating import TemplatingStub
 
 from charms.layer.jenkins.users import (
     USERS,
+    PASSWORD_FILE,
     Users,
 )
 
@@ -42,6 +43,12 @@ class UsersTest(TestCase):
         self.hookenv.config()["username"] = "admin"
         self.hookenv.config()["password"] = "sekret"
         self.users.configure_admin()
+        [password_file] = self.host.files
+        self.assertEqual(PASSWORD_FILE, password_file.path)
+        self.assertEqual(b"sekret", password_file.content)
+        self.assertEqual("root", password_file.owner)
+        self.assertEqual("root", password_file.group)
+        self.assertEqual(0o0600, password_file.perms)
 
     def test_configure_admin_random_password(self):
         """
@@ -88,17 +95,3 @@ class UsersTest(TestCase):
             render.context)
         self.assertEqual("jenkins", render.owner)
         self.assertEqual("nogroup", render.group)
-
-    def test_migrate(self):
-        """
-        Password stored in the custom .admin_password gets migrated to local
-        state.
-        """
-        home = self.useFixture(TempDir())
-        self.users._legacy_password_file = home.join(".admin_password")
-        with open(self.users._legacy_password_file, "w") as fd:
-            fd.write("xyz")
-        self.hookenv.config()["username"] = "admin"
-        self.hookenv.config()["password"] = ""
-        self.users.migrate()
-        self.assertEqual("xyz", self.hookenv.config()["_generated-password"])

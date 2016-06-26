@@ -13,12 +13,11 @@ from charms.layer.jenkins.paths import (
     HOME,
 )
 
+PASSWORD_FILE = os.path.join(HOME, ".admin_password")
+
 
 class Users(object):
     """Manage Jenkins users."""
-
-    # Legacy password file used by former versions of this charm
-    _legacy_password_file = os.path.join(HOME, ".admin_password")
 
     def __init__(self, hookenv=hookenv, host=host, templating=templating):
         """
@@ -35,13 +34,17 @@ class Users(object):
 
     def configure_admin(self):
         """Configure the admin user."""
-        # Always run - even if config has not changed, it's safe.
         self._hookenv.log("Configuring user for jenkins.", level=DEBUG)
 
         admin = self._admin_data()
 
-        admin_home = os.path.join(USERS, admin.username)
+        # Save the password to a file. It's not used directly by this charm
+        # but it's convenient for integration with third-party tools.
+        self._host.write_file(
+            PASSWORD_FILE, admin.password.encode("utf-8"), owner="root",
+            group="root", perms=0o0600)
 
+        admin_home = os.path.join(USERS, admin.username)
         self._host.mkdir(USERS, owner="jenkins", group="nogroup")
         self._host.mkdir(admin_home, owner="jenkins", group="nogroup")
 
@@ -53,15 +56,6 @@ class Users(object):
             "user-config.xml", admin_config, context, owner="jenkins",
             group="nogroup")
 
-    def migrate(self):
-        """Migrate the legacy password file to local state."""
-        config = self._hookenv.config()
-        if os.path.exists(self._legacy_password_file):
-            if not config["password"]:
-                with open(self._legacy_password_file, "r") as fd:
-                    config["_generated-password"] = fd.read()
-            os.unlink(self._legacy_password_file)
-
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
         config = self._hookenv.config()
@@ -70,9 +64,8 @@ class Users(object):
 
         if not password:
             password = self._host.pwgen(length=15)
-            # Save the generated password to the local state, for later
-            # reference (e.g. it will be passed through the jenkins-slave
-            # relation interface).
+            # Save the password to the local state, so it can be accessed
+            # by the Credentials class.
             config["_generated-password"] = password
 
         # Generate Salt and Hash Password for Jenkins

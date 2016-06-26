@@ -3,6 +3,7 @@ from urllib.error import URLError
 from jenkins import Jenkins, JenkinsException
 
 from charmhelpers.core import hookenv
+from charmhelpers.core import host
 from charmhelpers.core.decorators import (
     retry_on_exception,
 )
@@ -25,14 +26,17 @@ println(prop.getApiToken())
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
-    def __init__(self, hookenv=hookenv, jenkins=Jenkins):
+    def __init__(self, hookenv=hookenv, host=host, jenkins=Jenkins):
         """
         @param hookenv: An object implementing the charmhelpers.core.hookenv
+            API from charmhelpers (for testing).
+        @param host: An object implementing the charmhelpers.fetcher.archiveurl
             API from charmhelpers (for testing).
         @param jenkins: A client factory for driving the Jenkins API.
         """
         self._hookenv = hookenv
         self._jenkins = jenkins
+        self._host = host
 
     def wait(self):
         self._make_client()
@@ -70,7 +74,7 @@ class Api(object):
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def _make_client(self):
         """Build a Jenkins client instance."""
-        creds = Credentials(hookenv=self._hookenv)
+        creds = Credentials(hookenv=self._hookenv, host=self._host)
         user = creds.username()
         token = creds.token()
 

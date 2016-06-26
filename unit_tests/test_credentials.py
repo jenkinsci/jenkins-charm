@@ -6,8 +6,12 @@ from fixtures import (
 )
 
 from stubs.hookenv import HookenvStub
+from stubs.host import HostStub
 
-from charms.layer.jenkins.credentials import Credentials
+from charms.layer.jenkins.credentials import (
+    TOKEN_FILE,
+    Credentials,
+)
 
 
 class CredentialsTest(TestCase):
@@ -18,7 +22,8 @@ class CredentialsTest(TestCase):
         self.useFixture(EnvironmentVariable("CHARM_DIR", self.charm_dir.path))
         self.hookenv = HookenvStub(self.charm_dir.path)
         self.hookenv.config()["username"] = "admin"
-        self.credentials = Credentials(hookenv=self.hookenv)
+        self.host = HostStub()
+        self.credentials = Credentials(hookenv=self.hookenv, host=self.host)
 
     def test_username(self):
         """
@@ -55,3 +60,9 @@ class CredentialsTest(TestCase):
         self.assertEqual("abc", self.credentials.token("abc"))
         self.assertEqual("abc", self.hookenv.config()["_api-token"])
         self.assertEqual("abc", self.credentials.token())
+        [token_file] = self.host.files
+        self.assertEqual(TOKEN_FILE, token_file.path)
+        self.assertEqual(b"abc", token_file.content)
+        self.assertEqual("root", token_file.owner)
+        self.assertEqual("root", token_file.group)
+        self.assertEqual(0o0600, token_file.perms)

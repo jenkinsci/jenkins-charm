@@ -146,9 +146,6 @@ def migrate_charm_data():
     configuration = Configuration()
     configuration.migrate()
 
-    users = Users()
-    users.migrate()
-
 
 @when("stop")
 def stop():

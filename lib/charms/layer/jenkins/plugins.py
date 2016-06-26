@@ -85,8 +85,8 @@ class Plugins(object):
             command = ("wget",) + wget_options + ("-q", "-O", "-", url)
             plugin_data = self._subprocess.check_output(command)
             self._host.write_file(
-                plugin_path, plugin_data, owner="jenkins",
-                group="jenkins", perms=0o0744)
+                plugin_path, plugin_data, owner="jenkins", group="jenkins",
+                perms=0o0744)
         else:
             self._hookenv.log("Plugin %s already installed" % plugin_filename)
         return plugin_path

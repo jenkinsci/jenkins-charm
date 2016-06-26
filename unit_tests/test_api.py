@@ -9,6 +9,7 @@ from fixtures import (
 from jenkins import JenkinsException
 
 from stubs.hookenv import HookenvStub
+from stubs.host import HostStub
 from stubs.jenkins import JenkinsStub
 
 from charms.layer.jenkins.api import (
@@ -25,9 +26,11 @@ class ApiTest(TestCase):
         self.useFixture(EnvironmentVariable("CHARM_DIR", self.charm_dir.path))
         self.hookenv = HookenvStub(self.charm_dir.path)
         self.hookenv.config()["username"] = "admin"
+        self.host = HostStub()
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
-        self.api = Api(hookenv=self.hookenv, jenkins=self.jenkins)
+        self.api = Api(
+            hookenv=self.hookenv, host=self.host, jenkins=self.jenkins)
 
     def test_wait_transient_failure(self):
         """
