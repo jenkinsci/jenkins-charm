@@ -76,6 +76,7 @@ class UsersTest(TestCase):
             os.path.join(USERS, "admin"), admin_user_dir.path)
         self.assertEqual("jenkins", admin_user_dir.owner)
         self.assertEqual("nogroup", admin_user_dir.group)
+        self.assertEqual(0o0700, admin_user_dir.perms)
 
     def test_configure_admin_write_user_config(self):
         """

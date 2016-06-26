@@ -45,8 +45,8 @@ class Users(object):
             group="root", perms=0o0600)
 
         admin_home = os.path.join(USERS, admin.username)
-        self._host.mkdir(USERS, owner="jenkins", group="nogroup")
-        self._host.mkdir(admin_home, owner="jenkins", group="nogroup")
+        self._make_jenkins_dir(USERS)
+        self._make_jenkins_dir(admin_home)
 
         # NOTE: overwriting will destroy any data added by jenkins or the user.
         admin_config = os.path.join(admin_home, 'config.xml')
@@ -74,6 +74,10 @@ class Users(object):
         salty_password = "%s:%s" % (salt, sha.hexdigest())
 
         return _User(username, password, salty_password)
+
+    def _make_jenkins_dir(self, path):
+        """Create a directory under Jenkins' home."""
+        self._host.mkdir(path, owner="jenkins", group="nogroup", perms=0o0700)
 
 
 _User = namedtuple("User", ["username", "password", "salty_password"])
