@@ -11,6 +11,7 @@ from charms.reactive import (
     when,
     when_not,
     only_once,
+    get_state,
     set_state,
     remove_state,
 )
@@ -74,6 +75,17 @@ def bootstrap_jenkins():
     set_state("jenkins.bootstrapped")
 
 
+# Called once we're bootstrapped and every time the configured tools
+# change.
+@when("jenkins.bootstrapped", "config.changed.tools")
+def configure_tools():
+    remove_state("jenkins.configured.tools")
+    status_set("maintenance", "Installing tools")
+    packages = Packages()
+    packages.install_tools()
+    set_state("jenkins.configured.tools")
+
+
 # Called once we're bootstrapped and every time the configured user
 # changes.
 @when("jenkins.bootstrapped", "config.changed.username")
@@ -90,6 +102,10 @@ def configure_admin():
 # change.
 @when("jenkins.configured.admin", "config.changed.plugins")
 def configure_plugins():
+    if get_state("extension.connected"):
+        # We've been driven by an extension, let it take control over
+        # plugin.
+        return
     status_set("maintenance", "Configuring plugins")
     remove_state("jenkins.configured.plugins")
     plugins = Plugins()
@@ -99,7 +115,8 @@ def configure_plugins():
     set_state("jenkins.configured.plugins")
 
 
-@when("jenkins.configured.admin",
+@when("jenkins.configured.tools",
+      "jenkins.configured.admin",
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")

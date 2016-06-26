@@ -36,8 +36,12 @@ class Packages(object):
     def install_dependencies(self):
         """Install the deb dependencies of the Jenkins package."""
         self._hookenv.log("Installing jenkins dependencies and desired tools")
-        tools = self._hookenv.config()["tools"]
-        self._apt.queue_install(APT_DEPENDENCIES + tools.split())
+        self._apt.queue_install(APT_DEPENDENCIES)
+
+    def install_tools(self):
+        """Install the configured tools."""
+        tools = self._hookenv.config()["tools"].split()
+        self._apt.queue_install(tools)
 
     def install_jenkins(self):
         """Install the Jenkins package."""

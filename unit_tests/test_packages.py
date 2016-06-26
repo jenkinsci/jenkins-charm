@@ -41,13 +41,13 @@ class PackagesTest(TestCase):
         self.packages.install_dependencies()
         self.assertEqual(APT_DEPENDENCIES, self.apt.installs)
 
-    def test_install_dependencies_with_tools(self):
+    def test_install_tools(self):
         """
-        If extra tools are specified in the config, they are installed as well.
+        The requested tools get installed by the install_tools method.
         """
         self.hookenv.config()["tools"] = "git gcc"
-        self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES + ["git", "gcc"], self.apt.installs)
+        self.packages.install_tools()
+        self.assertEqual(["git", "gcc"], self.apt.installs)
 
     def test_install_jenkins_bundle(self):
         """
