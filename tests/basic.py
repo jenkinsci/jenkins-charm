@@ -20,11 +20,7 @@ class BasicDeploymentSpec(DeploymentSpec):
     def plugin_dir_stat(self, plugin):
         """Get the file system stat of the directory of the given plugin."""
         path = os.path.join(PLUGINS_DIR, plugin)
-        try:
-            stat = self.jenkins.directory_stat(path)
-        except IOError:
-            stat = None
-        return stat
+        return self.jenkins.directory_stat(path)
 
     def plugins_list(self):
         """Get the list of currently installed plugins."""
@@ -128,7 +124,7 @@ class BasicDeploymentTest(DeploymentTest):
         charm_name = self.spec.deployment.charm_name
         self.spec.deployment.configure(charm_name, {"plugins": plugins})
         self.spec.deployment.sentry.wait()
-        stat = self.spec.plugin_dir_stat("groovy")
-        self.assertGreater(stat["size"], 0, "Failed to locate groovy")
-        stat = self.spec.plugin_dir_stat("greenballs")
-        self.assertGreater(stat["size"], 0, "Failed to locate greenballs")
+        self.spec.jenkins.run("/bin/sleep 1")  # Make sure we're done for real
+        plugins = self.spec.plugins_list()
+        self.assertIn("groovy", plugins, "Failed to locate groovy")
+        self.assertIn("greenballs", plugins, "Failed to locate greenballs")
