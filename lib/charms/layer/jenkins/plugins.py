@@ -2,17 +2,15 @@ import os
 import glob
 import subprocess
 
-from charmhelpers.core import hookenv
-from charmhelpers.core import host
+from charmhelpers.core import hookenv, host
 
-from charms.layer.jenkins.paths import PLUGINS
+from charms.layer.jenkins import paths
 
 
 class Plugins(object):
     """Manage Jenkins plugins."""
 
-    def __init__(self, subprocess=subprocess, hookenv=hookenv, host=host,
-                 plugins_dir=PLUGINS):
+    def __init__(self, subprocess=subprocess, host=host):
         """
         @param subprocess: An object implementing the subprocess API (for
             testing).
@@ -20,12 +18,9 @@ class Plugins(object):
             API from charmhelpers (for testing).
         @param host: An object implementing the charmhelpers.fetcher.archiveurl
             API from charmhelpers (for testing).
-        @param plugins_dir: Path to Jenkins' plugins dir (for testing).
         """
         self._subprocess = subprocess
-        self._hookenv = hookenv
         self._host = host
-        self._plugins_dir = plugins_dir
 
     def install(self, plugins):
         """Install the given plugins, optionally removing unlisted ones.
@@ -34,35 +29,35 @@ class Plugins(object):
         """
         plugins = plugins or ""
         plugins = plugins.split()
-        self._hookenv.log("Stopping jenkins for plugin update(s)")
+        hookenv.log("Stopping jenkins for plugin update(s)")
         self._host.service_stop("jenkins")
 
-        self._hookenv.log("Installing plugins (%s)" % " ".join(plugins))
+        hookenv.log("Installing plugins (%s)" % " ".join(plugins))
 
-        self._host.mkdir(
-            self._plugins_dir, owner="jenkins", group="jenkins", perms=0o0755)
+        host.mkdir(
+            paths.plugins(), owner="jenkins", group="jenkins", perms=0o0755)
 
-        existing_plugins = set(glob.glob("%s/*.hpi" % self._plugins_dir))
+        existing_plugins = set(glob.glob("%s/*.hpi" % paths.plugins()))
         installed_plugins = self._install_plugins(plugins)
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
-            if self._hookenv.config()["remove-unlisted-plugins"] == "yes":
+            if hookenv.config()["remove-unlisted-plugins"] == "yes":
                 self._remove_plugins(unlisted_plugins)
             else:
-                self._hookenv.log(
+                hookenv.log(
                     "Unlisted plugins: (%s) Not removed. Set "
                     "remove-unlisted-plugins to 'yes' to clear them "
                     "away." % ", ".join(unlisted_plugins))
 
-        self._hookenv.log("Starting jenkins to pickup configuration changes")
+        hookenv.log("Starting jenkins to pickup configuration changes")
         self._host.service_start("jenkins")
 
     def _install_plugins(self, plugins):
         """Install the plugins with the given names."""
-        config = self._hookenv.config()
+        config = hookenv.config()
         plugins_site = config["plugins-site"]
 
-        self._hookenv.log("Fetching plugins from %s" % plugins_site)
+        hookenv.log("Fetching plugins from %s" % plugins_site)
 
         # NOTE: by default wget verifies certificates as of 1.10.
         if config["plugins-check-certificate"] == "no":
@@ -79,16 +74,16 @@ class Plugins(object):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
         url = os.path.join(plugins_site, plugin_filename)
-        plugin_path = os.path.join(self._plugins_dir, plugin_filename)
+        plugin_path = os.path.join(paths.plugins(), plugin_filename)
         if not os.path.isfile(plugin_path):
-            self._hookenv.log("Installing plugin %s" % plugin_filename)
+            hookenv.log("Installing plugin %s" % plugin_filename)
             command = ("wget",) + wget_options + ("-q", "-O", "-", url)
             plugin_data = self._subprocess.check_output(command)
             self._host.write_file(
                 plugin_path, plugin_data, owner="jenkins", group="jenkins",
                 perms=0o0744)
         else:
-            self._hookenv.log("Plugin %s already installed" % plugin_filename)
+            hookenv.log("Plugin %s already installed" % plugin_filename)
         return plugin_path
 
     def _remove_plugins(self, paths):
@@ -100,5 +95,5 @@ class Plugins(object):
         """Remove the plugin at the given path."""
         if not os.path.isfile(path):
             return
-        self._hookenv.log("Deleting unlisted plugin '%s'" % path)
+        hookenv.log("Deleting unlisted plugin '%s'" % path)
         os.remove(path)

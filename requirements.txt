@@ -5,3 +5,4 @@ fixtures
 coverage
 testtools
 python-jenkins
+git+git://github.com/freeekanayaka/charm-fixtures@master#egg=charmfixtures

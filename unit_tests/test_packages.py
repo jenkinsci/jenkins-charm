@@ -1,14 +1,10 @@
 import os
 
-from testtools.testcase import TestCase
+from charmfixtures import CharmTest
 
-from fixtures import (
-    EnvironmentVariable,
-    TempDir,
-)
+from charmhelpers.core import hookenv
 
 from stubs.subprocess import SubprocessStub
-from stubs.hookenv import HookenvStub
 from stubs.apt import AptStub
 
 from charms.layer.jenkins.packages import (
@@ -19,19 +15,14 @@ from charms.layer.jenkins.packages import (
 )
 
 
-class PackagesTest(TestCase):
+class PackagesTest(CharmTest):
 
     def setUp(self):
         super(PackagesTest, self).setUp()
         self.subprocess = SubprocessStub()
-        self.charm_dir = self.useFixture(TempDir())
-        self.useFixture(EnvironmentVariable("CHARM_DIR", self.charm_dir.path))
-        self.hookenv = HookenvStub(self.charm_dir.path)
-        self.hookenv.config()["tools"] = ""
+        self.hooktools.config.update(tools="")
         self.apt = AptStub()
-
-        self.packages = Packages(
-            subprocess=self.subprocess, hookenv=self.hookenv, apt=self.apt)
+        self.packages = Packages(subprocess=self.subprocess, apt=self.apt)
 
     def test_install_dependencies(self):
         """
@@ -45,7 +36,7 @@ class PackagesTest(TestCase):
         """
         The requested tools get installed by the install_tools method.
         """
-        self.hookenv.config()["tools"] = "git gcc"
+        self.hooktools.config["tools"] = "git gcc"
         self.packages.install_tools()
         self.assertEqual(["git", "gcc"], self.apt.installs)
 
@@ -54,9 +45,10 @@ class PackagesTest(TestCase):
         If the 'release' config is set to 'bundle', then Jenkins will be
         installed from a local jenkins.deb file.
         """
-        self.hookenv.config()["release"] = "bundle"
-        os.mkdir(self.charm_dir.join("files"))
-        bundle_path = self.charm_dir.join("files", "jenkins.deb")
+        self.hooktools.config["release"] = "bundle"
+        files = os.path.join(hookenv.charm_dir(), "files")
+        os.mkdir(files)
+        bundle_path = os.path.join(files, "jenkins.deb")
         with open(bundle_path, "w") as fd:
             fd.write("")
         self.packages.install_jenkins()
@@ -69,9 +61,9 @@ class PackagesTest(TestCase):
         If the 'release' config is set to 'bundle' but no jenkins.deb file is
         present, an error is raised.
         """
-        self.hookenv.config()["release"] = "bundle"
+        self.hooktools.config["release"] = "bundle"
         error = self.assertRaises(Exception, self.packages.install_jenkins)
-        path = self.charm_dir.join("files", "jenkins.deb")
+        path = os.path.join(hookenv.charm_dir(), "files", "jenkins.deb")
         self.assertEqual(
             "'{}' doesn't exist. No package bundled.".format(path),
             str(error))
@@ -81,7 +73,7 @@ class PackagesTest(TestCase):
         If the 'release' config is set to a remote URL, then Jenkins will be
         installed from the deb files pointed by that url.
         """
-        self.hookenv.config()["release"] = "http://jenkins-1.2.3.deb"
+        self.hooktools.config["release"] = "http://jenkins-1.2.3.deb"
         self.packages.install_jenkins()
         [(wget, _), (dpkg, _)] = self.subprocess.calls
         self.assertEqual(("wget", "-q", "-O"), wget[:3])
@@ -95,7 +87,7 @@ class PackagesTest(TestCase):
         If the 'release' config is set to 'lts', an APT source entry will be
         added, pointing to the debian-stable Jenkins repository.
         """
-        self.hookenv.config()["release"] = "lts"
+        self.hooktools.config["release"] = "lts"
         key = APT_KEY % "debian-stable"
         self.subprocess.outputs[("wget", "-q", "-O", "-", key)] = b"x"
         self.packages.install_jenkins()
@@ -107,7 +99,7 @@ class PackagesTest(TestCase):
         If the 'release' config is set to 'trunk', an APT source entry will be
         added, pointing to the debian Jenkins repository.
         """
-        self.hookenv.config()["release"] = "trunk"
+        self.hooktools.config["release"] = "trunk"
         key = APT_KEY % "debian"
         self.subprocess.outputs[("wget", "-q", "-O", "-", key)] = b"x"
         self.packages.install_jenkins()
@@ -118,7 +110,7 @@ class PackagesTest(TestCase):
         """
         If the 'release' config is invalid, an error is raised.
         """
-        self.hookenv.config()["release"] = "foo"
+        self.hooktools.config["release"] = "foo"
         error = self.assertRaises(Exception, self.packages.install_jenkins)
         self.assertEqual(
             "Release 'foo' configuration not recognised", str(error))

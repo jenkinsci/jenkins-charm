@@ -1,37 +1,29 @@
 import os
 
-from testtools.testcase import TestCase
+from charmfixtures import CharmTest
 
-from fixtures import (
-    EnvironmentVariable,
-    TempDir,
-)
-
-from stubs.hookenv import HookenvStub
 from stubs.host import HostStub
 from stubs.subprocess import SubprocessStub
 
+from charms.layer.jenkins import paths
 from charms.layer.jenkins.plugins import Plugins
 
 
-class PluginsTest(TestCase):
+class PluginsTest(CharmTest):
 
     def setUp(self):
         super(PluginsTest, self).setUp()
-        self.charm_dir = self.useFixture(TempDir())
-        self.useFixture(EnvironmentVariable("CHARM_DIR", self.charm_dir.path))
         self.subprocess = SubprocessStub()
-        self.hookenv = HookenvStub(self.charm_dir.path)
         self.host = HostStub()
-        self.plugins_dir = self.useFixture(TempDir())
-
         self.plugins = Plugins(
-            subprocess=self.subprocess, hookenv=self.hookenv, host=self.host,
-            plugins_dir=self.plugins_dir.path)
+            subprocess=self.subprocess, host=self.host)
 
-        config = self.hookenv.config()
-        config["plugins-site"] = "https://updates.jenkins-ci.org/latest/"
-        config["plugins-check-certificate"] = "yes"
+        self.filesystem.add(paths.PLUGINS)
+        self.users.add("jenkins", 123)
+        self.groups.add("jenkins", 123)
+        self.hooktools.config.update({
+            "plugins-site": "https://updates.jenkins-ci.org/latest/",
+            "plugins-check-certificate": "yes"})
 
     def test_install(self):
         """
@@ -56,7 +48,7 @@ class PluginsTest(TestCase):
         If plugins-check-certificate is set to 'no', the plugins site
         certificate won't be validated.
         """
-        self.hookenv.config()["plugins-check-certificate"] = "no"
+        self.hooktools.config["plugins-check-certificate"] = "no"
         self.plugins.install("plugin")
         [call] = self.subprocess.calls
         self.assertIn("--no-check-certificate", call.command)
@@ -66,8 +58,8 @@ class PluginsTest(TestCase):
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
         """
-        self.hookenv.config()["remove-unlisted-plugins"] = "yes"
-        unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
+        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
         self.plugins.install("plugin")
@@ -78,8 +70,8 @@ class PluginsTest(TestCase):
         If remove-unlisted-plugins is set to 'no', then unlisted plugins
         will be left on disk.
         """
-        self.hookenv.config()["remove-unlisted-plugins"] = "no"
-        unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
+        self.hooktools.config["remove-unlisted-plugins"] = "no"
+        unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
         self.plugins.install("plugin")
@@ -90,8 +82,8 @@ class PluginsTest(TestCase):
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
         """
-        self.hookenv.config()["remove-unlisted-plugins"] = "yes"
-        unlisted_plugin = self.plugins_dir.join("unlisted.hpi")
+        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         os.mkdir(unlisted_plugin)
         self.plugins.install("plugin")
         self.assertTrue(os.path.exists(unlisted_plugin))
@@ -100,8 +92,8 @@ class PluginsTest(TestCase):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
-        self.hookenv.config()["remove-unlisted-plugins"] = "yes"
-        plugin_path = self.plugins_dir.join("plugin.hpi")
+        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        plugin_path = os.path.join(paths.plugins(), "plugin.hpi")
         with open(plugin_path, "w"):
             pass
         self.plugins.install("plugin")
