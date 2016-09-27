@@ -3,7 +3,6 @@ import grp
 import hashlib
 import os
 import pwd
-import shutil
 import subprocess
 import sys
 
