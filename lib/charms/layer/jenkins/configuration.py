@@ -14,13 +14,6 @@ class Configuration(object):
     # Legacy flag file used by former versions of this charm
     _legacy_bootstrap_flag = "/var/lib/jenkins/config.bootstrapped"
 
-    def __init__(self, templating=templating):
-        """
-        @param templating: An object implementing the
-            charmhelpers.core.templating API from charmhelpers (for testing).
-        """
-        self._templating = templating
-
     def bootstrap(self):
         """Generate Jenkins' config, if it hasn't done yet."""
         config = hookenv.config()
@@ -33,7 +26,7 @@ class Configuration(object):
 
         hookenv.log("Bootstrapping initial Jenkins configuration")
         context = {"master_executors": config["master-executors"]}
-        self._templating.render(
+        templating.render(
             "jenkins-config.xml", paths.config_file(), context,
             owner="jenkins", group="nogroup")
 
