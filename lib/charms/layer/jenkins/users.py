@@ -14,16 +14,6 @@ from charms.layer.jenkins import paths
 class Users(object):
     """Manage Jenkins users."""
 
-    def __init__(self, host=host, templating=templating):
-        """
-        @param host: An object implementing the charmhelpers.fetcher.archiveurl
-            API from charmhelpers (for testing).
-        @param templating: An object implementing the
-            charmhelpers.core.templating API from charmhelpers (for testing).
-        """
-        self._host = host
-        self._templating = templating
-
     def configure_admin(self):
         """Configure the admin user."""
         hookenv.log("Configuring user for jenkins.", level=DEBUG)
@@ -41,10 +31,10 @@ class Users(object):
         self._make_jenkins_dir(admin_home)
 
         # NOTE: overwriting will destroy any data added by jenkins or the user.
-        admin_config = os.path.join(admin_home, 'config.xml')
+        admin_config = os.path.join(admin_home, "config.xml")
         context = {
             "username": admin.username, "password": admin.salty_password}
-        self._templating.render(
+        templating.render(
             "user-config.xml", admin_config, context, owner="jenkins",
             group="nogroup")
 
@@ -55,21 +45,23 @@ class Users(object):
         password = config["password"]
 
         if not password:
-            password = self._host.pwgen(length=15)
+            password = host.pwgen(length=15)
             # Save the password to the local state, so it can be accessed
             # by the Credentials class.
             config["_generated-password"] = password
 
-        # Generate Salt and Hash Password for Jenkins
-        salt = self._host.pwgen(length=6)
-        sha = hashlib.sha256(("%s{%s}" % (password, salt)).encode("utf-8"))
-        salty_password = "%s:%s" % (salt, sha.hexdigest())
-
-        return _User(username, password, salty_password)
+        return _User(username, password, _salty_password(password))
 
     def _make_jenkins_dir(self, path):
         """Create a directory under Jenkins' home."""
         host.mkdir(path, owner="jenkins", group="nogroup", perms=0o0700)
+
+
+def _salty_password(password):
+    """Generate Salt and Hash Password for Jenkins."""
+    salt = host.pwgen(length=6)
+    sha = hashlib.sha256(("%s{%s}" % (password, salt)).encode("utf-8"))
+    return "%s:%s" % (salt, sha.hexdigest())
 
 
 _User = namedtuple("User", ["username", "password", "salty_password"])

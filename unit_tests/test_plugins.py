@@ -2,7 +2,6 @@ import os
 
 from charmtest import CharmTest
 
-from stubs.host import HostStub
 from stubs.subprocess import SubprocessStub
 
 from charms.layer.jenkins import paths
@@ -14,9 +13,7 @@ class PluginsTest(CharmTest):
     def setUp(self):
         super(PluginsTest, self).setUp()
         self.subprocess = SubprocessStub()
-        self.host = HostStub()
-        self.plugins = Plugins(
-            subprocess=self.subprocess, host=self.host)
+        self.plugins = Plugins(subprocess=self.subprocess)
 
         self.filesystem.add(paths.PLUGINS)
         self.users.add("jenkins", 123)
@@ -30,11 +27,7 @@ class PluginsTest(CharmTest):
         The given plugins are downloaded from the Jenkins site.
         """
         self.plugins.install("plugin1 plugin2")
-        [action1, action2] = self.host.actions
-        self.assertEqual("stop", action1.name)
-        self.assertEqual("jenkins", action1.service)
-        self.assertEqual("start", action2.name)
-        self.assertEqual("jenkins", action2.service)
+        self.assertEqual(["stop", "start"], self.services["jenkins"])
         [call1, call2] = self.subprocess.calls
         self.assertEqual(
             "wget -q -O - https://updates.jenkins-ci.org/latest/plugin1.hpi",

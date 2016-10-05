@@ -4,28 +4,23 @@ from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
 
-from stubs.host import HostStub
-from stubs.templating import TemplatingStub
-
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.users import Users
-
-# SHA256 version of the hard-coded random password from HostStub.password
-SALTY_PASSWORD = (
-    "eegh5a:3c5eb427399cab549de5139adb70644a7c5580657f6b01f2b2f3380f0f2ce9b7")
 
 
 class UsersTest(CharmTest):
 
     def setUp(self):
         super(UsersTest, self).setUp()
-        self.host = HostStub()
-        self.templating = TemplatingStub()
         self.filesystem.add(paths.HOME)
         self.users.add("jenkins", 123)
         self.groups.add("nogroup", 456)
 
-        self.users = Users(host=self.host, templating=self.templating)
+        self.templates_dir = os.path.join(hookenv.charm_dir(), "templates")
+        root_dir = os.path.dirname(os.path.dirname(__file__))
+        os.symlink(os.path.join(root_dir, "templates"), self.templates_dir)
+
+        self.users = Users()
 
     def test_configure_admin_custom_password(self):
         """
@@ -51,8 +46,7 @@ class UsersTest(CharmTest):
             "username": "admin",
             "password": ""})
         self.users.configure_admin()
-        self.assertEqual(
-            self.host.password, hookenv.config()["_generated-password"])
+        self.assertTrue(hookenv.config()["_generated-password"])
 
     def test_configure_admin_make_users_dir(self):
         """
@@ -82,13 +76,10 @@ class UsersTest(CharmTest):
             "username": "admin",
             "password": ""})
         self.users.configure_admin()
-        render = self.templating.renders[0]
-        self.assertEqual("user-config.xml", render.source)
-        self.assertEqual(
-            os.path.join(paths.users(), "admin", "config.xml"),
-            render.target)
-        self.assertEqual(
-            {"username": "admin", "password": SALTY_PASSWORD},
-            render.context)
-        self.assertEqual("jenkins", render.owner)
-        self.assertEqual("nogroup", render.group)
+
+        path = os.path.join(paths.users(), "admin", "config.xml")
+        with open(path) as fd:
+            content = fd.read()
+        self.assertIn("<fullName>admin</fullName>", content)
+        self.assertEqual(123, self.filesystem.uid[path])
+        self.assertEqual(456, self.filesystem.gid[path])
