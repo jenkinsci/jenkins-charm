@@ -1,6 +1,6 @@
 import os
 
-from charmfixtures import CharmTest
+from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
 
@@ -31,7 +31,7 @@ class UsersTest(CharmTest):
         """
         If a password is provided, it's used to configure the admin user.
         """
-        self.hooktools.config.update({
+        self.application.config.update({
             "master-executors": 1,
             "username": "admin",
             "password": "sekret",
@@ -47,7 +47,7 @@ class UsersTest(CharmTest):
         """
         If a password is not provided, a random one will be generated.
         """
-        self.hooktools.config.update({
+        self.application.config.update({
             "username": "admin",
             "password": ""})
         self.users.configure_admin()
@@ -58,7 +58,7 @@ class UsersTest(CharmTest):
         """
         The Jenkins user directories are created with proper permissions.
         """
-        self.hooktools.config.update({
+        self.application.config.update({
             "username": "admin",
             "password": ""})
         self.users.configure_admin()
@@ -78,7 +78,7 @@ class UsersTest(CharmTest):
         A Jenkins user-config.xml file is written with the appropriate
         details.
         """
-        self.hooktools.config.update({
+        self.application.config.update({
             "username": "admin",
             "password": ""})
         self.users.configure_admin()

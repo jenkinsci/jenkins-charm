@@ -1,6 +1,6 @@
 import os
 
-from charmfixtures import CharmTest
+from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
 
@@ -12,7 +12,7 @@ class CredentialsTest(CharmTest):
 
     def setUp(self):
         super(CredentialsTest, self).setUp()
-        self.hooktools.config.update(username="admin", password="")
+        self.application.config.update(username="admin", password="")
         self.filesystem.add(paths.HOME)
         self.credentials = Credentials()
 
@@ -26,14 +26,14 @@ class CredentialsTest(CharmTest):
         """
         If set, the password matches the one set in the service configuration.
         """
-        self.hooktools.config["password"] = "sekret"
+        self.application.config["password"] = "sekret"
         self.assertEqual("sekret", self.credentials.password())
 
     def test_password_from_local_state(self):
         """
         If not set, the password is retrieved from the local state.
         """
-        self.hooktools.config["password"] = ""
+        self.application.config["password"] = ""
         hookenv.config()["_generated-password"] = "aodlaod"
         self.assertEqual("aodlaod", self.credentials.password())
 

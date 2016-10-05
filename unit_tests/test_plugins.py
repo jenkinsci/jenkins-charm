@@ -1,6 +1,6 @@
 import os
 
-from charmfixtures import CharmTest
+from charmtest import CharmTest
 
 from stubs.host import HostStub
 from stubs.subprocess import SubprocessStub
@@ -21,7 +21,7 @@ class PluginsTest(CharmTest):
         self.filesystem.add(paths.PLUGINS)
         self.users.add("jenkins", 123)
         self.groups.add("jenkins", 123)
-        self.hooktools.config.update({
+        self.application.config.update({
             "plugins-site": "https://updates.jenkins-ci.org/latest/",
             "plugins-check-certificate": "yes"})
 
@@ -48,7 +48,7 @@ class PluginsTest(CharmTest):
         If plugins-check-certificate is set to 'no', the plugins site
         certificate won't be validated.
         """
-        self.hooktools.config["plugins-check-certificate"] = "no"
+        self.application.config["plugins-check-certificate"] = "no"
         self.plugins.install("plugin")
         [call] = self.subprocess.calls
         self.assertIn("--no-check-certificate", call.command)
@@ -58,7 +58,7 @@ class PluginsTest(CharmTest):
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
         """
-        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        self.application.config["remove-unlisted-plugins"] = "yes"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
@@ -70,7 +70,7 @@ class PluginsTest(CharmTest):
         If remove-unlisted-plugins is set to 'no', then unlisted plugins
         will be left on disk.
         """
-        self.hooktools.config["remove-unlisted-plugins"] = "no"
+        self.application.config["remove-unlisted-plugins"] = "no"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
@@ -82,7 +82,7 @@ class PluginsTest(CharmTest):
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
         """
-        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        self.application.config["remove-unlisted-plugins"] = "yes"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         os.mkdir(unlisted_plugin)
         self.plugins.install("plugin")
@@ -92,7 +92,7 @@ class PluginsTest(CharmTest):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
-        self.hooktools.config["remove-unlisted-plugins"] = "yes"
+        self.application.config["remove-unlisted-plugins"] = "yes"
         plugin_path = os.path.join(paths.plugins(), "plugin.hpi")
         with open(plugin_path, "w"):
             pass

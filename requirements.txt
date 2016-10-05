@@ -1,8 +1,8 @@
 flake8
 pytest
 charmhelpers
-fixtures
+git+git://github.com/freeekanayaka/fixtures@master#egg=fixtures-3.0.1
 coverage
 testtools
 python-jenkins
-git+git://github.com/freeekanayaka/charm-fixtures@master#egg=charmfixtures
+git+git://github.com/freeekanayaka/charm-test@master#egg=charmtest

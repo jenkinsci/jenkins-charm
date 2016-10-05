@@ -2,7 +2,7 @@ from fixtures import (
     MonkeyPatch,
 )
 
-from charmfixtures import CharmTest
+from charmtest import CharmTest
 
 from jenkins import JenkinsException
 
@@ -19,7 +19,7 @@ class ApiTest(CharmTest):
 
     def setUp(self):
         super(ApiTest, self).setUp()
-        self.hooktools.config.update(username="admin", password="sekret")
+        self.application.config.update(username="admin", password="sekret")
         self.filesystem.add(paths.HOME)
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
@@ -106,7 +106,7 @@ class ApiTest(CharmTest):
         self.jenkins.create_node = lambda *args, **kwargs: None
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(
-            "ERROR: Failed to create node 'slave-0'", self.hooktools.log[-1])
+            "ERROR: Failed to create node 'slave-0'", self.unit.log[-1])
 
     def test_deleted(self):
         """
