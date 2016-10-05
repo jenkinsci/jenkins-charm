@@ -20,7 +20,6 @@ class PackagesTest(CharmTest):
     def setUp(self):
         super(PackagesTest, self).setUp()
         self.subprocess = SubprocessStub()
-        self.application.config.update(tools="")
         self.apt = AptStub()
         self.packages = Packages(subprocess=self.subprocess, apt=self.apt)
 
@@ -87,7 +86,6 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'lts', an APT source entry will be
         added, pointing to the debian-stable Jenkins repository.
         """
-        self.application.config["release"] = "lts"
         key = APT_KEY % "debian-stable"
         self.subprocess.outputs[("wget", "-q", "-O", "-", key)] = b"x"
         self.packages.install_jenkins()

@@ -19,7 +19,7 @@ class ApiTest(CharmTest):
 
     def setUp(self):
         super(ApiTest, self).setUp()
-        self.application.config.update(username="admin", password="sekret")
+        self.application.config["password"] = "sekret"
         self.filesystem.add(paths.HOME)
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"

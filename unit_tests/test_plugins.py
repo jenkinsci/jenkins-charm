@@ -1,5 +1,10 @@
 import os
 
+from testtools.matchers import (
+    PathExists,
+    Not,
+)
+
 from charmtest import CharmTest
 
 from stubs.subprocess import SubprocessStub
@@ -56,19 +61,18 @@ class PluginsTest(CharmTest):
         with open(unlisted_plugin, "w"):
             pass
         self.plugins.install("plugin")
-        self.assertFalse(os.path.exists(unlisted_plugin))
+        self.assertThat(unlisted_plugin, Not(PathExists()))
 
     def test_install_do_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'no', then unlisted plugins
         will be left on disk.
         """
-        self.application.config["remove-unlisted-plugins"] = "no"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
         self.plugins.install("plugin")
-        self.assertTrue(os.path.exists(unlisted_plugin))
+        self.assertThat(unlisted_plugin, PathExists())
 
     def test_install_skip_non_file_unlisted(self):
         """
@@ -79,7 +83,7 @@ class PluginsTest(CharmTest):
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         os.mkdir(unlisted_plugin)
         self.plugins.install("plugin")
-        self.assertTrue(os.path.exists(unlisted_plugin))
+        self.assertThat(unlisted_plugin, PathExists())
 
     def test_install_already_installed(self):
         """

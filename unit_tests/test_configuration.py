@@ -2,6 +2,11 @@ import os
 
 from fixtures import TempDir
 
+from testtools.matchers import (
+    FileContains,
+    Contains,
+)
+
 from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
@@ -14,9 +19,6 @@ class ConfigurationTest(CharmTest):
 
     def setUp(self):
         super(ConfigurationTest, self).setUp()
-        self.templates_dir = os.path.join(hookenv.charm_dir(), "templates")
-        root_dir = os.path.dirname(os.path.dirname(__file__))
-        os.symlink(os.path.join(root_dir, "templates"), self.templates_dir)
         self.users.add("jenkins", 123)
         self.groups.add("nogroup", 456)
 
@@ -30,10 +32,10 @@ class ConfigurationTest(CharmTest):
         self.application.config["master-executors"] = 1
         self.configuration.bootstrap()
         path = paths.config_file()
-        self.assertEqual(123, self.filesystem.uid[path])
-        self.assertEqual(456, self.filesystem.gid[path])
-        with open(path) as fd:
-            self.assertIn("<numExecutors>1</numExecutors>", fd.read())
+        self.assertThat(path, self.filesystem.hasOwner(123, 456))
+        self.assertThat(
+            path,
+            FileContains(matcher=Contains("<numExecutors>1</numExecutors>")))
         self.assertEqual({8080}, self.unit.ports["TCP"])
 
     def test_bootstrap_once(self):

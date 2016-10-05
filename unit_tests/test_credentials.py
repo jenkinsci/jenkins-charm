@@ -1,5 +1,7 @@
 import os
 
+from testtools.matchers import FileContains
+
 from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
@@ -12,7 +14,6 @@ class CredentialsTest(CharmTest):
 
     def setUp(self):
         super(CredentialsTest, self).setUp()
-        self.application.config.update(username="admin", password="")
         self.filesystem.add(paths.HOME)
         self.credentials = Credentials()
 
@@ -51,8 +52,6 @@ class CredentialsTest(CharmTest):
         self.assertEqual("abc", self.credentials.token("abc"))
         self.assertEqual("abc", hookenv.config()["_api-token"])
         self.assertEqual("abc", self.credentials.token())
-        with open(paths.admin_token()) as fd:
-            self.assertEqual("abc", fd.read())
-        self.assertEqual(0, self.filesystem.uid[paths.admin_token()])
-        self.assertEqual(0, self.filesystem.gid[paths.admin_token()])
+        self.assertThat(paths.admin_token(), FileContains("abc"))
+        self.assertThat(paths.admin_token(), self.filesystem.hasOwner(0, 0))
         self.assertEqual(0o100600, os.stat(paths.admin_token()).st_mode)
