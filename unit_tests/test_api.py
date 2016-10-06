@@ -19,8 +19,8 @@ class ApiTest(CharmTest):
 
     def setUp(self):
         super(ApiTest, self).setUp()
-        self.application.config["password"] = "sekret"
-        self.filesystem.add(paths.HOME)
+        self.fakes.juju.config["password"] = "sekret"
+        self.fakes.fs.add(paths.HOME)
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
         self.api = Api(jenkins=self.jenkins)
@@ -106,7 +106,7 @@ class ApiTest(CharmTest):
         self.jenkins.create_node = lambda *args, **kwargs: None
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(
-            "ERROR: Failed to create node 'slave-0'", self.unit.log[-1])
+            "ERROR: Failed to create node 'slave-0'", self.fakes.juju.log[-1])
 
     def test_deleted(self):
         """

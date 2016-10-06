@@ -18,9 +18,9 @@ class UsersTest(CharmTest):
 
     def setUp(self):
         super(UsersTest, self).setUp()
-        self.filesystem.add(paths.HOME)
-        self.users.add("jenkins", 123)
-        self.groups.add("nogroup", 456)
+        self.fakes.fs.add(paths.HOME)
+        self.fakes.users.add("jenkins", 123)
+        self.fakes.groups.add("nogroup", 456)
 
         self.users = Users()
 
@@ -28,10 +28,10 @@ class UsersTest(CharmTest):
         """
         If a password is provided, it's used to configure the admin user.
         """
-        self.application.config["password"] = "sekret"
+        self.fakes.juju.config["password"] = "sekret"
         self.users.configure_admin()
         self.assertThat(paths.admin_password(), FileContains("sekret"))
-        self.assertThat(paths.admin_password(), self.filesystem.hasOwner(0, 0))
+        self.assertThat(paths.admin_password(), self.fakes.fs.hasOwner(0, 0))
         self.assertEqual(0o100600, os.stat(paths.admin_password()).st_mode)
 
     def test_configure_admin_random_password(self):
@@ -48,11 +48,11 @@ class UsersTest(CharmTest):
         self.users.configure_admin()
 
         self.assertThat(paths.users(), DirExists())
-        self.assertThat(paths.users(), self.filesystem.hasOwner(123, 456))
+        self.assertThat(paths.users(), self.fakes.fs.hasOwner(123, 456))
 
         admin_user_dir = os.path.join(paths.users(), "admin")
         self.assertThat(admin_user_dir, DirExists())
-        self.assertThat(admin_user_dir, self.filesystem.hasOwner(123, 456))
+        self.assertThat(admin_user_dir, self.fakes.fs.hasOwner(123, 456))
         self.assertEqual(0o40700, os.stat(admin_user_dir).st_mode)
 
     def test_configure_admin_write_user_config(self):
@@ -65,4 +65,4 @@ class UsersTest(CharmTest):
         path = os.path.join(paths.users(), "admin", "config.xml")
         self.assertThat(
             path, FileContains(matcher=Contains("<fullName>admin</fullName>")))
-        self.assertThat(path, self.filesystem.hasOwner(123, 456))
+        self.assertThat(path, self.fakes.fs.hasOwner(123, 456))

@@ -19,7 +19,6 @@ class PackagesTest(CharmTest):
     def setUp(self):
         super(PackagesTest, self).setUp()
         self.apt = AptStub()
-        self._packages = self.packages
         self.packages = Packages(apt=self.apt)
 
     def test_install_dependencies(self):
@@ -34,7 +33,7 @@ class PackagesTest(CharmTest):
         """
         The requested tools get installed by the install_tools method.
         """
-        self.application.config["tools"] = "git gcc"
+        self.fakes.juju.config["tools"] = "git gcc"
         self.packages.install_tools()
         self.assertEqual(["git", "gcc"], self.apt.installs)
 
@@ -43,21 +42,21 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'bundle', then Jenkins will be
         installed from a local jenkins.deb file.
         """
-        self.application.config["release"] = "bundle"
+        self.fakes.juju.config["release"] = "bundle"
         files = os.path.join(hookenv.charm_dir(), "files")
         os.mkdir(files)
         bundle_path = os.path.join(files, "jenkins.deb")
         with open(bundle_path, "w") as fd:
             fd.write("")
         self.packages.install_jenkins()
-        self.assertEqual(["install"], self._packages["jenkins"])
+        self.assertEqual(["install"], self.fakes.packages["jenkins"])
 
     def test_install_jenkins_bundle_no_file(self):
         """
         If the 'release' config is set to 'bundle' but no jenkins.deb file is
         present, an error is raised.
         """
-        self.application.config["release"] = "bundle"
+        self.fakes.juju.config["release"] = "bundle"
         error = self.assertRaises(Exception, self.packages.install_jenkins)
         path = os.path.join(hookenv.charm_dir(), "files", "jenkins.deb")
         self.assertEqual(
@@ -69,17 +68,17 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to a remote URL, then Jenkins will be
         installed from the deb files pointed by that url.
         """
-        self.network["http://jenkins-1.2.3.deb"] = b"data"
-        self.application.config["release"] = "http://jenkins-1.2.3.deb"
+        self.fakes.network["http://jenkins-1.2.3.deb"] = b"data"
+        self.fakes.juju.config["release"] = "http://jenkins-1.2.3.deb"
         self.packages.install_jenkins()
-        self.assertEqual(["install"], self._packages["jenkins"])
+        self.assertEqual(["install"], self.fakes.packages["jenkins"])
 
     def test_install_jenkins_lts_release(self):
         """
         If the 'release' config is set to 'lts', an APT source entry will be
         added, pointing to the debian-stable Jenkins repository.
         """
-        self.network[APT_KEY % "debian-stable"] = b"stable-key"
+        self.fakes.network[APT_KEY % "debian-stable"] = b"stable-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian-stable"
         self.assertEqual([(source, "stable-key")], self.apt.sources)
@@ -89,8 +88,8 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'trunk', an APT source entry will be
         added, pointing to the debian Jenkins repository.
         """
-        self.application.config["release"] = "trunk"
-        self.network[APT_KEY % "debian"] = b"trunk-key"
+        self.fakes.juju.config["release"] = "trunk"
+        self.fakes.network[APT_KEY % "debian"] = b"trunk-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian"
         self.assertEqual([(source, "trunk-key")], self.apt.sources)
@@ -99,7 +98,7 @@ class PackagesTest(CharmTest):
         """
         If the 'release' config is invalid, an error is raised.
         """
-        self.application.config["release"] = "foo"
+        self.fakes.juju.config["release"] = "foo"
         error = self.assertRaises(Exception, self.packages.install_jenkins)
         self.assertEqual(
             "Release 'foo' configuration not recognised", str(error))

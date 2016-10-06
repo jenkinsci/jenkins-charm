@@ -18,18 +18,18 @@ class PluginsTest(CharmTest):
         super(PluginsTest, self).setUp()
         self.plugins = Plugins()
 
-        self.filesystem.add(paths.PLUGINS)
-        self.users.add("jenkins", 123)
-        self.groups.add("jenkins", 123)
-        self.application.config["plugins-site"] = "http://plugins/"
-        self.network["http://plugins/plugin.hpi"] = b"data"
+        self.fakes.fs.add(paths.PLUGINS)
+        self.fakes.users.add("jenkins", 123)
+        self.fakes.groups.add("jenkins", 123)
+        self.fakes.juju.config["plugins-site"] = "http://plugins/"
+        self.fakes.network["http://plugins/plugin.hpi"] = b"data"
 
     def test_install(self):
         """
         The given plugins are downloaded from the Jenkins site.
         """
         self.plugins.install("plugin")
-        self.assertEqual(["stop", "start"], self.services["jenkins"])
+        self.assertEqual(["stop", "start"], self.fakes.services["jenkins"])
         plugin_path = os.path.join(paths.plugins(), "plugin.hpi")
         self.assertThat(plugin_path, FileContains("data"))
 
@@ -38,16 +38,17 @@ class PluginsTest(CharmTest):
         If plugins-check-certificate is set to 'no', the plugins site
         certificate won't be validated.
         """
-        self.application.config["plugins-check-certificate"] = "no"
+        self.fakes.juju.config["plugins-check-certificate"] = "no"
         self.plugins.install("plugin")
-        self.assertIn("--no-check-certificate", self.processes.procs[-4].args)
+        self.assertIn(
+            "--no-check-certificate", self.fakes.processes.procs[-4].args)
 
     def test_install_dont_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
         """
-        self.application.config["remove-unlisted-plugins"] = "yes"
+        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         with open(unlisted_plugin, "w"):
             pass
@@ -70,7 +71,7 @@ class PluginsTest(CharmTest):
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
         """
-        self.application.config["remove-unlisted-plugins"] = "yes"
+        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
         unlisted_plugin = os.path.join(paths.plugins(), "unlisted.hpi")
         os.mkdir(unlisted_plugin)
         self.plugins.install("plugin")
@@ -80,10 +81,10 @@ class PluginsTest(CharmTest):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
-        self.application.config["remove-unlisted-plugins"] = "yes"
+        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
         plugin_path = os.path.join(paths.plugins(), "plugin.hpi")
         with open(plugin_path, "w"):
             pass
         self.plugins.install("plugin")
-        commands = [proc.args[0] for proc in self.processes.procs]
+        commands = [proc.args[0] for proc in self.fakes.processes.procs]
         self.assertNotIn("wget", commands)

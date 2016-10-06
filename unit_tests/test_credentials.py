@@ -14,7 +14,7 @@ class CredentialsTest(CharmTest):
 
     def setUp(self):
         super(CredentialsTest, self).setUp()
-        self.filesystem.add(paths.HOME)
+        self.fakes.fs.add(paths.HOME)
         self.credentials = Credentials()
 
     def test_username(self):
@@ -27,14 +27,14 @@ class CredentialsTest(CharmTest):
         """
         If set, the password matches the one set in the service configuration.
         """
-        self.application.config["password"] = "sekret"
+        self.fakes.juju.config["password"] = "sekret"
         self.assertEqual("sekret", self.credentials.password())
 
     def test_password_from_local_state(self):
         """
         If not set, the password is retrieved from the local state.
         """
-        self.application.config["password"] = ""
+        self.fakes.juju.config["password"] = ""
         hookenv.config()["_generated-password"] = "aodlaod"
         self.assertEqual("aodlaod", self.credentials.password())
 
@@ -53,5 +53,5 @@ class CredentialsTest(CharmTest):
         self.assertEqual("abc", hookenv.config()["_api-token"])
         self.assertEqual("abc", self.credentials.token())
         self.assertThat(paths.admin_token(), FileContains("abc"))
-        self.assertThat(paths.admin_token(), self.filesystem.hasOwner(0, 0))
+        self.assertThat(paths.admin_token(), self.fakes.fs.hasOwner(0, 0))
         self.assertEqual(0o100600, os.stat(paths.admin_token()).st_mode)
