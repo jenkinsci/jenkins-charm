@@ -20,14 +20,11 @@ APT_KEY = "http://pkg.jenkins-ci.org/%s/jenkins-ci.org.key"
 class Packages(object):
     """Manage Jenkins package dependencies."""
 
-    def __init__(self, subprocess=subprocess, apt=apt):
+    def __init__(self, apt=apt):
         """
-        @param subprocess: An object implementing the subprocess API (for
-            testing).
         @param apt: An object implementing the charms.apt API from the apt
             charm layer (for testing).
         """
-        self._subprocess = subprocess
         self._apt = apt
 
     def install_dependencies(self):
@@ -68,14 +65,14 @@ class Packages(object):
     def _install_local_deb(self, filename):
         """Install the given local jenkins deb"""
         # Run dpkg to install bundled deb.
-        self._subprocess.check_call(("dpkg", "-i", filename))
+        subprocess.check_call(("dpkg", "-i", filename))
 
     def _install_from_remote_deb(self, url):
         """Install Jenkins from http(s) deb file."""
         hookenv.log("Getting remote jenkins package: %s" % url)
         tempdir = tempfile.mkdtemp()
         target = os.path.join(tempdir, 'jenkins.deb')
-        self._subprocess.check_call(("wget", "-q", "-O", target, url))
+        subprocess.check_call(("wget", "-q", "-O", target, url))
         self._install_local_deb(target)
         shutil.rmtree(tempdir)
 
@@ -97,5 +94,5 @@ class Packages(object):
         # Setup archive to use appropriate jenkins upstream
         wget = ("wget", "-q", "-O", "-", APT_KEY % dist)
         source = APT_SOURCE % dist
-        key = self._subprocess.check_output(wget).decode("utf-8")
+        key = subprocess.check_output(wget).decode("utf-8")
         self._apt.add_source(source, key=key)

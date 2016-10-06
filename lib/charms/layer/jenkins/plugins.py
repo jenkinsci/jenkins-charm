@@ -10,15 +10,6 @@ from charms.layer.jenkins import paths
 class Plugins(object):
     """Manage Jenkins plugins."""
 
-    def __init__(self, subprocess=subprocess):
-        """
-        @param subprocess: An object implementing the subprocess API (for
-            testing).
-        @param hookenv: An object implementing the charmhelpers.core.hookenv
-            API from charmhelpers (for testing).
-        """
-        self._subprocess = subprocess
-
     def install(self, plugins):
         """Install the given plugins, optionally removing unlisted ones.
 
@@ -75,7 +66,7 @@ class Plugins(object):
         if not os.path.isfile(plugin_path):
             hookenv.log("Installing plugin %s" % plugin_filename)
             command = ("wget",) + wget_options + ("-q", "-O", "-", url)
-            plugin_data = self._subprocess.check_output(command)
+            plugin_data = subprocess.check_output(command)
             host.write_file(
                 plugin_path, plugin_data, owner="jenkins", group="jenkins",
                 perms=0o0744)

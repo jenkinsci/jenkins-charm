@@ -2,12 +2,11 @@ import os
 
 from testtools.matchers import (
     PathExists,
+    FileContains,
     Not,
 )
 
 from charmtest import CharmTest
-
-from stubs.subprocess import SubprocessStub
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.plugins import Plugins
@@ -17,29 +16,22 @@ class PluginsTest(CharmTest):
 
     def setUp(self):
         super(PluginsTest, self).setUp()
-        self.subprocess = SubprocessStub()
-        self.plugins = Plugins(subprocess=self.subprocess)
+        self.plugins = Plugins()
 
         self.filesystem.add(paths.PLUGINS)
         self.users.add("jenkins", 123)
         self.groups.add("jenkins", 123)
-        self.application.config.update({
-            "plugins-site": "https://updates.jenkins-ci.org/latest/",
-            "plugins-check-certificate": "yes"})
+        self.application.config["plugins-site"] = "http://plugins/"
+        self.network["http://plugins/plugin.hpi"] = b"data"
 
     def test_install(self):
         """
         The given plugins are downloaded from the Jenkins site.
         """
-        self.plugins.install("plugin1 plugin2")
+        self.plugins.install("plugin")
         self.assertEqual(["stop", "start"], self.services["jenkins"])
-        [call1, call2] = self.subprocess.calls
-        self.assertEqual(
-            "wget -q -O - https://updates.jenkins-ci.org/latest/plugin1.hpi",
-            " ".join(call1.command))
-        self.assertEqual(
-            "wget -q -O - https://updates.jenkins-ci.org/latest/plugin2.hpi",
-            " ".join(call2.command))
+        plugin_path = os.path.join(paths.plugins(), "plugin.hpi")
+        self.assertThat(plugin_path, FileContains("data"))
 
     def test_install_no_certificate_check(self):
         """
@@ -48,8 +40,7 @@ class PluginsTest(CharmTest):
         """
         self.application.config["plugins-check-certificate"] = "no"
         self.plugins.install("plugin")
-        [call] = self.subprocess.calls
-        self.assertIn("--no-check-certificate", call.command)
+        self.assertIn("--no-check-certificate", self.processes.procs[-4].args)
 
     def test_install_dont_remove_unlisted(self):
         """
@@ -94,4 +85,5 @@ class PluginsTest(CharmTest):
         with open(plugin_path, "w"):
             pass
         self.plugins.install("plugin")
-        self.assertEqual([], self.subprocess.calls)
+        commands = [proc.args[0] for proc in self.processes.procs]
+        self.assertNotIn("wget", commands)
