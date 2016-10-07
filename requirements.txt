@@ -1,8 +1,2 @@
-flake8
-pytest
 charmhelpers
-git+git://github.com/freeekanayaka/fixtures@master#egg=fixtures-3.0.1
-coverage
-testtools
 python-jenkins
-git+git://github.com/freeekanayaka/charm-test@master#egg=charmtest
