@@ -23,9 +23,9 @@ class Plugins(object):
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
 
         host.mkdir(
-            paths.plugins(), owner="jenkins", group="jenkins", perms=0o0755)
+            paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
 
-        existing_plugins = set(glob.glob("%s/*.hpi" % paths.plugins()))
+        existing_plugins = set(glob.glob("%s/*.hpi" % paths.PLUGINS))
         installed_plugins = self._install_plugins(plugins)
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
@@ -62,7 +62,7 @@ class Plugins(object):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
         url = os.path.join(plugins_site, plugin_filename)
-        plugin_path = os.path.join(paths.plugins(), plugin_filename)
+        plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
         if not os.path.isfile(plugin_path):
             hookenv.log("Installing plugin %s" % plugin_filename)
             command = ("wget",) + wget_options + ("-q", "-O", "-", url)

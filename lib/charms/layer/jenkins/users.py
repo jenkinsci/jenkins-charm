@@ -23,11 +23,11 @@ class Users(object):
         # Save the password to a file. It's not used directly by this charm
         # but it's convenient for integration with third-party tools.
         host.write_file(
-            paths.admin_password(), admin.password.encode("utf-8"),
+            paths.ADMIN_PASSWORD, admin.password.encode("utf-8"),
             owner="root", group="root", perms=0o0600)
 
-        admin_home = os.path.join(paths.users(), admin.username)
-        self._make_jenkins_dir(paths.users())
+        admin_home = os.path.join(paths.USERS, admin.username)
+        self._make_jenkins_dir(paths.USERS)
         self._make_jenkins_dir(admin_home)
 
         # NOTE: overwriting will destroy any data added by jenkins or the user.

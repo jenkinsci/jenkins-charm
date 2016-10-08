@@ -49,7 +49,7 @@ class PackagesTest(CharmTest):
         with open(bundle_path, "w") as fd:
             fd.write("")
         self.packages.install_jenkins()
-        self.assertEqual(["install"], self.fakes.packages["jenkins"])
+        self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
 
     def test_install_jenkins_bundle_no_file(self):
         """
@@ -68,17 +68,17 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to a remote URL, then Jenkins will be
         installed from the deb files pointed by that url.
         """
-        self.fakes.network["http://jenkins-1.2.3.deb"] = b"data"
+        self.fakes.processes.wget.locations["http://jenkins-1.2.3.deb"] = b"data"
         self.fakes.juju.config["release"] = "http://jenkins-1.2.3.deb"
         self.packages.install_jenkins()
-        self.assertEqual(["install"], self.fakes.packages["jenkins"])
+        self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
 
     def test_install_jenkins_lts_release(self):
         """
         If the 'release' config is set to 'lts', an APT source entry will be
         added, pointing to the debian-stable Jenkins repository.
         """
-        self.fakes.network[APT_KEY % "debian-stable"] = b"stable-key"
+        self.fakes.processes.wget.locations[APT_KEY % "debian-stable"] = b"stable-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian-stable"
         self.assertEqual([(source, "stable-key")], self.apt.sources)
@@ -89,7 +89,7 @@ class PackagesTest(CharmTest):
         added, pointing to the debian Jenkins repository.
         """
         self.fakes.juju.config["release"] = "trunk"
-        self.fakes.network[APT_KEY % "debian"] = b"trunk-key"
+        self.fakes.processes.wget.locations[APT_KEY % "debian"] = b"trunk-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian"
         self.assertEqual([(source, "trunk-key")], self.apt.sources)

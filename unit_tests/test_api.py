@@ -1,3 +1,5 @@
+import os
+
 from fixtures import (
     MonkeyPatch,
 )
@@ -21,6 +23,7 @@ class ApiTest(CharmTest):
         super(ApiTest, self).setUp()
         self.fakes.juju.config["password"] = "sekret"
         self.fakes.fs.add(paths.HOME)
+        os.makedirs(paths.HOME)
         self.jenkins = JenkinsStub()
         self.jenkins.scripts[TOKEN_SCRIPT.format("admin")] = "abc\n"
         self.api = Api(jenkins=self.jenkins)

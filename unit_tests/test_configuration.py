@@ -7,6 +7,8 @@ from testtools.matchers import (
     Contains,
 )
 
+from systemfixtures.matchers import HasOwnership
+
 from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
@@ -31,8 +33,8 @@ class ConfigurationTest(CharmTest):
         """
         self.fakes.juju.config["master-executors"] = 1
         self.configuration.bootstrap()
-        path = paths.config_file()
-        self.assertThat(path, self.fakes.fs.hasOwner(123, 456))
+        path = paths.CONFIG_FILE
+        self.assertThat(path, HasOwnership(123, 456))
         self.assertThat(
             path,
             FileContains(matcher=Contains("<numExecutors>1</numExecutors>")))
@@ -45,7 +47,7 @@ class ConfigurationTest(CharmTest):
         """
         self.fakes.juju.config["master-executors"] = 1
         self.configuration.bootstrap()
-        path = paths.config_file()
+        path = paths.CONFIG_FILE
         stat = os.stat(path)
         self.configuration.bootstrap()
         self.assertEqual(stat, os.stat(path))

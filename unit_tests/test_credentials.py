@@ -1,6 +1,11 @@
 import os
 
-from testtools.matchers import FileContains
+from testtools.matchers import (
+    FileContains,
+    HasPermissions,
+)
+
+from systemfixtures.matchers import HasOwnership
 
 from charmtest import CharmTest
 
@@ -15,6 +20,7 @@ class CredentialsTest(CharmTest):
     def setUp(self):
         super(CredentialsTest, self).setUp()
         self.fakes.fs.add(paths.HOME)
+        os.makedirs(paths.HOME)
         self.credentials = Credentials()
 
     def test_username(self):
@@ -52,6 +58,6 @@ class CredentialsTest(CharmTest):
         self.assertEqual("abc", self.credentials.token("abc"))
         self.assertEqual("abc", hookenv.config()["_api-token"])
         self.assertEqual("abc", self.credentials.token())
-        self.assertThat(paths.admin_token(), FileContains("abc"))
-        self.assertThat(paths.admin_token(), self.fakes.fs.hasOwner(0, 0))
-        self.assertEqual(0o100600, os.stat(paths.admin_token()).st_mode)
+        self.assertThat(paths.ADMIN_TOKEN, FileContains("abc"))
+        self.assertThat(paths.ADMIN_TOKEN, HasOwnership(0, 0))
+        self.assertThat(paths.ADMIN_TOKEN, HasPermissions("0600"))

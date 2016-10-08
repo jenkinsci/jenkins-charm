@@ -27,6 +27,6 @@ class Credentials(object):
             # this charm but it's convenient for integration with
             # third-party tools.
             host.write_file(
-                paths.admin_token(), value.encode("utf-8"), owner="root",
+                paths.ADMIN_TOKEN, value.encode("utf-8"), owner="root",
                 group="root", perms=0o0600)
         return config.get("_api-token")

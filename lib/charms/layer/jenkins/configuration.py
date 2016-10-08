@@ -27,7 +27,7 @@ class Configuration(object):
         hookenv.log("Bootstrapping initial Jenkins configuration")
         context = {"master_executors": config["master-executors"]}
         templating.render(
-            "jenkins-config.xml", paths.config_file(), context,
+            "jenkins-config.xml", paths.CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
         config["_config-bootstrapped"] = True
