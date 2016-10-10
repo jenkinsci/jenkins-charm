@@ -1,7 +1,9 @@
 bootstrap: false
+virtualenv: true
+virtualenv_python: python3
 reset: true
 tests: "[0-9]*"
-packages:
+python_packages:
   - amulet
-  - python3-jenkins
-  - python3-requests
+  - python-jenkins
+  - requests

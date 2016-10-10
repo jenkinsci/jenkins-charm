@@ -1,8 +1,9 @@
 import os
 
-from fixtures import (
-    MonkeyPatch,
-)
+from urllib.parse import urljoin
+from urllib.error import HTTPError
+
+from fixtures import MonkeyPatch
 
 from charmtest import CharmTest
 
@@ -13,6 +14,7 @@ from stubs.jenkins import JenkinsStub
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import (
     TOKEN_SCRIPT,
+    URL,
     Api,
 )
 
@@ -125,3 +127,37 @@ class ApiTest(CharmTest):
         """
         self.api.delete_node("slave-0")
         self.assertEqual([], self.jenkins.nodes)
+
+    def test_reload(self):
+        """
+        The reload method POSTs a request to the '/reload' URL, expecting
+        a 503 on the homepage (which happens after redirection).
+        """
+        error = HTTPError(URL, 503, "Service Unavailable", {}, None)
+        error.url = URL
+        self.jenkins.responses[urljoin(URL, "/reload")] = error
+        self.api.reload()
+
+    def test_reload_unexpected_error(self):
+        """
+        If the error code is not 403, the error is propagated.
+        """
+        error = HTTPError(URL, 403, "Forbidden", {}, None)
+        self.jenkins.responses[urljoin(URL, "/reload")] = error
+        self.assertRaises(HTTPError, self.api.reload)
+
+    def test_reload_unexpected_url(self):
+        """
+        If the error URL is not the root, the error is propagated.
+        """
+        error = HTTPError(URL, 503, "Service Unavailable", {}, None)
+        error.url = "/foo"
+        self.jenkins.responses[urljoin(URL, "/reload")] = error
+        self.assertRaises(HTTPError, self.api.reload)
+
+    def test_reload_unexpected_success(self):
+        """
+        If the request unexpectedly succeeds, an error is raised.
+        """
+        self.jenkins.responses[urljoin(URL, "/reload")] = "home"
+        self.assertRaises(RuntimeError, self.api.reload)

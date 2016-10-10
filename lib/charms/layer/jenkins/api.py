@@ -1,4 +1,5 @@
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
+from urllib.request import Request
 
 from jenkins import Jenkins, JenkinsException
 
@@ -62,6 +63,25 @@ class Api(object):
             client.delete_node(host)
         else:
             hookenv.log("Node '%s' does not exist - not deleting" % host)
+
+    def reload(self):
+        """Reload configuration from disk."""
+        hookenv.log("Reloading configuration from disk")
+        client = self._make_client()
+        request = Request(client._build_url("/reload"), method="POST")
+        try:
+            client.jenkins_open(request)
+        except HTTPError as error:
+            # We expect a 'Service Unavailable' error code and to be at the
+            # home page.
+            if error.code != 503:
+                hookenv.log("Unexpected HTTP response code '%d'" % error.code)
+                raise
+            if error.url != client._build_url("/"):
+                hookenv.log("Unexpected HTTP response url '%s'" % error.url)
+                raise
+        else:
+            raise RuntimeError("Couldn't reload configuration")
 
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)

@@ -85,10 +85,10 @@ class BasicDeploymentTest(DeploymentTest):
         """Validate admin user."""
         client = Jenkins(self.spec.jenkins_url(), "admin", PASSWORD)
         try:
-            version = client.get_version()
+            user = client.get_whoami()
         except:
             self.fail("Can't access Jenkins API")
-        self.assertTrue(version.startswith("1"), "Unexpected Jenkins version")
+        self.assertEqual("admin", user["id"], "Unexpected user ID")
 
     def test_00_plugins(self):
         """Validate that configured plugins are installed."""
@@ -113,10 +113,10 @@ class BasicDeploymentTest(DeploymentTest):
         self.spec.deployment.sentry.wait()
         client = Jenkins(self.spec.jenkins_url(), "admin", "changed")
         try:
-            version = client.get_version()
+            user = client.get_whoami()
         except:
             self.fail("Can't access Jenkins API")
-        self.assertTrue(version.startswith("1"), "Unexpected Jenkins version")
+        self.assertEqual("admin", user["id"], "Unexpected user ID")
 
     def test_10_change_plugins(self):
         """Validate that plugins get updated after a config change."""

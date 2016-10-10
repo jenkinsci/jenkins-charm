@@ -1,4 +1,6 @@
 from collections import namedtuple
+from urllib.parse import urljoin
+
 
 Node = namedtuple("Node", ["host", "executors", "description", "labels"])
 
@@ -9,6 +11,7 @@ class JenkinsStub(object):
     def __init__(self):
         self.nodes = []
         self.scripts = {}
+        self.responses = {}
 
     def __call__(self, url, username, password):
         self.url = url
@@ -35,3 +38,12 @@ class JenkinsStub(object):
 
     def run_script(self, script):
         return self.scripts[script]
+
+    def jenkins_open(self, request):
+        response = self.responses[request.full_url]
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+    def _build_url(self, path):
+        return urljoin(self.url, path)
