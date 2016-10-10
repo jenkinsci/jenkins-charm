@@ -7,3 +7,4 @@ python_packages:
   - amulet
   - python-jenkins
   - requests
+  - retrying

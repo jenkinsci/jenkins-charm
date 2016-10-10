@@ -3,6 +3,7 @@ from basic import BasicDeploymentSpec
 
 EXTERNAL = {
     "trusty": "cs:~matsubara/trusty/ci-configurator-3",
+    "xenial": "cs:~free.ekanayaka/xenial/ci-configurator-0",
 }
 
 REPO = "lp:~free.ekanayaka/junk/ci-configurator-test-repo"
@@ -12,9 +13,10 @@ class ExternalDeploymentSpec(BasicDeploymentSpec):
 
     def _pre_setup_10_external(self):
         """Set up the deployment in the class."""
-        # XXX ci-configuration is currently broken and needs the paramiko
-        #     package.
-        self.jenkins_config["tools"] = "python-paramiko"
+        # XXX ci-configuration is currently broken and needs paramiko.
+        self.jenkins_config["tools"] += " python-paramiko"
+        # XXX when deployed on xenial (python 2) ci-configuration needs more.
+        self.jenkins_config["tools"] += " python-yaml python-apt"
         # This will trigger removal of plugins set on the principal
         self.jenkins_config["remove-unlisted-plugins"] = "yes"
         self.deployment.add("ci-configurator", EXTERNAL[self.series])

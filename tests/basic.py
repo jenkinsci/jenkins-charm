@@ -1,5 +1,7 @@
 import os
 
+from retrying import retry
+
 from jenkins import Jenkins
 
 from deployment import (
@@ -34,7 +36,7 @@ class BasicDeploymentSpec(DeploymentSpec):
     def _init_00_basic(self):
         self.jenkins_config = {
             "password": PASSWORD,
-            "tools": "python3-testtools",
+            "tools": "python-minimal python3-testtools",
             "plugins": "groovy",
         }
 
@@ -124,7 +126,11 @@ class BasicDeploymentTest(DeploymentTest):
         charm_name = self.spec.deployment.charm_name
         self.spec.deployment.configure(charm_name, {"plugins": plugins})
         self.spec.deployment.sentry.wait()
-        self.spec.jenkins.run("/bin/sleep 1")  # Make sure we're done for real
-        plugins = self.spec.plugins_list()
-        self.assertIn("groovy", plugins, "Failed to locate groovy")
-        self.assertIn("greenballs", plugins, "Failed to locate greenballs")
+
+        @retry(stop_max_attempt_number=10, wait_fixed=1000)
+        def assert_plugins():
+            plugins = self.spec.plugins_list()
+            self.assertIn("groovy", plugins, "Failed to locate groovy")
+            self.assertIn("greenballs", plugins, "Failed to locate greenballs")
+
+        assert_plugins()

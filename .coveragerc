@@ -1,0 +1,5 @@
+[run]
+source = lib
+
+[report]
+fail_under=100

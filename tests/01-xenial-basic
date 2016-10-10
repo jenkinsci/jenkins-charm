@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+
+from unittest import TestCase, main
+
+from basic import (
+    BasicDeploymentSpec,
+    BasicDeploymentTest,
+)
+
+
+class XenialBasicDeploymentTest(BasicDeploymentTest, TestCase):
+
+    spec = BasicDeploymentSpec(series="xenial")
+
+
+if __name__ == "__main__":
+    main()

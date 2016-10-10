@@ -12,6 +12,7 @@ class WebsiteDeploymentSpec(BasicDeploymentSpec):
 
     def _pre_setup_10_website(self):
         """Set up the deployment in the class."""
+        self.jenkins_config["tools"] += " python-minimal"
         self.deployment.add("haproxy")
         self.deployment.relate("jenkins:website", "haproxy:reverseproxy")
         self.deployment.expose("haproxy")
