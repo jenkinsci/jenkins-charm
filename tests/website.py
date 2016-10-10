@@ -25,5 +25,6 @@ class WebsiteDeploymentTest(DeploymentTest):
     def test_00_website_relation(self):
         """Validate that Jenkins is correctly reverse-proxied by HAProxy."""
         response = requests.get(self.spec.proxy_url())
-        self.assertEqual(200, response.status_code, "Proxy returned non-200")
-        self.assertIn("Dashboard", response.text, "Not at Jenkins home page")
+        self.assertEqual(403, response.status_code, "Proxy returned non-403")
+        self.assertIn(
+            "Authentication required", response.text, "Unexpected page")
