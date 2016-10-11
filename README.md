@@ -1,5 +1,5 @@
 # Overview
-[![Build Status](https://travis-ci.org/freeekanayaka/layer-jenkins.svg?branch=master)](https://travis-ci.org/freeekanayaka/layer-jenkins)
+[![Build Status](https://travis-ci.org/freeekanayaka/layer-jenkins.svg?branch=master)](https://travis-ci.org/freeekanayaka/layer-jenkins) [![Coverage Status](https://coveralls.io/repos/github/freeekanayaka/layer-jenkins/badge.svg?branch=master)](https://coveralls.io/github/freeekanayaka/layer-jenkins?branch=master)
 
 This charm (along with its companion, jenkins-slave) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
 
