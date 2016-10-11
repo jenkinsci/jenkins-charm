@@ -1,5 +1,5 @@
 [run]
-source = lib
+source = lib/charms/layer/jenkins/
 
 [report]
 fail_under=100
