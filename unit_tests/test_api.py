@@ -12,9 +12,9 @@ from jenkins import JenkinsException
 from stubs.jenkins import JenkinsStub
 
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.service import URL
 from charms.layer.jenkins.api import (
     TOKEN_SCRIPT,
-    URL,
     Api,
 )
 

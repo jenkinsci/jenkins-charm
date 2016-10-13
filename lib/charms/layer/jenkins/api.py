@@ -1,20 +1,19 @@
-from urllib.error import URLError, HTTPError
+from urllib.error import (
+    URLError,
+    HTTPError,
+)
 from urllib.request import Request
 
 from jenkins import Jenkins, JenkinsException
 
 from charmhelpers.core import hookenv
-from charmhelpers.core.decorators import (
-    retry_on_exception,
-)
+from charmhelpers.core.decorators import retry_on_exception
 
-from charmhelpers.core.hookenv import (
-    ERROR,
-)
+from charmhelpers.core.hookenv import ERROR
 
 from charms.layer.jenkins.credentials import Credentials
+from charms.layer.jenkins.service import URL
 
-URL = "http://localhost:8080/"
 RETRIABLE = (URLError, JenkinsException)
 TOKEN_SCRIPT = """
 user = hudson.model.User.get('{}')

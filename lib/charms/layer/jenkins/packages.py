@@ -6,6 +6,7 @@ import subprocess
 from testtools import try_import
 
 from charmhelpers.core import hookenv
+from charmhelpers.core.decorators import retry_on_exception
 
 # XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors

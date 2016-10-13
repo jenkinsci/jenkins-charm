@@ -28,6 +28,7 @@ from charms.layer.jenkins.configuration import (
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.plugins import Plugins
 from charms.layer.jenkins.api import Api
+from charms.layer.jenkins.service import Service
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 
@@ -61,6 +62,8 @@ def install_jenkins():
     status_set("maintenance", "Installing Jenkins")
     packages = Packages()
     packages.install_jenkins()
+    service = Service()
+    service.check_ready()
 
 
 # Called once the jenkins package has been installed, but we didn't
