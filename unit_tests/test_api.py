@@ -3,15 +3,15 @@ from urllib.error import HTTPError
 
 from jenkins import JenkinsException
 
+from testing import JenkinsTest
+from states import JenkinsConfiguredAdmin
+
 from charms.layer.jenkins.service import URL
 from charms.layer.jenkins.api import (
     GET_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
     Api,
 )
-
-from testing import JenkinsTest
-from states import JenkinsConfiguredAdmin
 
 
 class ApiTest(JenkinsTest):
