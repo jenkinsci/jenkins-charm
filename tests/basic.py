@@ -19,6 +19,10 @@ class BasicDeploymentSpec(DeploymentSpec):
         """Get the URL of the Jenkins master."""
         return "http://%s:8080/" % self.jenkins.info["public-address"]
 
+    def jenkins_client(self, password=PASSWORD):
+        """Return a client for the Jenkins server under test."""
+        return Jenkins(self.jenkins_url(), "admin", password)
+
     def plugin_dir_stat(self, plugin):
         """Get the file system stat of the directory of the given plugin."""
         path = os.path.join(PLUGINS_DIR, plugin)
@@ -85,7 +89,7 @@ class BasicDeploymentTest(DeploymentTest):
 
     def test_00_user(self):
         """Validate admin user."""
-        client = Jenkins(self.spec.jenkins_url(), "admin", PASSWORD)
+        client = self.jenkins_client()
         try:
             user = client.get_whoami()
         except:
@@ -111,14 +115,19 @@ class BasicDeploymentTest(DeploymentTest):
     def test_10_change_password(self):
         """Validate that after changing the password we can still login."""
         charm_name = self.spec.deployment.charm_name
+
         self.spec.deployment.configure(charm_name, {"password": "changed"})
         self.spec.deployment.sentry.wait()
-        client = Jenkins(self.spec.jenkins_url(), "admin", "changed")
+
+        client = self.jenkins_client(password="changed")
         try:
             user = client.get_whoami()
         except:
             self.fail("Can't access Jenkins API")
         self.assertEqual("admin", user["id"], "Unexpected user ID")
+
+        self.spec.deployment.configure(charm_name, {"password": PASSWORD})
+        self.spec.deployment.sentry.wait()
 
     def test_10_change_plugins(self):
         """Validate that plugins get updated after a config change."""
