@@ -62,8 +62,6 @@ def install_jenkins():
     status_set("maintenance", "Installing Jenkins")
     packages = Packages()
     packages.install_jenkins()
-    service = Service()
-    service.check_ready()
 
 
 # Called once the jenkins package has been installed, but we didn't
@@ -74,6 +72,8 @@ def install_jenkins():
 @when("apt.installed.jenkins")
 def bootstrap_jenkins():
     status_set("maintenance", "Bootstrapping Jenkins configuration")
+    service = Service()
+    service.check_ready()
     configuration = Configuration()
     configuration.bootstrap()
     set_state("jenkins.bootstrapped")
