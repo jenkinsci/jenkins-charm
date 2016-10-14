@@ -3,8 +3,6 @@ import os
 from urllib.parse import urljoin
 from urllib.error import HTTPError
 
-from fixtures import MonkeyPatch
-
 from charmtest import CharmTest
 
 from jenkins import JenkinsException
@@ -34,8 +32,6 @@ class ApiTest(CharmTest):
         """
         Wait for Jenkins to be fully up, even in spite of transient failures.
         """
-        self.useFixture(MonkeyPatch("time.sleep", lambda _: None))
-
         get_whoami = self.jenkins.get_whoami
         tries = []
 
@@ -73,8 +69,6 @@ class ApiTest(CharmTest):
         """
         Transient failures get retried.
         """
-        self.useFixture(MonkeyPatch("time.sleep", lambda _: None))
-
         create_node = self.jenkins.create_node
         tries = []
 
@@ -94,7 +88,6 @@ class ApiTest(CharmTest):
         """
         If errors persist, we give up.
         """
-        self.useFixture(MonkeyPatch("time.sleep", lambda _: None))
 
         def failure(*args, **kwargs):
             raise JenkinsException("error")

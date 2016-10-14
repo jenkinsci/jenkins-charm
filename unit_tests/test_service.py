@@ -1,4 +1,4 @@
-import fakesleep
+import time
 
 from charmtest import CharmTest
 
@@ -13,8 +13,6 @@ class ServiceTest(CharmTest):
 
     def setUp(self):
         super().setUp()
-        fakesleep.monkey_patch()
-        self.addCleanup(fakesleep.monkey_restore)
         self.service = Service()
 
     def test_check_ready(self):
@@ -28,10 +26,10 @@ class ServiceTest(CharmTest):
         """
         Transient failures are retried.
         """
-        start = fakesleep.time()
+        start = time.time()
 
         def callback(requests, context):
-            if fakesleep.time() - start >= 2:
+            if time.time() - start >= 2:
                 context.status_code = 503
             else:
                 context.status_code = 200
