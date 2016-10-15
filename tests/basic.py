@@ -89,7 +89,7 @@ class BasicDeploymentTest(DeploymentTest):
 
     def test_00_user(self):
         """Validate admin user."""
-        client = self.jenkins_client()
+        client = self.spec.jenkins_client()
         try:
             user = client.get_whoami()
         except:
@@ -119,7 +119,7 @@ class BasicDeploymentTest(DeploymentTest):
         self.spec.deployment.configure(charm_name, {"password": "changed"})
         self.spec.deployment.sentry.wait()
 
-        client = self.jenkins_client(password="changed")
+        client = self.spec.jenkins_client(password="changed")
         try:
             user = client.get_whoami()
         except:
