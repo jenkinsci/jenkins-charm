@@ -1,5 +1,5 @@
 # Overview
-[![Build Status](https://travis-ci.org/freeekanayaka/layer-jenkins.svg?branch=master)](https://travis-ci.org/freeekanayaka/layer-jenkins) [![Coverage Status](https://coveralls.io/repos/github/freeekanayaka/layer-jenkins/badge.svg?branch=master)](https://coveralls.io/github/freeekanayaka/layer-jenkins?branch=master)
+[![Build Status](https://travis-ci.org/jenkinsci/layer-jenkins.svg?branch=master)](https://travis-ci.org/jenkinsci/layer-jenkins) [![Coverage Status](https://coveralls.io/repos/github/jenkinsci/layer-jenkins/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/layer-jenkins?branch=master)
 
 This charm (along with its companion, jenkins-slave) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
 
@@ -63,9 +63,9 @@ If you wish to perform custom configuration of either the master
 or slave services, you can branch this charm and add install hooks
 into hooks/install.d.
 
-These will be executed when the main install, config-changed or
-upgrade-charm hooks are executed (as the config-changed and
-upgrade-charm hooks just call install)..
+These will be executed when the main install, `config-changed` or
+`upgrade-charm` hooks are executed (as the `config-changed` and
+`upgrade-charm` hooks just call install)..
 
 Additional hooks are executed in the context of the install hook
 so may use any variables which are defined in this hook.
