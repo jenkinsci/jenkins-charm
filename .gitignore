@@ -1,2 +1,8 @@
+.tox
+.cache
 .coverage
+.unit-state.db
+*__pycache__
 *.pyc
+lib/charms/__init__.py
+lib/charms/layer/__init__.py

@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+
+from unittest import TestCase, main
+
+from website import (
+    WebsiteDeploymentSpec,
+    WebsiteDeploymentTest,
+)
+
+
+class XenialWebsiteDeploymentTest(WebsiteDeploymentTest, TestCase):
+
+    spec = WebsiteDeploymentSpec(series="xenial")
+
+
+if __name__ == "__main__":
+    main()
