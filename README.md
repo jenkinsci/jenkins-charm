@@ -1,5 +1,5 @@
 # Overview
-[![Build Status](https://travis-ci.org/jenkinsci/layer-jenkins.svg?branch=master)](https://travis-ci.org/jenkinsci/layer-jenkins) [![Coverage Status](https://coveralls.io/repos/github/jenkinsci/layer-jenkins/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/layer-jenkins?branch=master)
+[![Build Status](https://travis-ci.org/jenkinsci/jenkins-charm.svg?branch=master)](https://travis-ci.org/jenkinsci/jenkins-charm) [![Coverage Status](https://coveralls.io/repos/github/jenkinsci/jenkins-charm/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/jenkins-charm?branch=master)
 
 This charm (along with its companion, jenkins-slave) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
 
