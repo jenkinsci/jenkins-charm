@@ -17,6 +17,8 @@ tags:
   - application_development
   - ops
 subordinate: false
+series:
+  - xenial
 provides:
   website:
     interface: http
