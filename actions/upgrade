@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from charms.layer.jenkins.packages import Packages
+
+packages = Packages()
+packages.install_dependencies()
+packages.install_jenkins()

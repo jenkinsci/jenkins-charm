@@ -1,0 +1,6 @@
+stop:
+  description: Stop the jenkins service.
+start:
+  description: Start the jenkins service (will restart if already running).
+upgrade:
+  description: Upgrade to the latest available version of jenkins (given the release config option).
