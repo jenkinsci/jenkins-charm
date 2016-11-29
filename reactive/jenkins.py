@@ -17,6 +17,7 @@ from charms.reactive import (
 )
 from charms.reactive.bus import get_state
 from charms.reactive.helpers import data_changed
+from charms.reactive import RelationBase
 from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
 
@@ -102,6 +103,11 @@ def configure_admin():
     api = Api()
     api.reload()
     api.wait()  # Wait for the service to be fully up
+    # Inform any extension that the username/password changed
+    if get_state("extension.connected"):
+        extension_relation = (RelationBase.from_state("extension.connected"))
+        extension_relation.joined()
+
     set_state("jenkins.configured.admin")
 
 
