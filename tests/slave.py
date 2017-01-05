@@ -2,7 +2,6 @@ from deployment import DeploymentTest
 from basic import BasicDeploymentSpec
 
 JENKINS_SLAVE = {
-    "trusty": "cs:~juju-qa/trusty/jenkins-slave-2",
     "xenial": "cs:~free.ekanayaka/xenial/jenkins-slave-2",
 }
 
