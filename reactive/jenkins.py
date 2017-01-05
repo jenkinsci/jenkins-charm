@@ -48,6 +48,7 @@ def install_dependencies():
     packages = Packages()
     packages.install_dependencies()
 
+
 # Dynamically create an OR-ed chain of @when_not, so install_dependencies
 # will get triggered whenever one or more dependencies are unmet (typically
 # at install time).

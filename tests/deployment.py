@@ -1,6 +1,6 @@
 from amulet import SKIP, Deployment, TimeoutError, raise_status
 
-TIMEOUT = 990
+TIMEOUT = 1800
 
 
 class DeploymentSpec(object):

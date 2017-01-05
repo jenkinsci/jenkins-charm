@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+from unittest import TestCase, main
+from extension import ExtensionDeploymentSpec, ExtensionDeploymentTest
+
+
+class XenialExtensionDeploymentTest(ExtensionDeploymentTest, TestCase):
+
+    spec = ExtensionDeploymentSpec(series="xenial")
+
+
+if __name__ == "__main__":
+    main()
