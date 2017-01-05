@@ -50,7 +50,11 @@ class BasicDeploymentSpec(DeploymentSpec):
         charm_name = self.deployment.charm_name
         # Specify charm_name because this layer could be named something
         # else.
-        self.deployment.add(charm_name, units=1)
+        if self.storage:
+            self.deployment.add(charm_name, units=1,
+                                storage={"jenkins": "rootfs,50M"})
+        else:
+            self.deployment.add(charm_name, units=1)
         self.deployment.configure(charm_name, self.jenkins_config)
         self.deployment.expose("jenkins")
 
