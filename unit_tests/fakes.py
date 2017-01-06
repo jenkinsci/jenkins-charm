@@ -33,7 +33,7 @@ class FakeJenkins(Fixture):
                 return True
         return False
 
-    def create_node(self, host, executors, description, labels=()):
+    def create_node(self, host, executors, description, labels=(), launcher=None):
         self.nodes.append(Node(host, executors, description, labels))
 
     def delete_node(self, host):
