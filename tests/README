@@ -11,27 +11,9 @@ juju, of course):
 If you use a web proxy server to access the web, you'll need to set the
 AMULET_HTTP_PROXY environment variable to the http URL of the proxy server.
 
-The following examples demonstrate different ways that tests can be executed.
-All examples are run from the charm's root directory.
-
-  * To run all tests (starting with 00-setup):
-
-      make test
-
-  * To run a specific test module (or modules):
-
-      juju test -v -p AMULET_HTTP_PROXY 100-deploy
-
-  * To run a specific test module (or modules), and keep the environment
-    deployed after a failure:
-
-      juju test --set-e -v -p AMULET_HTTP_PROXY 100-deploy
-
-  * To re-run a test module against an already deployed environment (one
-    that was deployed by a previous call to 'juju test --set-e'):
-
-      ./tests/100-deploy
-
+To run tests first build the charm then, the recommended way to run tests is
+via bundletester, https://github.com/juju-solutions/bundletester. Tests can
+also be run directly, ie `./tests/01-xenial-basic`.
 
 For debugging and test development purposes, all code should be idempotent.
 In other words, the code should have the ability to be re-run without changing

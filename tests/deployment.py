@@ -5,7 +5,7 @@ TIMEOUT = 990
 
 class DeploymentSpec(object):
 
-    def __init__(self, series="trusty"):
+    def __init__(self, series="xenial"):
         self.series = series
         self.deployment = Deployment(series=self.series)
         self._run_hooks("init")
