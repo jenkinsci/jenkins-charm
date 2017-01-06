@@ -66,6 +66,7 @@ class ApiTest(JenkinsTest):
         self.assertEqual(1, node.executors)
         self.assertEqual("slave-0", node.description)
         self.assertEqual(["python"], node.labels)
+        self.assertEqual("hudson.slaves.JNLPLauncher", node.launcher)
 
     def test_add_exists(self):
         """

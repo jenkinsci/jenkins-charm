@@ -6,7 +6,8 @@ from fixtures import (
     MonkeyPatch,
 )
 
-Node = namedtuple("Node", ["host", "executors", "description", "labels"])
+Node = namedtuple(
+    "Node", ["host", "executors", "description", "labels", "launcher"])
 
 
 class FakeJenkins(Fixture):
@@ -33,8 +34,9 @@ class FakeJenkins(Fixture):
                 return True
         return False
 
-    def create_node(self, host, executors, description, labels=()):
-        self.nodes.append(Node(host, executors, description, labels))
+    def create_node(self, host, executors, description, labels=(),
+                    launcher=""):
+        self.nodes.append(Node(host, executors, description, labels, launcher))
 
     def delete_node(self, host):
         for node in self.nodes[:]:
