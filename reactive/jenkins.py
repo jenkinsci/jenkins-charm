@@ -3,6 +3,7 @@ from charmhelpers.core.hookenv import (
     config,
 )
 from charmhelpers.core.host import (
+    service_restart,
     service_stop,
 )
 
@@ -95,13 +96,24 @@ def configure_tools():
 # Called once we're bootstrapped and every time the configured user
 # changes.
 @when("jenkins.bootstrapped")
-@when_any("config.changed.username", "config.changed.password")
+@when_any("config.changed.username", "config.changed.password",
+          "config.changed.public-url")
 def configure_admin():
     remove_state("jenkins.configured.admin")
+    api = Api()
+
+    status_set("maintenance", "Configuring Jenkins public url")
+    configuration = Configuration()
+    needs_restart = configuration.set_url()
+    if needs_restart:
+        status_set("maintenance", "Restarting Jenkins")
+        service_restart('jenkins')
+        api.wait()
+
     status_set("maintenance", "Configuring admin user")
     users = Users()
     users.configure_admin()
-    api = Api()
+
     api.reload()
     api.wait()  # Wait for the service to be fully up
     # Inform any extension that the username/password changed

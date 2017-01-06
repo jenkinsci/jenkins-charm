@@ -2,7 +2,7 @@ import requests
 
 from charmhelpers.core.decorators import retry_on_exception
 
-URL = "http://localhost:8080/"
+from charms.layer.jenkins.api import Api
 
 
 class ServiceUnavailable(Exception):
@@ -18,6 +18,7 @@ class Service(object):
     @retry_on_exception(7, base_delay=5, exc_type=_check_ready_retry)
     def check_ready(self):
         """Build a Jenkins client instance."""
-        response = requests.get(URL)
+        api = Api()
+        response = requests.get(api.url)
         if response.status_code >= 500:
             raise ServiceUnavailable()

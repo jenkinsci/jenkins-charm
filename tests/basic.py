@@ -15,13 +15,14 @@ PLUGINS_DIR = "/var/lib/jenkins/plugins"
 
 class BasicDeploymentSpec(DeploymentSpec):
 
-    def jenkins_url(self):
+    def jenkins_url(self, prefix='/'):
         """Get the URL of the Jenkins master."""
-        return "http://%s:8080/" % self.jenkins.info["public-address"]
+        return "http://{}:8080{}".format(self.jenkins.info["public-address"],
+                                         prefix)
 
-    def jenkins_client(self, password=PASSWORD):
+    def jenkins_client(self, password=PASSWORD, prefix='/'):
         """Return a client for the Jenkins server under test."""
-        return Jenkins(self.jenkins_url(), "admin", password)
+        return Jenkins(self.jenkins_url(prefix), "admin", password)
 
     def plugin_dir_stat(self, plugin):
         """Get the file system stat of the directory of the given plugin."""
@@ -127,6 +128,29 @@ class BasicDeploymentTest(DeploymentTest):
         self.assertEqual("admin", user["id"], "Unexpected user ID")
 
         self.spec.deployment.configure(charm_name, {"password": PASSWORD})
+        self.spec.deployment.sentry.wait()
+
+    def test_10_change_url(self):
+        """
+        Validate that after changing public-url we can login at the new
+        prefix and that the public_url has been updated.
+        """
+        charm_name = self.spec.deployment.charm_name
+
+        public_url = "http://public.jenkins:8080/jenkins-alt"
+        self.spec.deployment.configure(charm_name, {"public-url": public_url})
+        self.spec.deployment.sentry.wait()
+
+        client = self.spec.jenkins_client(prefix='/jenkins-alt')
+        try:
+            user = client.get_whoami()
+        except:
+            self.fail("Can't access Jenkins API")
+        self.assertEqual("admin", user["id"], "Unexpected user ID")
+        client_url = client.get_info()['views'][0]['url']
+        self.assertEqual(client_url, public_url + '/')
+
+        self.spec.deployment.configure(charm_name, {"public-url": ""})
         self.spec.deployment.sentry.wait()
 
     def test_10_change_plugins(self):
