@@ -3,10 +3,10 @@ from urllib.error import HTTPError
 
 from jenkins import JenkinsException
 
+from charmhelpers.core import hookenv
 from testing import JenkinsTest
 from states import JenkinsConfiguredAdmin
 
-from charms.layer.jenkins.service import URL
 from charms.layer.jenkins.api import (
     GET_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
@@ -137,31 +137,42 @@ class ApiTest(JenkinsTest):
         The reload method POSTs a request to the '/reload' URL, expecting
         a 503 on the homepage (which happens after redirection).
         """
-        error = HTTPError(URL, 503, "Service Unavailable", {}, None)
-        error.url = URL
-        self.fakes.jenkins.responses[urljoin(URL, "/reload")] = error
+        error = HTTPError(self.api.url, 503, "Service Unavailable", {}, None)
+        error.url = self.api.url
+        self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.api.reload()
 
     def test_reload_unexpected_error(self):
         """
         If the error code is not 403, the error is propagated.
         """
-        error = HTTPError(URL, 403, "Forbidden", {}, None)
-        self.fakes.jenkins.responses[urljoin(URL, "/reload")] = error
+        error = HTTPError(self.api.url, 403, "Forbidden", {}, None)
+        self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
     def test_reload_unexpected_url(self):
         """
         If the error URL is not the root, the error is propagated.
         """
-        error = HTTPError(URL, 503, "Service Unavailable", {}, None)
+        error = HTTPError(self.api.url, 503, "Service Unavailable", {}, None)
         error.url = "/foo"
-        self.fakes.jenkins.responses[urljoin(URL, "/reload")] = error
+        self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
     def test_reload_unexpected_success(self):
         """
         If the request unexpectedly succeeds, an error is raised.
         """
-        self.fakes.jenkins.responses[urljoin(URL, "/reload")] = "home"
+        self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = "home"
         self.assertRaises(RuntimeError, self.api.reload)
+
+    def test_url(self):
+        """
+        Verify the url always ends in a / and has the expected prefix
+        """
+        config = hookenv.config()
+        config["public-url"] = ""
+        self.assertEqual(self.api.url, 'http://localhost:8080/')
+
+        config["public-url"] = "http://here:8080/jenkins"
+        self.assertEqual(self.api.url, 'http://localhost:8080/jenkins/')
