@@ -65,7 +65,16 @@ class Api(object):
                 return
 
             hookenv.log("Adding node '%s' to Jenkins master" % host)
-            client.create_node(host, int(executors), host, labels=labels)
+
+            # See the "Launch slave agent headlessly" section of the Jenkins
+            # wiki page about distributed builds:
+            #
+            # https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds
+            launcher = jenkins.LAUNCHER_JNLP
+
+            client.create_node(
+                host, int(executors), host, labels=labels, launcher=launcher)
+
             if not client.node_exists(host):
                 hookenv.log(
                     "Failed to create node '%s'" % host, level=ERROR)
