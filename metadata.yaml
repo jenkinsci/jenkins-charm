@@ -26,6 +26,9 @@ provides:
     interface: jenkins-extension
     scope: container
     optional: true
+  nrpe-external-master:
+    interface: nrpe-external-master
+    scope: container
 requires:
   master:
     interface: jenkins-slave

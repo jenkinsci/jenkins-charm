@@ -1,6 +1,12 @@
+from urllib.parse import urlparse
+
+from charmhelpers.core import unitdata
 from charmhelpers.core.hookenv import (
     log,
     config,
+    in_relation_hook,
+    relation_id,
+    relation_get,
 )
 from charmhelpers.core.host import (
     service_restart,
@@ -30,6 +36,7 @@ from charms.layer.jenkins.configuration import (
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.plugins import Plugins
 from charms.layer.jenkins.api import Api
+from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
@@ -171,6 +178,52 @@ def add_slaves(master):
 def migrate_charm_data():
     configuration = Configuration()
     configuration.migrate()
+
+
+@when('nrpe-external-master.available')
+def update_nrpe_config(nagios):
+    unit_data = unitdata.kv()
+    nagios_hostname = unit_data.get('nagios.hostname', None)
+    nagios_host_context = unit_data.get('nagios.host_context', None)
+
+    # require the nrpe-external-master relation to provide the host context
+    if in_relation_hook() and relation_id().\
+            startswith('nrpe-external-master:'):
+        rel = relation_get()
+        if 'nagios_host_context' in rel:
+            nagios_host_context = rel['nagios_host_context']
+            unit_data.set('nagios.host_context', nagios_host_context)
+
+            # We have to strip the nagios host context from the nagios hostname
+            # since the nagios.add_check will put it back again...
+            nagios_hostname = rel['nagios_hostname']
+            if nagios_hostname.startswith(nagios_host_context + '-'):
+                nagios_hostname = nagios_hostname[len(nagios_host_context +
+                                                      '-'):]
+
+            unit_data.set('nagios.hostname', nagios_hostname)
+
+    if not nagios_hostname or not nagios_host_context:
+        return
+    # The above boilerplate is needed until this issue is fixed:
+    #
+    # https://github.com/cmars/nrpe-external-master-interface/issues/6
+
+    status_set('maintenance', 'Updating Nagios configs')
+
+    creds = Credentials()
+    check = [
+        '/usr/lib/nagios/plugins/check_http', '-H', 'localhost', '-p',
+        '8080', '-u', urlparse(Api().url).path, '-a',
+        "{}:{}".format(creds.username(), creds.token()),
+    ]
+    nagios.add_check(check,
+                     name="check_jenkins_http",
+                     description="Verify Jenkins HTTP is up.",
+                     context=nagios_host_context,
+                     unit=nagios_hostname)
+
+    status_set('active', 'Ready')
 
 
 @when("stop")
