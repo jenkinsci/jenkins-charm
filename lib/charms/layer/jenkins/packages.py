@@ -1,4 +1,5 @@
 import os
+import os.path
 import shutil
 import tempfile
 import subprocess
@@ -14,7 +15,6 @@ apt = try_import("charms.apt")
 
 APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
 APT_SOURCE = "deb http://pkg.jenkins-ci.org/%s binary/"
-APT_KEY = "http://pkg.jenkins-ci.org/%s/jenkins-ci.org.key"
 
 
 class Packages(object):
@@ -92,7 +92,8 @@ class Packages(object):
             raise Exception(message)
 
         # Setup archive to use appropriate jenkins upstream
-        wget = ("wget", "-q", "-O", "-", APT_KEY % dist)
         source = APT_SOURCE % dist
-        key = subprocess.check_output(wget).decode("utf-8")
+        keyfile = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
+        with open(keyfile, "r") as k:
+            key = k.read()
         self._apt.add_source(source, key=key)

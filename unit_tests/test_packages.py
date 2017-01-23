@@ -8,7 +8,6 @@ from stubs.apt import AptStub
 
 from charms.layer.jenkins.packages import (
     APT_DEPENDENCIES,
-    APT_KEY,
     APT_SOURCE,
     Packages,
 )
@@ -20,6 +19,11 @@ class PackagesTest(CharmTest):
         super(PackagesTest, self).setUp()
         self.apt = AptStub()
         self.packages = Packages(apt=self.apt)
+        # XXX Not all charm files are populated in charm_dir() by default.
+        # XXX See: https://github.com/freeekanayaka/charm-test/issues/2
+        keyfile = "jenkins.io.key"
+        os.symlink(os.path.join(os.getcwd(), keyfile),
+                   os.path.join(hookenv.charm_dir(), keyfile))
 
     def test_install_dependencies(self):
         """
@@ -81,11 +85,12 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'lts', an APT source entry will be
         added, pointing to the debian-stable Jenkins repository.
         """
-        self.fakes.processes.wget.locations[
-            APT_KEY % "debian-stable"] = b"stable-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian-stable"
-        self.assertEqual([(source, "stable-key")], self.apt.sources)
+        key = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
+        with open(key, "r") as k:
+            key = k.read()
+        self.assertEqual([(source, key)], self.apt.sources)
 
     def test_install_jenkins_trunk_release(self):
         """
@@ -93,10 +98,12 @@ class PackagesTest(CharmTest):
         added, pointing to the debian Jenkins repository.
         """
         self.fakes.juju.config["release"] = "trunk"
-        self.fakes.processes.wget.locations[APT_KEY % "debian"] = b"trunk-key"
         self.packages.install_jenkins()
         source = APT_SOURCE % "debian"
-        self.assertEqual([(source, "trunk-key")], self.apt.sources)
+        key = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
+        with open(key, "r") as k:
+            key = k.read()
+        self.assertEqual([(source, key)], self.apt.sources)
 
     def test_install_jenkins_invalid_release(self):
         """
