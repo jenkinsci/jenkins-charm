@@ -19,6 +19,8 @@ class PackagesTest(CharmTest):
         super(PackagesTest, self).setUp()
         self.apt = AptStub()
         self.packages = Packages(apt=self.apt)
+        # XXX Not all charm files are populated in charm_dir() by default.
+        # XXX See: https://github.com/freeekanayaka/charm-test/issues/2
         keyfile = "jenkins.io.key"
         os.symlink(os.path.join(os.getcwd(), keyfile),
                    os.path.join(hookenv.charm_dir(), keyfile))
