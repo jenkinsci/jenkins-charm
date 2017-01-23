@@ -96,4 +96,4 @@ class Packages(object):
         keyfile = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
         with open(keyfile, "r") as k:
             key = k.read()
-        self._apt.add_source(source, key = key)
+        self._apt.add_source(source, key=key)
