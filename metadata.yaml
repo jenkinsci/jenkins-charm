@@ -36,3 +36,8 @@ requires:
   zuul:
     interface: zuul
     optional: true
+storage:
+  jenkins:
+    type: filesystem
+    description: Jenkins data.
+    location: /srv/mnt/jenkins

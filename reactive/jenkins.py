@@ -7,9 +7,11 @@ from charmhelpers.core.hookenv import (
     in_relation_hook,
     relation_id,
     relation_get,
+    storage_get,
 )
 from charmhelpers.core.host import (
     service_restart,
+    service_start,
     service_stop,
 )
 
@@ -28,6 +30,7 @@ from charms.reactive import RelationBase
 from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
 
+from charms.layer.jenkins import paths
 from charms.layer.jenkins.packages import APT_DEPENDENCIES, Packages
 from charms.layer.jenkins.configuration import (
     PORT,
@@ -38,6 +41,7 @@ from charms.layer.jenkins.plugins import Plugins
 from charms.layer.jenkins.api import Api
 from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
+from charms.layer.jenkins.storage import Storage
 
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 
@@ -174,6 +178,18 @@ def add_slaves(master):
             labels=slave["labels"] or ())
 
 
+@hook('jenkins-storage-attached')
+def attach():
+    homedir = storage_get()['location']
+    set_jenkins_dir(homedir)
+
+
+@hook('jenkins-storage-detaching')
+def detaching():
+    # This hook triggers before the stop hook when removing the application
+    set_jenkins_dir()
+
+
 @when("upgrade-charm")
 def migrate_charm_data():
     configuration = Configuration()
@@ -230,3 +246,29 @@ def update_nrpe_config(nagios):
 def stop():
     service_stop("jenkins")
     status_set("maintenance", "Jenkins stopped")
+
+
+def set_jenkins_dir(storage_dir=paths.HOME):
+    status_set("maintenance", "Configuring Jenkins storage")
+    jenkins_installed = get_state("apt.installed.jenkins")
+    if jenkins_installed:
+        service_stop('jenkins')
+
+    if storage_dir is paths.HOME:
+        log("Setting Jenkins to use local storage")
+        Storage().unlink_home()
+    else:
+        log("Setting Jenkins to use storage at {}".format(storage_dir))
+        Storage().link_home(storage_dir)
+
+    if jenkins_installed:
+        status_set("maintenance", "Restarting Jenkins")
+        service_start('jenkins')
+        Service().check_ready()
+
+    if get_state('jenkins.bootstrapped'):
+        # JENKINS_HOME just changed trigger bootstrap again
+        remove_state("jenkins.bootstrapped")
+        bootstrap_jenkins()
+    else:
+        status_set('active', 'Ready')
