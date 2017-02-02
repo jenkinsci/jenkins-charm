@@ -8,14 +8,24 @@ from charms.layer.jenkins.storage import Storage
 from states import State
 
 
+def fake_mv(args):
+    src = args['args'][1]
+    dest = args['args'][2]
+    os.rename(src, dest)
+    return {"stdout": None}
+
+
 class StorageTest(CharmTest):
 
     def setUp(self):
         super(StorageTest, self).setUp()
         self.useFixture(State(self.fakes))
         self.fakes.fs.add(os.path.dirname(paths.HOME))
+        self.fakes.processes.add(fake_mv, name='mv')
         os.makedirs(paths.HOME)
         os.chown(paths.HOME, 123, 123)
+        with open(os.path.join(paths.HOME, "jenkins_config"), 'w') as f:
+            f.write("fake config")
         self.storage_dir = paths.HOME + '-storage'
         os.makedirs(self.storage_dir)
 

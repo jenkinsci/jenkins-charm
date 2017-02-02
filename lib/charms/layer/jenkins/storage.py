@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from charmhelpers.core.hookenv import log
 
@@ -31,8 +32,13 @@ class Storage(object):
                    len(os.listdir(dest)) == 0:
                     # This handles the simple case of upgrading from a charm
                     # version with no storage support to one with it
-                    os.rmdir(dest)
-                    os.rename(paths.HOME, dest)
+                    for f in os.listdir(paths.HOME):
+                        # Note os.rename doesn't work depending on the type of
+                        # mount, shutil.move doesn't preserve owner/group
+                        subprocess.check_call(["mv",
+                                               os.path.join(paths.HOME, f),
+                                               os.path.join(dest, f)])
+                    os.rmdir(paths.HOME)
                 else:
                     if os.path.exists(self._backup_dir):
                         raise RuntimeError('{} exists, failed moving storage.'.
