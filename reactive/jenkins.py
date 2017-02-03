@@ -97,6 +97,7 @@ def bootstrap_jenkins():
 # change.
 @when("jenkins.bootstrapped", "config.changed.tools")
 def configure_tools():
+    remove_state("jenkins.ready")
     remove_state("jenkins.configured.tools")
     status_set("maintenance", "Installing tools")
     packages = Packages()
@@ -110,6 +111,7 @@ def configure_tools():
 @when_any("config.changed.username", "config.changed.password",
           "config.changed.public-url")
 def configure_admin():
+    remove_state("jenkins.ready")
     remove_state("jenkins.configured.admin")
     api = Api()
 
@@ -145,6 +147,7 @@ def configure_plugins():
         log("External relation detected - skip configuring plugins")
         return
     status_set("maintenance", "Configuring plugins")
+    remove_state("jenkins.ready")
     remove_state("jenkins.configured.plugins")
     plugins = Plugins()
     plugins.install(config("plugins"))
@@ -158,6 +161,7 @@ def configure_plugins():
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
+    set_state("jenkins.ready")
 
 
 @when("website.available")
