@@ -16,6 +16,8 @@ from charms.layer.jenkins.configuration import Configuration
 
 from states import AptInstalledJenkins
 
+from charmhelpers.core import hookenv
+
 
 class ConfigurationTest(CharmTest):
 
@@ -76,7 +78,17 @@ class ConfigurationTest(CharmTest):
         self.assertThat(paths.LOCATION_CONFIG_FILE, HasOwnership(123, 456))
         self.assertThat(
             paths.LOCATION_CONFIG_FILE,
-            FileContains(matcher=Contains("<jenkinsUrl></jenkinsUrl>")))
+            FileContains(
+                matcher=Not(Contains("<jenkinsUrl></jenkinsUrl>"))))
+
+    def test_set_url_not_empty(self):
+        url = "http://jenkins.example.com"
+        hookenv.config()["public-url"] = url
+        self.configuration.set_url()
+        self.assertThat(
+            paths.LOCATION_CONFIG_FILE,
+            FileContains(
+                matcher=Contains("<jenkinsUrl>" + url + "</jenkinsUrl>")))
 
     def test_migrate(self):
         """

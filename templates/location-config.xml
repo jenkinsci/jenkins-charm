@@ -1,4 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <jenkins.model.JenkinsLocationConfiguration>
-	<jenkinsUrl>{{public_url}}</jenkinsUrl>
+    {% if public_url %}
+        <jenkinsUrl>{{public_url}}</jenkinsUrl>
+    {% endif %}
 </jenkins.model.JenkinsLocationConfiguration>

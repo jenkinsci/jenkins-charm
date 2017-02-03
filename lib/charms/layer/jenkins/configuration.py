@@ -36,12 +36,13 @@ class Configuration(object):
             reload via the API is sufficient.
         """
         config = hookenv.config()
-        context = {"public_url": config["public-url"]}
+        url = config["public-url"]
+        context = {"public_url": url}
         templating.render(
             "location-config.xml", paths.LOCATION_CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
-        return self._set_prefix(urlparse(config["public-url"]).path)
+        return self._set_prefix(urlparse(url).path)
 
     def _set_prefix(self, prefix):
         """ Set Jenkins to use the given prefix.
