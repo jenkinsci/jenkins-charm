@@ -37,7 +37,7 @@ class Configuration(object):
         """
         config = hookenv.config()
         url = config["public-url"]
-        context = {"jenkins_url_node": self._get_url_config(url)}
+        context = {"public_url": url}
         templating.render(
             "location-config.xml", paths.LOCATION_CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
@@ -81,7 +81,3 @@ class Configuration(object):
             return True
 
         return False
-
-    def _get_url_config(self, url):
-        """Get Jenkins Url configuration node"""
-        return "<jenkinsUrl>" + url + "</jenkinsUrl>" if url else ""
