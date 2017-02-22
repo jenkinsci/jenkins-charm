@@ -1,0 +1,44 @@
+backup-jobs:
+  description: Backup the jobs directory as a gzipped tar archive.
+  params:
+    artifacts:
+      type: boolean
+      default: False
+      description: |
+        Include job artifacts in the backup. The default, 'False', will only
+        backup the config.xml files for existing jobs. Setting this to 'True'
+        will include all artifacts from the jobs directory in the archive.
+    online:
+      type: boolean
+      default: False
+      description: |
+        Backup the jobs directory while the jenkins service is running. The
+        default, 'False', will stop the jenkins service, perform the backup,
+        and start the service. When 'True', the jenkins service will remain
+        active during the backup.
+restore-jobs:
+  description: Restore an attached resource archive into the jobs directory.
+  params:
+    online:
+      type: boolean
+      default: False
+      description: |
+        Restore the jobs directory while the jenkins service is running. The
+        default, 'False', will stop the jenkins service, extract the archive
+        to the jobs directory, and start the service. When 'True', the jenkins
+        service will remain active during restoration.
+    overwrite:
+      type: boolean
+      default: False
+      description: |
+        Overwrite existing files in the jobs directory. The default, 'False',
+        will only restore files that either do not exist or are newer
+        than files present in the jobs directory. When 'True', all files in
+        the archive will be restored to the jobs directory.
+    wipe:
+      type: boolean
+      default: False
+      description: |
+        Remove the jobs directory prior to restoration. The default, 'False',
+        will restore files into a pre-existing jobs directory. When 'True',
+        the jobs directory is removed and recreated prior to restoration.

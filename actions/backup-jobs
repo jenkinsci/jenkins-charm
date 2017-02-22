@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+# This action creates a snapshot (tgz archive) of the jenkins jobs directory.
+
+import action_utils
+import atexit
+import grp
+import os
+import pwd
+import tarfile
+
+from charmhelpers.core import hookenv, host
+from charms.reactive import is_state
+from glob import glob
+from time import strftime
+
+# Fail if jenkins is not ready
+if not is_state('jenkins.configured.admin'):
+    error = 'Jenkins is not ready to perform this action.'
+    detail = 'The jenkins.configured.admin state is not set.'
+    action_utils.fail(error, detail)
+
+# Process action params and setup the archive bits
+artifacts = hookenv.action_get("artifacts")
+file_path = "/home/ubuntu/jobs-{}.tgz".format(strftime("%Y%m%d-%H%M%S"))
+jobs_dir = "/var/lib/jenkins/jobs"
+online = hookenv.action_get("online")
+
+# Stop jenkins if we are not doing an online backup
+if online is False:
+    action_utils.fail_if_started()
+    # we stopped jenkins; ensure it is started when this action exits.
+    atexit.register(action_utils.fail_if_stopped)
+
+# Create the archive
+if artifacts is True:
+    jobs_glob = glob("{}/*".format(jobs_dir))
+else:
+    jobs_glob = glob("{}/*/config.xml".format(jobs_dir))
+
+try:
+    with tarfile.open(file_path, 'w:gz') as archive:
+        for job in jobs_glob:
+            # files in the archive will be relative to jobs_dir
+            archive.add(job, arcname=os.path.relpath(job, jobs_dir))
+except Exception as e:
+    error = 'Error creating {}'.format(file_path)
+    action_utils.fail(error, e)
+
+os.chown(file_path,
+         pwd.getpwnam('ubuntu').pw_uid,
+         grp.getgrnam('ubuntu').gr_gid)
+
+# Set action data
+file_sum = host.file_hash(file_path, hash_type='sha256')
+hookenv.action_set({'output.remotefile': file_path})
+hookenv.action_set({'output.256sum': file_sum})
+hookenv.action_set({'output.fetchcmd': "juju scp {}:{} .".format(
+                    hookenv.local_unit(), file_path)})
