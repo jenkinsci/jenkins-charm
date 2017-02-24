@@ -171,3 +171,26 @@ class BasicDeploymentTest(DeploymentTest):
             self.assertIn("greenballs", plugins, "Failed to locate greenballs")
 
         assert_plugins()
+
+    def test_20_backup_jobs(self):
+        """
+        Validate we can backup the jobs directory by running the backup-jobs
+        action.
+        """
+        uuid = self.spec.jenkins.run_action('backup-jobs')
+        result = self.spec.deployment.action_fetch(uuid, full_output=True)
+        # action status=completed on success
+        if (result['status'] != "completed"):
+            self.fail('Jenkins backup-jobs action failed: %s' % result)
+
+    def test_20_restore_jobs(self):
+        """
+        Validate restore-jobs fails as expected when the jobs resource is not
+        a valid archive (which is true since we have not attached a resource).
+        """
+        uuid = self.spec.jenkins.run_action('restore-jobs')
+        result = self.spec.deployment.action_fetch(uuid, full_output=True)
+        # Our action should fail with a 'no handler' message
+        self.assertIn("No handler for archive",
+                      result['results']['output'],
+                      "Jenkins restore-jobs action did not fail as expected")
