@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# This action expands a resource to the jenkins jobs directory.
-
 import action_utils
 import atexit
 import distutils.dir_util
@@ -12,52 +10,59 @@ from charmhelpers.payload import archive
 from charms.reactive import is_state
 from shutil import rmtree
 
-# Fail if jenkins is not ready
-if not is_state('jenkins.configured.admin'):
-    error = 'Jenkins is not ready to perform this action.'
-    detail = 'The jenkins.configured.admin state is not set.'
-    action_utils.fail(error, detail)
 
-# Process action params and set vars for later user
-file_path = hookenv.resource_get("jobs")
-jobs_dir = "/var/lib/jenkins/jobs"
-online = hookenv.action_get("online")
-overwrite = hookenv.action_get("overwrite")
-tmp_dir = tempfile.TemporaryDirectory()
-wipe = hookenv.action_get("wipe")
+# This action expands a resource to the jenkins jobs directory.
+def restore():
+    # Fail if jenkins is not ready
+    if not is_state('jenkins.configured.admin'):
+        error = 'Jenkins is not ready to perform this action.'
+        detail = 'The jenkins.configured.admin state is not set.'
+        action_utils.fail(error, detail)
 
-# Extract the archive to a temp dir, failing fast if we encounter problems
-try:
-    archive.extract(file_path, tmp_dir.name)
-except Exception as e:
-    error = 'Error extracting {}. Jobs directory is unchanged'.format(file_path)
-    action_utils.fail(error, e)
+    # Process action params and set vars for later user
+    file_path = hookenv.resource_get("jobs")
+    jobs_dir = "/var/lib/jenkins/jobs"
+    online = hookenv.action_get("online")
+    overwrite = hookenv.action_get("overwrite")
+    tmp_dir = tempfile.TemporaryDirectory()
+    wipe = hookenv.action_get("wipe")
 
-# Stop jenkins if we are not doing an online restore
-if online is False:
-    action_utils.fail_if_started()
-    # we stopped jenkins; ensure it is started when this action exits.
-    atexit.register(action_utils.fail_if_stopped)
+    # Extract the archive to a temp dir, failing fast if we encounter problems
+    try:
+        archive.extract(file_path, tmp_dir.name)
+    except Exception as e:
+        error = 'Error extracting {}. Jobs directory is unchanged'.format(file_path)
+        action_utils.fail(error, e)
 
-# Wipe/recreate the current jobs dir if requested
-if wipe is True:
-    rmtree(jobs_dir)
-    host.mkdir(jobs_dir, owner='jenkins', group='jenkins', perms=0o755)
+    # Stop jenkins if we are not doing an online restore
+    if online is False:
+        action_utils.fail_if_started()
+        # we stopped jenkins; ensure it is started when this action exits.
+        atexit.register(action_utils.fail_if_stopped)
 
-# Copy bits to the jobs directory. Adjust update param as needed (an update
-# is the opposite of an overwrite).
-if overwrite is True:
-    distutils.dir_util.copy_tree(src=tmp_dir.name, dst=jobs_dir, update=False)
-else:
-    distutils.dir_util.copy_tree(src=tmp_dir.name, dst=jobs_dir, update=True)
+    # Wipe/recreate the current jobs dir if requested
+    if wipe is True:
+        rmtree(jobs_dir)
+        host.mkdir(jobs_dir, owner='jenkins', group='jenkins', perms=0o755)
 
-# Make sure our jobs dir is owned by jenkins
-host.chownr(jobs_dir, owner='jenkins', group='jenkins')
+    # Copy bits to the jobs directory. Adjust update param as needed (an update
+    # is the opposite of an overwrite).
+    if overwrite is True:
+        distutils.dir_util.copy_tree(src=tmp_dir.name, dst=jobs_dir, update=False)
+    else:
+        distutils.dir_util.copy_tree(src=tmp_dir.name, dst=jobs_dir, update=True)
 
-# Temp dir should clean itself up when we exit, but be explicit just in case
-tmp_dir.cleanup()
+    # Make sure our jobs dir is owned by jenkins
+    host.chownr(jobs_dir, owner='jenkins', group='jenkins')
 
-# Set action data
-file_sum = host.file_hash(file_path, hash_type='sha256')
-hookenv.action_set({'output.file': file_path})
-hookenv.action_set({'output.256sum': file_sum})
+    # Temp dir should clean itself up when we exit, but be explicit just in case
+    tmp_dir.cleanup()
+
+    # Set action data
+    file_sum = host.file_hash(file_path, hash_type='sha256')
+    hookenv.action_set({'output.file': file_path})
+    hookenv.action_set({'output.256sum': file_sum})
+
+
+if __name__ == '__main__':
+    restore()
