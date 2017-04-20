@@ -2,8 +2,8 @@ import time
 
 from charmtest import CharmTest
 
+from charms.layer.jenkins.api import Api
 from charms.layer.jenkins.service import (
-    URL,
     ServiceUnavailable,
     Service,
 )
@@ -35,12 +35,14 @@ class ServiceTest(CharmTest):
                 context.status_code = 200
             return ""
 
-        self.fakes.network.get(URL, text=callback)
+        api = Api()
+        self.fakes.network.get(api.url, text=callback)
         self.assertIsNone(self.service.check_ready())
 
     def test_check_ready_unavailable(self):
         """
         If the backend keeps returning 5xx, an error is raised.
         """
-        self.fakes.network.get(URL, status_code=500)
+        api = Api()
+        self.fakes.network.get(api.url, status_code=500)
         self.assertRaises(ServiceUnavailable, self.service.check_ready)

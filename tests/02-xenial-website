@@ -10,7 +10,7 @@ from website import (
 
 class XenialWebsiteDeploymentTest(WebsiteDeploymentTest, TestCase):
 
-    spec = WebsiteDeploymentSpec(series="xenial")
+    spec = WebsiteDeploymentSpec(series="xenial", storage=False)
 
 
 if __name__ == "__main__":

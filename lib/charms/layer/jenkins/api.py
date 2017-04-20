@@ -1,20 +1,17 @@
 import requests
-
-import jenkins
-
+from urllib.parse import urljoin, urlparse
 from urllib.error import (
     URLError,
     HTTPError,
 )
 from urllib.request import Request
 
+import jenkins
 from charmhelpers.core import hookenv
 from charmhelpers.core.decorators import retry_on_exception
-
 from charmhelpers.core.hookenv import ERROR
 
 from charms.layer.jenkins.credentials import Credentials
-from charms.layer.jenkins.service import URL
 
 RETRIABLE = (URLError, jenkins.JenkinsException)
 GET_TOKEN_SCRIPT = """
@@ -34,13 +31,21 @@ user.addProperty(property)
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
+    @property
+    def url(self):
+        config = hookenv.config()
+        prefix = urlparse(config["public-url"]).path
+        if len(prefix) > 0 and prefix[-1] != '/':
+            prefix += '/'
+        return urljoin("http://localhost:8080/", prefix)
+
     def wait(self):
         self._make_client()
 
     def version(self):
         """Return the version."""
         self.wait()
-        response = requests.get(URL)
+        response = requests.get(self.url)
         return response.headers["X-Jenkins"]
 
     def update_password(self, username, password):
@@ -65,7 +70,16 @@ class Api(object):
                 return
 
             hookenv.log("Adding node '%s' to Jenkins master" % host)
-            client.create_node(host, int(executors), host, labels=labels)
+
+            # See the "Launch slave agent headlessly" section of the Jenkins
+            # wiki page about distributed builds:
+            #
+            # https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds
+            launcher = jenkins.LAUNCHER_JNLP
+
+            client.create_node(
+                host, int(executors), host, labels=labels, launcher=launcher)
+
             if not client.node_exists(host):
                 hookenv.log(
                     "Failed to create node '%s'" % host, level=ERROR)
@@ -85,7 +99,7 @@ class Api(object):
         """Reload configuration from disk."""
         hookenv.log("Reloading configuration from disk")
         client = self._make_client()
-        request = Request(client._build_url("/reload"), method="POST")
+        request = Request(urljoin(self.url, "reload"), method="POST")
         try:
             client.jenkins_open(request)
         except HTTPError as error:
@@ -94,7 +108,7 @@ class Api(object):
             if error.code != 503:
                 hookenv.log("Unexpected HTTP response code '%d'" % error.code)
                 raise
-            if error.url != client._build_url("/"):
+            if error.url != self.url:
                 hookenv.log("Unexpected HTTP response url '%s'" % error.url)
                 raise
         else:
@@ -110,10 +124,10 @@ class Api(object):
 
         # TODO: also handle regenerated tokens
         if token is None:
-            client = jenkins.Jenkins(URL, user, creds.password())
+            client = jenkins.Jenkins(self.url, user, creds.password())
             token = client.run_script(GET_TOKEN_SCRIPT.format(user)).strip()
             creds.token(token)
 
-        client = jenkins.Jenkins(URL, user, token)
+        client = jenkins.Jenkins(self.url, user, token)
         client.get_whoami()
         return client

@@ -35,6 +35,13 @@ The main method to use the Jenkins service at scale is to add units to the jenki
 
 Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or you cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
 
+## Storage Support
+This charm includes Juju storage support which can be used in the standard way, for example:
+
+    juju deploy jenkins --storage jenkins=10G
+
+Adding storage to an exising application is not supported.
+
 # Configuration
 
 You have already seen the password configuration in the "Usage" section. Some other interesting config options are plugins and release. You can add config options via the command line with juju set or via a config file. More information on Juju config is at [Juju Config Docs](https://juju.ubuntu.com/docs/charms-config.html).

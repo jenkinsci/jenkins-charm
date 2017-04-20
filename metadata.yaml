@@ -26,6 +26,9 @@ provides:
     interface: jenkins-extension
     scope: container
     optional: true
+  nrpe-external-master:
+    interface: nrpe-external-master
+    scope: container
 requires:
   master:
     interface: jenkins-slave
@@ -33,3 +36,8 @@ requires:
   zuul:
     interface: zuul
     optional: true
+storage:
+  jenkins:
+    type: filesystem
+    description: Jenkins data.
+    location: /srv/mnt/jenkins

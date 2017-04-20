@@ -5,6 +5,7 @@ includes:
   - interface:jenkins-slave
   - interface:jenkins-extension
   - interface:jenkins-zuul
+  - interface:nrpe-external-master
 options:
   basic:
     packages: ['python3-testtools', 'pwgen']

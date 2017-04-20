@@ -48,3 +48,9 @@ options:
     default: 1
     description: |
       Number of executors to configure for jenkins master.
+  public-url:
+    type: string
+    default: ""
+    description: |
+      Public url of Jenkins frontend, including the hostname and prefix. This
+      is used by Jenkins whenever generating full links.

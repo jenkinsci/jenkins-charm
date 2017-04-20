@@ -2,7 +2,6 @@ from deployment import DeploymentTest
 from basic import BasicDeploymentSpec
 
 EXTERNAL = {
-    "trusty": "cs:~matsubara/trusty/ci-configurator-3",
     "xenial": "cs:~free.ekanayaka/xenial/ci-configurator-0",
 }
 

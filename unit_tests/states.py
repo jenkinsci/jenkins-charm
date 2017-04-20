@@ -6,7 +6,7 @@ from fixtures import Fixture
 from charmhelpers.core import hookenv
 
 from charms.layer.jenkins import paths
-from charms.layer.jenkins.api import URL
+from charms.layer.jenkins.api import Api
 
 INITIAL_PASSWORD = "initial-pw"
 GENERATED_PASSWORD = "generated-pw"
@@ -30,7 +30,14 @@ class AptInstalledJenkins(State):
         with open(paths.INITIAL_PASSWORD, "w") as fd:
             fd.write(INITIAL_PASSWORD)
 
-        self.fakes.network.get(URL, headers={"X-Jenkins": "2.0.0"})
+        self.fakes.fs.add(paths.DEFAULTS_CONFIG_FILE)
+        os.makedirs('/etc/default')
+        with open(paths.DEFAULTS_CONFIG_FILE, "wb") as fd:
+            fd.write(b"# port for HTTP connector\nHTTP_PORT=8080\n")
+            fd.write(b'JENKINS_ARGS="--httpPort=$HTTP_PORT"')
+
+        api = Api()
+        self.fakes.network.get(api.url, headers={"X-Jenkins": "2.0.0"})
 
 
 class JenkinsConfiguredAdmin(State):

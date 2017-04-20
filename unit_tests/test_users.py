@@ -32,7 +32,9 @@ class UsersTest(JenkinsTest):
         """
         If a password is provided, it's used to configure the admin user.
         """
-        self.fakes.juju.config["password"] = "x"
+        config = hookenv.config()
+        config["password"] = "x"
+
         script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="x")
         self.fakes.jenkins.scripts[script] = ""
 
