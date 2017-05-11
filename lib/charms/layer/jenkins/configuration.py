@@ -1,10 +1,12 @@
 import os
+import re
 from urllib.parse import urlparse
 
 from charmhelpers.core import hookenv
 from charmhelpers.core import templating
 
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.api import Api
 
 PORT = 8080
 
@@ -23,6 +25,26 @@ class Configuration(object):
             owner="jenkins", group="nogroup")
 
         hookenv.open_port(PORT)
+
+    def configure_proxy(self):
+        """Check whether the machine is configured to use an http(s) proxy
+        and if it does - propagate the environment proxy settings to Jenkins."""
+        env_proxy = (os.environ['HTTP_PROXY'] or os.environ['HTTPS_PROXY'] or
+                     os.environ['http_proxy'] or os.environ['https_proxy'])
+
+        if not env_proxy:
+            hookenv.log("There are no environment proxy settings")
+            return
+
+        hookenv.log("There are environment proxy settings")
+        url = urlparse(env_proxy)
+
+        noproxy = os.environ['NO_PROXY'] or os.environ['no_proxy']
+        if noproxy:
+            noproxy = ' '.join([re.sub("^\.", '*.', x.strip()) for x in noproxy.split(',')])
+
+        api = Api()
+        api.configure_proxy(url.hostname, url.port, url.username, url.password, noproxy)
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""

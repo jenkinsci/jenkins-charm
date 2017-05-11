@@ -121,6 +121,11 @@ def configure_admin():
         service_restart('jenkins')
         api.wait()
 
+    status_set("maintenance", "Configuring proxy settings")
+    configuration.configure_proxy()
+    service_restart('jenkins')
+    api.wait()
+
     status_set("maintenance", "Configuring admin user")
     users = Users()
     users.configure_admin()
