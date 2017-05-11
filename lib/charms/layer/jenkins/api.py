@@ -27,6 +27,10 @@ property = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword(
 user.addProperty(property)
 """
 
+CONFIGURE_PROXY_SCRIPT = """
+proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}', '{noproxy}')
+proxy.save()
+"""
 
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
@@ -56,6 +60,14 @@ class Api(object):
         client = self._make_client()
         client.run_script(UPDATE_PASSWORD_SCRIPT.format(
             username=username, password=password))
+
+    def configure_proxy(self, hostname, port, username, password, noproxy):
+        """Configure a system proxy."""
+        client = self._make_client()
+        client.run_script(CONFIGURE_PROXY_SCRIPT.format(
+            hostname=hostname, port=port,
+            username=username, password=password,
+            noproxy=noproxy))
 
     def add_node(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
