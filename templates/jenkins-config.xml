@@ -9,4 +9,5 @@
     <disableSignup>true</disableSignup>
     <enableCaptcha>false</enableCaptcha>
   </securityRealm>
+  <slaveAgentPort>{{jnlp_port}}</slaveAgentPort>
 </hudson>

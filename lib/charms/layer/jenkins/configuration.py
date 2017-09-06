@@ -17,12 +17,16 @@ class Configuration(object):
         hookenv.log("Bootstrapping initial Jenkins configuration")
 
         config = hookenv.config()
-        context = {"master_executors": config["master-executors"]}
+        context = {
+            "master_executors": config["master-executors"],
+            "jnlp_port": config["jnlp-port"],
+        }
         templating.render(
             "jenkins-config.xml", paths.CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
         hookenv.open_port(PORT)
+        hookenv.open_port(config["jnlp_port"])
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""
