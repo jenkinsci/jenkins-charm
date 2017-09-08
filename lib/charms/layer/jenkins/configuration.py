@@ -26,7 +26,7 @@ class Configuration(object):
             owner="jenkins", group="nogroup")
 
         hookenv.open_port(PORT)
-        hookenv.open_port(config["jnlp_port"])
+        hookenv.open_port(config["jnlp-port"])
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""
