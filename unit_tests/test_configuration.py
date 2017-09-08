@@ -36,7 +36,7 @@ class ConfigurationTest(CharmTest):
         self.assertThat(
             paths.CONFIG_FILE,
             FileContains(matcher=Contains("<numExecutors>1</numExecutors>")))
-        self.assertEqual({8080}, self.fakes.juju.ports["TCP"])
+        self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
 
     def test_set_prefix1(self):
         # Case #1 - no previous config, no prefix, no change
