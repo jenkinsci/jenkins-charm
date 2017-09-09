@@ -21,12 +21,20 @@ class Configuration(object):
             "master_executors": config["master-executors"],
             "jnlp_port": config["jnlp-port"],
         }
+
+        # check for sane values, default to, uhh, the default
+        if not -1 <= config["jnlp-port"] <= 65535:
+            config["jnlp-port"] = 48484
+
+        # if we're using a set JNLP port, open it
+        if config["jnlp-port"] > 0:
+            hookenv.open_port(config["jnlp-port"])
+
         templating.render(
             "jenkins-config.xml", paths.CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
         hookenv.open_port(PORT)
-        hookenv.open_port(config["jnlp-port"])
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""

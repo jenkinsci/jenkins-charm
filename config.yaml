@@ -58,4 +58,5 @@ options:
     type: int
     default: 48484
     description: |
-      TCP port on which to listen for incoming connections from slaves
+      TCP port on which to listen for incoming connections from slaves.
+      Set to -1 for a random port, or to 0 to disable JNLP entirely.
