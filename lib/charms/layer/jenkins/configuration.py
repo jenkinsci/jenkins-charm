@@ -17,18 +17,18 @@ class Configuration(object):
         hookenv.log("Bootstrapping initial Jenkins configuration")
 
         config = hookenv.config()
-        context = {
-            "master_executors": config["master-executors"],
-            "jnlp_port": config["jnlp-port"],
-        }
 
-        # check for sane values, default to, uhh, the default
-        if not -1 <= config["jnlp-port"] <= 65535:
+        # check for sane port values, fall back to the default
+        if not -1 <= config["jnlp-port"] <= 65535: # pragma: no cover
             config["jnlp-port"] = 48484
 
         # if we're using a set JNLP port, open it
         if config["jnlp-port"] > 0:
             hookenv.open_port(config["jnlp-port"])
+
+        context = {
+            "master_executors": config["master-executors"],
+            "jnlp_port": config["jnlp-port"]}
 
         templating.render(
             "jenkins-config.xml", paths.CONFIG_FILE, context,
