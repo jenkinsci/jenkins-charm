@@ -36,7 +36,12 @@ class ConfigurationTest(CharmTest):
         self.assertThat(
             paths.CONFIG_FILE,
             FileContains(matcher=Contains("<numExecutors>1</numExecutors>")))
-        self.assertEqual({8080}, self.fakes.juju.ports["TCP"])
+        self.assertThat(
+            paths.CONFIG_FILE,
+            FileContains(
+                matcher=Contains("<slaveAgentPort>48484</slaveAgentPort>"))
+            )
+        self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
 
     def test_set_prefix1(self):
         # Case #1 - no previous config, no prefix, no change
@@ -71,6 +76,13 @@ class ConfigurationTest(CharmTest):
         os.remove(paths.DEFAULTS_CONFIG_FILE)
         updated = self.configuration._set_prefix("/nothing")
         self.assertFalse(updated)
+
+    def test_bad_jnlp_port(self):
+        # bootstrap should fail and return False if we set an invalid port
+        bad_port = 99999
+        hookenv.config()["jnlp-port"] = bad_port
+        bootstrap = self.configuration.bootstrap()
+        self.assertFalse(bootstrap)
 
     def test_set_url(self):
         needs_restart = self.configuration.set_url()

@@ -13,6 +13,18 @@ If you want to run jobs on separate nodes you will also need to deploy the jenki
     juju deploy -n 5 jenkins-slave
     juju add-relation jenkins jenkins-slave
 
+Slaves will attempt to connect via JNLP on port 48484 by default. This is configurable, e.g.:
+
+    juju set jenkins jnlp-port=12345
+
+If you want the previously-default behaviour of a random TCP port, you can set this to -1:
+
+    juju set jenkins jnlp-port=-1
+
+Or if you want to disable the feature entirely, set it to 0:
+
+    juju set jenkins jnlp-port=0
+
 The default password for the 'admin' account will be auto-generated.
 
 You can set it using:

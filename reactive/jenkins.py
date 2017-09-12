@@ -89,8 +89,8 @@ def bootstrap_jenkins():
     service = Service()
     service.check_ready()
     configuration = Configuration()
-    configuration.bootstrap()
-    set_state("jenkins.bootstrapped")
+    if configuration.bootstrap():
+        set_state("jenkins.bootstrapped")
 
 
 # Called once we're bootstrapped and every time the configured tools

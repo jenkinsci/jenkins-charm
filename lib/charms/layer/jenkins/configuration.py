@@ -17,12 +17,30 @@ class Configuration(object):
         hookenv.log("Bootstrapping initial Jenkins configuration")
 
         config = hookenv.config()
-        context = {"master_executors": config["master-executors"]}
+
+        if not -1 <= config["jnlp-port"] <= 65535:
+            err = "{} is not a valid setting for jnlp-port".format(
+                config["jnlp-port"]
+            )
+            hookenv.log(err)
+            hookenv.status_set("blocked", err)
+            return False
+
+        context = {
+            "master_executors": config["master-executors"],
+            "jnlp_port": config["jnlp-port"]}
+
         templating.render(
             "jenkins-config.xml", paths.CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
         hookenv.open_port(PORT)
+
+        # if we're using a set JNLP port, open it
+        if config["jnlp-port"] > 0:
+            hookenv.open_port(config["jnlp-port"])
+
+        return True
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""
