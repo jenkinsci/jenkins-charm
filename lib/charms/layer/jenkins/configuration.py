@@ -18,23 +18,29 @@ class Configuration(object):
 
         config = hookenv.config()
 
-        # check for sane port values, fall back to the default
-        if not -1 <= config["jnlp-port"] <= 65535: # pragma: no cover
-            config["jnlp-port"] = 48484
+        if not -1 <= config["jnlp-port"] <= 65535:
+            err = "{} is not a valid setting for jnlp-port".format(
+                config["jnlp-port"]
+            )
+            hookenv.log(err)
+            hookenv.status_set("blocked", err)
+            return False
+        else:
+            context = {
+                "master_executors": config["master-executors"],
+                "jnlp_port": config["jnlp-port"]}
 
-        # if we're using a set JNLP port, open it
-        if config["jnlp-port"] > 0:
-            hookenv.open_port(config["jnlp-port"])
+            templating.render(
+                "jenkins-config.xml", paths.CONFIG_FILE, context,
+                owner="jenkins", group="nogroup")
 
-        context = {
-            "master_executors": config["master-executors"],
-            "jnlp_port": config["jnlp-port"]}
+            hookenv.open_port(PORT)
 
-        templating.render(
-            "jenkins-config.xml", paths.CONFIG_FILE, context,
-            owner="jenkins", group="nogroup")
+            # if we're using a set JNLP port, open it
+            if config["jnlp-port"] > 0:
+                hookenv.open_port(config["jnlp-port"])
 
-        hookenv.open_port(PORT)
+            return True
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""
