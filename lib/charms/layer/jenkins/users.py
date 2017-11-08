@@ -7,6 +7,7 @@ from charmhelpers.core import host
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
+from charms.layer.jenkins.credentials import Credentials
 
 
 class Users(object):
@@ -32,21 +33,12 @@ class Users(object):
             # presenting the setup wizard.
             host.write_file(
                 paths.LAST_EXEC, "{}\n".format(api.version()).encode("utf-8"),
-                owner="jenkins", group="nogroup")
+                owner="jenkins", group="nogroup", perms=0o0600)
 
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
-        config = hookenv.config()
-        username = config["username"]
-        password = config["password"]
-
-        if not password:
-            password = host.pwgen(length=15)
-            # Save the password to the local state, so it can be accessed
-            # by the Credentials class.
-            config["_generated-password"] = password
-
-        return _User(username, password)
+        creds = Credentials()
+        return _User(creds.username(), creds.password())
 
 
 _User = namedtuple("User", ["username", "password"])

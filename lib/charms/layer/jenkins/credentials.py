@@ -28,21 +28,21 @@ class Credentials(object):
 
         password = hookenv.config()["password"]
         if not password:
-            password = hookenv.config()["_generated-password"]
+            with open(paths.ADMIN_PASSWORD, 'r') as f:
+                password = f.read().strip()
         return password
 
     def token(self, value=None):
         """Get or set the admin token from/to the local state."""
-        config = hookenv.config()
         if value is not None:
-            config["_api-token"] = value
-            # Save the token to a file as well. It's not used directly by
-            # this charm but it's convenient for integration with
-            # third-party tools.
+            # Save the token to a file
             host.write_file(
                 paths.ADMIN_TOKEN, value.encode("utf-8"), owner="root",
                 group="root", perms=0o0600)
-        return config.get("_api-token")
+        if not os.path.exists(paths.ADMIN_TOKEN):
+            return None
+        with open(paths.ADMIN_TOKEN, 'r') as f:
+            return f.read().strip()
 
     def _initial_password(self):
         """Return the initial admin password."""
