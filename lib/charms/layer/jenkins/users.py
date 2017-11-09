@@ -37,8 +37,17 @@ class Users(object):
 
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
-        creds = Credentials()
-        return _User(creds.username(), creds.password())
+        config = hookenv.config()
+        username = config["username"]
+        password = config["password"]
+
+        if not password:
+            password = host.pwgen(length=15)
+            # Save the password to the local state, so it can be accessed
+            # by the Credentials class.
+            config["_generated-password"] = password
+
+        return _User(username, password)
 
 
 _User = namedtuple("User", ["username", "password"])

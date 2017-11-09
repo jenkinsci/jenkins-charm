@@ -28,7 +28,7 @@ class Plugins(object):
         try:
             installed_plugins = self._install_plugins(plugins)
         except:
-            hookenv.log("Can't download plugin: {}".format(url))
+            hookenv.log("Plugin installation failed, check logs for details")
             host.service_start("jenkins")  # Make sure we don't leave jenkins down
             raise
 
