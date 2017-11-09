@@ -7,7 +7,6 @@ from charmhelpers.core import host
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
-from charms.layer.jenkins.credentials import Credentials
 
 
 class Users(object):
