@@ -91,3 +91,18 @@ class PluginsTest(CharmTest):
         self.plugins.install("plugin")
         commands = [proc.args[0] for proc in self.fakes.processes.procs]
         self.assertNotIn("wget", commands)
+
+    def test_install_bad_plugin(self):
+        """
+        If plugin can't be downloaded we expect error message in the logs
+        """
+        def broken_download(*args, **kwargs):
+            raise Exception("error")
+
+        self.plugins._install_plugin = broken_download
+        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
+        plugin_path = os.path.join(paths.PLUGINS, "bad_plugin.hpi")
+        with open(plugin_path, "w"):
+            pass
+        self.assertRaises(Exception,
+                          self.plugins.install, "bad_plugin")

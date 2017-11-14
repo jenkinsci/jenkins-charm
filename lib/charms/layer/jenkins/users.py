@@ -32,7 +32,7 @@ class Users(object):
             # presenting the setup wizard.
             host.write_file(
                 paths.LAST_EXEC, "{}\n".format(api.version()).encode("utf-8"),
-                owner="jenkins", group="nogroup")
+                owner="jenkins", group="nogroup", perms=0o0600)
 
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""

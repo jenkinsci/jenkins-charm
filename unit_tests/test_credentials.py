@@ -79,7 +79,6 @@ class CredentialsTest(CharmTest):
         """
         self.useFixture(JenkinsConfiguredAdmin(self.fakes))
         self.assertEqual("abc", self.credentials.token("abc"))
-        self.assertEqual("abc", hookenv.config()["_api-token"])
         self.assertEqual("abc", self.credentials.token())
         self.assertThat(paths.ADMIN_TOKEN, FileContains("abc"))
         self.assertThat(paths.ADMIN_TOKEN, HasOwnership(0, 0))

@@ -20,7 +20,6 @@ from charms.reactive import (
     when,
     when_not,
     when_any,
-    only_once,
     set_state,
     remove_state,
 )
@@ -82,7 +81,7 @@ def install_jenkins():
 # perform any configuration yet. We'll not touch config.xml ever again,
 # since from this point it should be managed by the user (or by some
 # subordinate charm via the 'jenkins-extension' interface).
-@only_once()
+@when_not("jenkins.bootstrapped")
 @when("apt.installed.jenkins")
 def bootstrap_jenkins():
     status_set("maintenance", "Bootstrapping Jenkins configuration")

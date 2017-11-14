@@ -19,14 +19,19 @@ class Plugins(object):
         plugins = plugins.split()
         hookenv.log("Stopping jenkins for plugin update(s)")
         host.service_stop("jenkins")
-
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
 
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
 
         existing_plugins = set(glob.glob("%s/*.hpi" % paths.PLUGINS))
-        installed_plugins = self._install_plugins(plugins)
+        try:
+            installed_plugins = self._install_plugins(plugins)
+        except:
+            hookenv.log("Plugin installation failed, check logs for details")
+            host.service_start("jenkins")  # Make sure we don't leave jenkins down
+            raise
+
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
