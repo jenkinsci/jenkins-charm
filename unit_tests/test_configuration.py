@@ -78,11 +78,16 @@ class ConfigurationTest(CharmTest):
         self.assertFalse(updated)
 
     def test_bad_jnlp_port(self):
-        # bootstrap should fail and return False if we set an invalid port
-        bad_port = 99999
-        hookenv.config()["jnlp-port"] = bad_port
-        bootstrap = self.configuration.bootstrap()
-        self.assertFalse(bootstrap)
+        # Bootstrap should fail and return False if we set an invalid port
+        orig_port = hookenv.config()["jnlp-port"]
+        try:
+            bad_port = 99999
+            hookenv.config()["jnlp-port"] = bad_port
+            bootstrap = self.configuration.bootstrap()
+            self.assertFalse(bootstrap)
+        finally:
+            # Reset our port
+            hookenv.config()["jnlp-port"] = orig_port
 
     def test_set_url(self):
         needs_restart = self.configuration.set_url()
