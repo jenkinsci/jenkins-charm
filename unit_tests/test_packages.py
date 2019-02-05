@@ -71,12 +71,16 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'bundle' but no jenkins.deb file is
         present, an error is raised.
         """
-        self.fakes.juju.config["release"] = "bundle"
-        error = self.assertRaises(Exception, self.packages.install_jenkins)
-        path = os.path.join(hookenv.charm_dir(), "files", "jenkins.deb")
-        self.assertEqual(
-            "'{}' doesn't exist. No package bundled.".format(path),
-            str(error))
+        orig_release = hookenv.config()["release"]
+        try:
+            hookenv.config()["release"] = "bundle"
+            error = self.assertRaises(Exception, self.packages.install_jenkins)
+            path = os.path.join(hookenv.charm_dir(), "files", "jenkins.deb")
+            self.assertEqual(
+                "'{}' doesn't exist. No package bundled.".format(path),
+                str(error))
+        finally:
+            hookenv.config()["release"] = orig_release
 
     def test_install_jenkins_remote(self):
         """
@@ -123,7 +127,11 @@ class PackagesTest(CharmTest):
         """
         If the 'release' config is invalid, an error is raised.
         """
-        self.fakes.juju.config["release"] = "foo"
-        error = self.assertRaises(Exception, self.packages.install_jenkins)
-        self.assertEqual(
-            "Release 'foo' configuration not recognised", str(error))
+        orig_release = hookenv.config()["release"]
+        try:
+            hookenv.config()["release"] = "foo"
+            error = self.assertRaises(Exception, self.packages.install_jenkins)
+            self.assertEqual(
+                "Release 'foo' configuration not recognised", str(error))
+        finally:
+            hookenv.config()["release"] = orig_release
