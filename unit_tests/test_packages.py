@@ -25,6 +25,12 @@ class PackagesTest(CharmTest):
         os.symlink(os.path.join(os.getcwd(), keyfile),
                    os.path.join(hookenv.charm_dir(), keyfile))
 
+    def tearDown(self):
+        # Reset installs and sources after each test
+        super(PackagesTest, self).tearDown()
+        self.packages.installs = []
+        self.sources = []
+
     def test_install_dependencies(self):
         """
         The Jenkins dependencies get installed by the install_dependencies
@@ -37,9 +43,13 @@ class PackagesTest(CharmTest):
         """
         The requested tools get installed by the install_tools method.
         """
-        self.fakes.juju.config["tools"] = "git gcc"
-        self.packages.install_tools()
-        self.assertEqual(["git", "gcc"], self.apt.installs)
+        orig_tools = hookenv.config()["tools"]
+        try:
+            hookenv.config()["tools"] = "git gcc"
+            self.packages.install_tools()
+            self.assertEqual(["git", "gcc"], self.apt.installs)
+        finally:
+            hookenv.config()["tools"] = orig_tools
 
     def test_install_jenkins_bundle(self):
         """
