@@ -45,7 +45,7 @@ The main method to use the Jenkins service at scale is to add units to the jenki
 
     juju deploy -n 5 jenkins-slave
 
-Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or you cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
+Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or your cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
 
 ## Storage Support
 This charm includes Juju storage support which can be used in the standard way, for example:
@@ -84,10 +84,10 @@ into hooks/install.d.
 
 These will be executed when the main install, `config-changed` or
 `upgrade-charm` hooks are executed (as the `config-changed` and
-`upgrade-charm` hooks just call install)..
+`upgrade-charm` hooks just call install).
 
 Additional hooks are executed in the context of the install hook
-so may use any variables which are defined in this hook.
+so you may use any variables which are defined in this hook.
 
 # Jenkins Project Information 
 
