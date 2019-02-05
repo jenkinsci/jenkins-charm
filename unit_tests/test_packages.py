@@ -56,15 +56,19 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'bundle', then Jenkins will be
         installed from a local jenkins.deb file.
         """
-        self.fakes.juju.config["release"] = "bundle"
-        files = os.path.join(hookenv.charm_dir(), "files")
-        os.mkdir(files)
-        bundle_path = os.path.join(files, "jenkins.deb")
-        with open(bundle_path, "w") as fd:
-            fd.write("")
-        self.packages.install_jenkins()
-        self.assertEqual(
-            ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+        orig_release = hookenv.config()["release"]
+        try:
+            hookenv.config()["release"] = "bundle"
+            files = os.path.join(hookenv.charm_dir(), "files")
+            os.mkdir(files)
+            bundle_path = os.path.join(files, "jenkins.deb")
+            with open(bundle_path, "w") as fd:
+                fd.write("")
+            self.packages.install_jenkins()
+            self.assertEqual(
+                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+        finally:
+            hookenv.config()["release"] = orig_release
 
     def test_install_jenkins_bundle_no_file(self):
         """
@@ -89,10 +93,14 @@ class PackagesTest(CharmTest):
         """
         self.fakes.processes.wget.locations[
             "http://jenkins-1.2.3.deb"] = b"data"
-        self.fakes.juju.config["release"] = "http://jenkins-1.2.3.deb"
-        self.packages.install_jenkins()
-        self.assertEqual(
-            ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+        orig_release = hookenv.config()["release"]
+        try:
+            hookenv.config()["release"] = "http://jenkins-1.2.3.deb"
+            self.packages.install_jenkins()
+            self.assertEqual(
+                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+        finally:
+            hookenv.config()["release"] = orig_release
 
     def test_install_jenkins_lts_release(self):
         """

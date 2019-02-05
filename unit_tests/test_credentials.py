@@ -38,9 +38,13 @@ class CredentialsTest(CharmTest):
         """
         The username matches then one set in the service configuration.
         """
-        self.fakes.juju.config["username"] = "joe"
-        self.useFixture(JenkinsConfiguredAdmin(self.fakes))
-        self.assertEqual("joe", self.credentials.username())
+        orig_username = hookenv.config()["username"]
+        try:
+            hookenv.config()["username"] = "joe"
+            self.useFixture(JenkinsConfiguredAdmin(self.fakes))
+            self.assertEqual("joe", self.credentials.username())
+        finally:
+            hookenv.config()["username"] = orig_username
 
     def test_password_initial(self):
         """
@@ -54,9 +58,13 @@ class CredentialsTest(CharmTest):
         """
         If set, the password matches the one set in the service configuration.
         """
-        self.fakes.juju.config["password"] = "sekret"
-        self.useFixture(JenkinsConfiguredAdmin(self.fakes))
-        self.assertEqual("sekret", self.credentials.password())
+        orig_password = hookenv.config()["password"]
+        try:
+            hookenv.config()["password"] = "sekret"
+            self.useFixture(JenkinsConfiguredAdmin(self.fakes))
+            self.assertEqual("sekret", self.credentials.password())
+        finally:
+            hookenv.config()["password"] = orig_password
 
     def test_password_from_local_state(self):
         """

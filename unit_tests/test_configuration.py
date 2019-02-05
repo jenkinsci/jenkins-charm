@@ -100,12 +100,16 @@ class ConfigurationTest(CharmTest):
 
     def test_set_url_not_empty(self):
         url = "http://jenkins.example.com"
-        hookenv.config()["public-url"] = url
-        self.configuration.set_url()
-        self.assertThat(
-            paths.LOCATION_CONFIG_FILE,
-            FileContains(
-                matcher=Contains("<jenkinsUrl>" + url + "</jenkinsUrl>")))
+        orig_public_url = hookenv.config()["public-url"]
+        try:
+            hookenv.config()["public-url"] = url
+            self.configuration.set_url()
+            self.assertThat(
+                paths.LOCATION_CONFIG_FILE,
+                FileContains(
+                    matcher=Contains("<jenkinsUrl>" + url + "</jenkinsUrl>")))
+        finally:
+            hookenv.config()["public-url"] = orig_public_url
 
     def test_migrate(self):
         """
