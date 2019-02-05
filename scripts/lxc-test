@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Script to run lint and test suite inside LXC.
+
+if [[ -z "${SQUID_PROXY}" ]]; then
+    PROXY_COMMAND=""
+else
+    PROXY_COMMAND="https_proxy=${SQUID_PROXY} http_proxy=${SQUID_PROXY}"
+    if [[ -n "${NO_PROXY}" ]]; then
+        PROXY_COMMAND="${PROXY_COMMAND} no_proxy=${NO_PROXY}"
+    fi
+fi
+
+set -eu
+
+CONTAINER_NAME=${JOB_BASE_NAME:-jenkins-charm}
+
+function log_info() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO: $1"
+}
+
+function lxc_run() {
+    cmd=$1
+    log_info "Running command \"${cmd}\" in container \"${CONTAINER_NAME}\" as root"
+    lxc exec ${CONTAINER_NAME} -- bash -c "${cmd}"
+}
+
+function lxc_run_as_ubuntu() {
+    cmd=$1
+    log_info "Running command \"${cmd}\" in container \"${CONTAINER_NAME}\" as ubuntu"
+    lxc exec ${CONTAINER_NAME} -- sudo -u ubuntu -i ${cmd}
+}
+
+function recreate_lxc() {
+    set +e
+    log_info "Checking if container exists"
+    lxc list | grep ${CONTAINER_NAME}
+    if [ $? -eq 0 ]; then
+        log_info "Found old container, deleting"
+        lxc delete --force ${CONTAINER_NAME}
+    fi
+    set -e
+    lxc launch ubuntu:16.04 ${CONTAINER_NAME}
+    # We shouldn't need to just wait here, but there doesn't appear to be an
+    # lxc wait command.
+    sleep 20
+    # Install packages.
+    lxc_run "apt update"
+    lxc_run "apt install -y make"
+    lxc_run_as_ubuntu "mkdir /home/ubuntu/jenkins-charm"
+    # Copy the source (current directory) into LXC
+    tar cf - . | lxc exec ${CONTAINER_NAME} -- tar xvf - -C /home/ubuntu/jenkins-charm
+    lxc_run "chown -R ubuntu:ubuntu /home/ubuntu/jenkins-charm"
+    # Run the code setup.
+    lxc_run_as_ubuntu "${PROXY_COMMAND} make -C /home/ubuntu/jenkins-charm lxc-setup"
+}
+
+log_info "Recreating container \"${CONTAINER_NAME}\""
+recreate_lxc
+
+# Provide a visual break so it's more obvious set up has finished and you're
+# now looking at output you care about
+log_info ""
+log_info "--------------------------------------------"
+log_info "Set up complete, about to run lint and tests"
+log_info "--------------------------------------------"
+log_info ""
+
+lxc_run_as_ubuntu "make -C /home/ubuntu/jenkins-charm lxc-test"
+
+log_info "Cleaning up"
+lxc delete --force ${CONTAINER_NAME}

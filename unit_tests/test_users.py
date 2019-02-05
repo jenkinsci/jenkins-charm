@@ -33,19 +33,23 @@ class UsersTest(JenkinsTest):
         If a password is provided, it's used to configure the admin user.
         """
         config = hookenv.config()
-        config["password"] = "x"
+        orig_password = config["password"]
+        try:
+            config["password"] = "x"
 
-        script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="x")
-        self.fakes.jenkins.scripts[script] = ""
+            script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="x")
+            self.fakes.jenkins.scripts[script] = ""
 
-        self.users.configure_admin()
+            self.users.configure_admin()
 
-        self.assertThat(paths.ADMIN_PASSWORD, FileContains("x"))
-        self.assertThat(paths.ADMIN_PASSWORD, HasOwnership(0, 0))
-        self.assertThat(paths.ADMIN_PASSWORD, HasPermissions("0600"))
+            self.assertThat(paths.ADMIN_PASSWORD, FileContains("x"))
+            self.assertThat(paths.ADMIN_PASSWORD, HasOwnership(0, 0))
+            self.assertThat(paths.ADMIN_PASSWORD, HasPermissions("0600"))
 
-        self.assertThat(paths.LAST_EXEC, FileContains("2.0.0\n"))
-        self.assertThat(paths.LAST_EXEC, HasOwnership(123, 456))
+            self.assertThat(paths.LAST_EXEC, FileContains("2.0.0\n"))
+            self.assertThat(paths.LAST_EXEC, HasOwnership(123, 456))
+        finally:
+            config["password"] = orig_password
 
     def test_configure_admin_random_password(self):
         """

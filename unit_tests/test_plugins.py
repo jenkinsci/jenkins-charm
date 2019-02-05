@@ -6,6 +6,8 @@ from testtools.matchers import (
     Not,
 )
 
+from charmhelpers.core import hookenv
+
 from charmtest import CharmTest
 
 from charms.layer.jenkins import paths
@@ -22,8 +24,13 @@ class PluginsTest(CharmTest):
         os.makedirs(paths.PLUGINS)
         self.fakes.users.add("jenkins", 123)
         self.fakes.groups.add("jenkins", 123)
-        self.fakes.juju.config["plugins-site"] = "http://x/"
+        self.orig_plugins_site = hookenv.config()["plugins-site"]
+        hookenv.config()["plugins-site"] = "http://x/"
         self.fakes.processes.wget.locations["http://x/plugin.hpi"] = b"data"
+
+    def tearDown(self):
+        super(PluginsTest, self).tearDown()
+        hookenv.config()["plugins-site"] = self.orig_plugins_site
 
     def test_install(self):
         """
@@ -41,22 +48,30 @@ class PluginsTest(CharmTest):
         If plugins-check-certificate is set to 'no', the plugins site
         certificate won't be validated.
         """
-        self.fakes.juju.config["plugins-check-certificate"] = "no"
-        self.plugins.install("plugin")
-        self.assertIn(
-            "--no-check-certificate", self.fakes.processes.procs[-4].args)
+        orig_plugins_check_certificate = hookenv.config()["plugins-check-certificate"]
+        try:
+            hookenv.config()["plugins-check-certificate"] = "no"
+            self.plugins.install("plugin")
+            self.assertIn(
+                "--no-check-certificate", self.fakes.processes.procs[-4].args)
+        finally:
+            hookenv.config()["plugins-check-certificate"] = orig_plugins_check_certificate
 
     def test_install_dont_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
         """
-        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
-        unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.hpi")
-        with open(unlisted_plugin, "w"):
-            pass
-        self.plugins.install("plugin")
-        self.assertThat(unlisted_plugin, Not(PathExists()))
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.hpi")
+            with open(unlisted_plugin, "w"):
+                pass
+            self.plugins.install("plugin")
+            self.assertThat(unlisted_plugin, Not(PathExists()))
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
     def test_install_do_remove_unlisted(self):
         """
@@ -74,23 +89,31 @@ class PluginsTest(CharmTest):
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
         """
-        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
-        unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.hpi")
-        os.mkdir(unlisted_plugin)
-        self.plugins.install("plugin")
-        self.assertThat(unlisted_plugin, PathExists())
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.hpi")
+            os.mkdir(unlisted_plugin)
+            self.plugins.install("plugin")
+            self.assertThat(unlisted_plugin, PathExists())
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
     def test_install_already_installed(self):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
-        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
-        plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
-        with open(plugin_path, "w"):
-            pass
-        self.plugins.install("plugin")
-        commands = [proc.args[0] for proc in self.fakes.processes.procs]
-        self.assertNotIn("wget", commands)
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
+            with open(plugin_path, "w"):
+                pass
+            self.plugins.install("plugin")
+            commands = [proc.args[0] for proc in self.fakes.processes.procs]
+            self.assertNotIn("wget", commands)
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
     def test_install_bad_plugin(self):
         """
@@ -100,9 +123,13 @@ class PluginsTest(CharmTest):
             raise Exception("error")
 
         self.plugins._install_plugin = broken_download
-        self.fakes.juju.config["remove-unlisted-plugins"] = "yes"
-        plugin_path = os.path.join(paths.PLUGINS, "bad_plugin.hpi")
-        with open(plugin_path, "w"):
-            pass
-        self.assertRaises(Exception,
-                          self.plugins.install, "bad_plugin")
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            plugin_path = os.path.join(paths.PLUGINS, "bad_plugin.hpi")
+            with open(plugin_path, "w"):
+                pass
+            self.assertRaises(Exception,
+                              self.plugins.install, "bad_plugin")
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins

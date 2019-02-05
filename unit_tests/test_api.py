@@ -171,8 +171,12 @@ class ApiTest(JenkinsTest):
         Verify the url always ends in a / and has the expected prefix
         """
         config = hookenv.config()
-        config["public-url"] = ""
-        self.assertEqual(self.api.url, 'http://localhost:8080/')
+        orig_public_url = config["public-url"]
+        try:
+            config["public-url"] = ""
+            self.assertEqual(self.api.url, 'http://localhost:8080/')
 
-        config["public-url"] = "http://here:8080/jenkins"
-        self.assertEqual(self.api.url, 'http://localhost:8080/jenkins/')
+            config["public-url"] = "http://here:8080/jenkins"
+            self.assertEqual(self.api.url, 'http://localhost:8080/jenkins/')
+        finally:
+            config["public-url"] = orig_public_url
