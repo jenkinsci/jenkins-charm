@@ -29,7 +29,7 @@ class PackagesTest(CharmTest):
         # Reset installs and sources after each test
         super(PackagesTest, self).tearDown()
         self.packages.installs = []
-        self.sources = []
+        self.packages.sources = []
 
     def test_install_dependencies(self):
         """
@@ -107,13 +107,17 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to 'trunk', an APT source entry will be
         added, pointing to the debian Jenkins repository.
         """
-        self.fakes.juju.config["release"] = "trunk"
-        self.packages.install_jenkins()
-        source = APT_SOURCE % "debian"
-        key = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
-        with open(key, "r") as k:
-            key = k.read()
-        self.assertEqual([(source, key)], self.apt.sources)
+        orig_release = hookenv.config()["release"]
+        try:
+            hookenv.config()["release"] = "trunk"
+            self.packages.install_jenkins()
+            source = APT_SOURCE % "debian"
+            key = os.path.join(hookenv.charm_dir(), "jenkins.io.key")
+            with open(key, "r") as k:
+                key = k.read()
+            self.assertEqual([(source, key)], self.apt.sources)
+        finally:
+            hookenv.config()["release"] = orig_release
 
     def test_install_jenkins_invalid_release(self):
         """
