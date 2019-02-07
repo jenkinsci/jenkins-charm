@@ -12,6 +12,7 @@ from states import JenkinsConfiguredAdmin
 
 from charms.layer.jenkins.api import (
     GET_LEGACY_TOKEN_SCRIPT,
+    GET_NEW_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
     Api,
 )
@@ -23,6 +24,7 @@ class ApiTest(JenkinsTest):
         super(ApiTest, self).setUp()
         self.useFixture(JenkinsConfiguredAdmin(self.fakes))
         self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
+        self.fakes.jenkins.scripts[GET_NEW_TOKEN_SCRIPT.format("admin")] = "xyz\n"
         self.api = Api()
 
     @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
@@ -45,11 +47,13 @@ class ApiTest(JenkinsTest):
         self.fakes.jenkins.get_whoami = transient_failure
         self.assertIsNone(self.api.wait())
 
-    def test_update_password(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_update_password(self, _jenkins_version):
         """
         The update_password() method runs a groovy script to update the
         password for the given user.
         """
+        _jenkins_version.return_value = '2.120.1'
         username = "joe"
         password = "new"
         script = UPDATE_PASSWORD_SCRIPT.format(
@@ -57,8 +61,15 @@ class ApiTest(JenkinsTest):
         self.fakes.jenkins.scripts[script] = ""
         self.assertIsNone(self.api.update_password(username, password))
 
-    def test_version(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_version(self, _jenkins_version):
         """The version() method returns the version of the Jenkins server."""
+        _jenkins_version.return_value = '2.120.1'
+        self.assertEqual("2.0.0", self.api.version())
+
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_new_token_script(self, _jenkins_version):
+        _jenkins_version.return_value = '2.150.1'
         self.assertEqual("2.0.0", self.api.version())
 
     @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')

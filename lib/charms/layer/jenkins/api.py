@@ -137,7 +137,7 @@ class Api(object):
             # If we're using Jenkins >= 2.129 we need to request a new token.
             jenkins_version = Packages().jenkins_version()
             if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
-                token = client.run_script(GET_LEGACY_NEW_SCRIPT.format(user)).strip()
+                token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
             else:
                 token = client.run_script(GET_LEGACY_TOKEN_SCRIPT.format(user)).strip()
             creds.token(token)
