@@ -4,7 +4,10 @@ from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
 
-from stubs.apt import AptStub
+from stubs.apt import (
+    AptStub,
+    AptStubLegacyJenkinsVersion,
+)
 
 from charms.layer.jenkins.packages import (
     APT_DEPENDENCIES,
@@ -143,3 +146,10 @@ class PackagesTest(CharmTest):
                 "Release 'foo' configuration not recognised", str(error))
         finally:
             hookenv.config()["release"] = orig_release
+
+    def test_jenkins_version(self):
+        self.assertEqual(self.packages.jenkins_version(), '2.150.1')
+        # And now test older version.
+        self.apt = AptStubLegacyJenkinsVersion()
+        self.packages = Packages(apt=self.apt)
+        self.assertEqual(self.packages.jenkins_version(), '2.128.1')

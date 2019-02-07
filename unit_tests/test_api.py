@@ -1,3 +1,5 @@
+import mock
+
 from urllib.parse import urljoin
 from requests import Request, Response
 from requests.exceptions import HTTPError
@@ -9,7 +11,7 @@ from testing import JenkinsTest
 from states import JenkinsConfiguredAdmin
 
 from charms.layer.jenkins.api import (
-    GET_TOKEN_SCRIPT,
+    GET_LEGACY_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
     Api,
 )
@@ -20,13 +22,15 @@ class ApiTest(JenkinsTest):
     def setUp(self):
         super(ApiTest, self).setUp()
         self.useFixture(JenkinsConfiguredAdmin(self.fakes))
-        self.fakes.jenkins.scripts[GET_TOKEN_SCRIPT.format("admin")] = "abc\n"
+        self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
         self.api = Api()
 
-    def test_wait_transient_failure(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_wait_transient_failure(self, _jenkins_version):
         """
         Wait for Jenkins to be fully up, even in spite of transient failures.
         """
+        _jenkins_version.return_value = '2.120.1'
         get_whoami = self.fakes.jenkins.get_whoami
         tries = []
 
@@ -57,10 +61,12 @@ class ApiTest(JenkinsTest):
         """The version() method returns the version of the Jenkins server."""
         self.assertEqual("2.0.0", self.api.version())
 
-    def test_add(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_add(self, _jenkins_version):
         """
         A slave node can be added by specifying executors and labels.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.api.add_node("slave-0", 1, labels=["python"])
         [node] = self.fakes.jenkins.nodes
         self.assertEqual("slave-0", node.host)
@@ -69,18 +75,22 @@ class ApiTest(JenkinsTest):
         self.assertEqual(["python"], node.labels)
         self.assertEqual("hudson.slaves.JNLPLauncher", node.launcher)
 
-    def test_add_exists(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_add_exists(self, _jenkins_version):
         """
         If a node already exists, nothing is done.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.fakes.jenkins.create_node("slave-0", 1, "slave-0")
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(1, len(self.fakes.jenkins.nodes))
 
-    def test_add_transient_failure(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_add_transient_failure(self, _jenkins_version):
         """
         Transient failures get retried.
         """
+        _jenkins_version.return_value = '2.120.1'
         create_node = self.fakes.jenkins.create_node
         tries = []
 
@@ -96,10 +106,12 @@ class ApiTest(JenkinsTest):
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(1, len(self.fakes.jenkins.nodes))
 
-    def test_add_retry_give_up(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_add_retry_give_up(self, _jenkins_version):
         """
         If errors persist, we give up.
         """
+        _jenkins_version.return_value = '2.120.1'
 
         def failure(*args, **kwargs):
             raise JenkinsException("error")
@@ -108,28 +120,34 @@ class ApiTest(JenkinsTest):
         self.assertRaises(
             JenkinsException, self.api.add_node, "slave-0", 1)
 
-    def test_add_spurious(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_add_spurious(self, _jenkins_version):
         """
         If adding a node apparently succeeds, but actually didn't then we
         log an error.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.fakes.jenkins.create_node = lambda *args, **kwargs: None
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(
             "ERROR: Failed to create node 'slave-0'", self.fakes.juju.log[-1])
 
-    def test_deleted(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_deleted(self, _jenkins_version):
         """
         A slave node can be deleted by specifyng its host name.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.api.add_node("slave-0", 1, labels=["python"])
         self.api.delete_node("slave-0")
         self.assertEqual([], self.fakes.jenkins.nodes)
 
-    def test_deleted_no_present(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_deleted_no_present(self, _jenkins_version):
         """
         If a slave node doesn't exists, deleting it is a no-op.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.api.delete_node("slave-0")
         self.assertEqual([], self.fakes.jenkins.nodes)
 
@@ -140,36 +158,44 @@ class ApiTest(JenkinsTest):
         response.url = url
         return HTTPError(request=Request('POST', url), response=response)
 
-    def test_reload(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_reload(self, _jenkins_version):
         """
         The reload method POSTs a request to the '/reload' URL, expecting
         a 503 on the homepage (which happens after redirection).
         """
+        _jenkins_version.return_value = '2.120.1'
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.api.reload()
 
-    def test_reload_unexpected_error(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_reload_unexpected_error(self, _jenkins_version):
         """
         If the error code is not 403, the error is propagated.
         """
+        _jenkins_version.return_value = '2.120.1'
         error = self._make_httperror(self.api.url, 403, "Forbidden")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
-    def test_reload_unexpected_url(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_reload_unexpected_url(self, _jenkins_version):
         """
         If the error URL is not the root, the error is propagated.
         """
+        _jenkins_version.return_value = '2.120.1'
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         error.response.url = urljoin(self.api.url, "/foo")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
-    def test_reload_unexpected_success(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_reload_unexpected_success(self, _jenkins_version):
         """
         If the request unexpectedly succeeds, an error is raised.
         """
+        _jenkins_version.return_value = '2.120.1'
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = "home"
         self.assertRaises(RuntimeError, self.api.reload)
 

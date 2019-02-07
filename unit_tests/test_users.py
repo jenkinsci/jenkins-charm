@@ -1,3 +1,5 @@
+import mock
+
 from fixtures import MonkeyPatch
 
 from testtools.matchers import (
@@ -12,7 +14,7 @@ from charmhelpers.core import hookenv
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.api import (
-    GET_TOKEN_SCRIPT,
+    GET_LEGACY_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
 )
 
@@ -25,13 +27,15 @@ class UsersTest(JenkinsTest):
     def setUp(self):
         super(UsersTest, self).setUp()
         self.useFixture(AptInstalledJenkins(self.fakes))
-        self.fakes.jenkins.scripts[GET_TOKEN_SCRIPT.format("admin")] = "abc\n"
+        self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
         self.users = Users()
 
-    def test_configure_admin_custom_password(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_configure_admin_custom_password(self, _jenkins_version):
         """
         If a password is provided, it's used to configure the admin user.
         """
+        _jenkins_version.return_value = '2.120.1'
         config = hookenv.config()
         orig_password = config["password"]
         try:
@@ -51,10 +55,12 @@ class UsersTest(JenkinsTest):
         finally:
             config["password"] = orig_password
 
-    def test_configure_admin_random_password(self):
+    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
+    def test_configure_admin_random_password(self, _jenkins_version):
         """
         If a password is not provided, a random one will be generated.
         """
+        _jenkins_version.return_value = '2.120.1'
         def pwgen(length):
             return "z"
         script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="z")
