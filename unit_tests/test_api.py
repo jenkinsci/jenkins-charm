@@ -1,5 +1,6 @@
 from urllib.parse import urljoin
-from urllib.error import HTTPError
+from requests import Request, Response
+from requests.exceptions import HTTPError
 
 from jenkins import JenkinsException
 
@@ -132,13 +133,19 @@ class ApiTest(JenkinsTest):
         self.api.delete_node("slave-0")
         self.assertEqual([], self.fakes.jenkins.nodes)
 
+    def _make_httperror(self, url, status_code, reason):
+        response = Response()
+        response.reason = reason
+        response.status_code = status_code
+        response.url = url
+        return HTTPError(request=Request('POST', url), response=response)
+
     def test_reload(self):
         """
         The reload method POSTs a request to the '/reload' URL, expecting
         a 503 on the homepage (which happens after redirection).
         """
-        error = HTTPError(self.api.url, 503, "Service Unavailable", {}, None)
-        error.url = self.api.url
+        error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.api.reload()
 
@@ -146,7 +153,7 @@ class ApiTest(JenkinsTest):
         """
         If the error code is not 403, the error is propagated.
         """
-        error = HTTPError(self.api.url, 403, "Forbidden", {}, None)
+        error = self._make_httperror(self.api.url, 403, "Forbidden")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
@@ -154,8 +161,8 @@ class ApiTest(JenkinsTest):
         """
         If the error URL is not the root, the error is propagated.
         """
-        error = HTTPError(self.api.url, 503, "Service Unavailable", {}, None)
-        error.url = "/foo"
+        error = self._make_httperror(self.api.url, 503, "Service Unavailable")
+        error.response.url = urljoin(self.api.url, "/foo")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
 
