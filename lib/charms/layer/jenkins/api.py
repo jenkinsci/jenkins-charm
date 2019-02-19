@@ -1,10 +1,5 @@
 import requests
 from urllib.parse import urljoin, urlparse
-from urllib.error import (
-    URLError,
-    HTTPError,
-)
-from urllib.request import Request
 
 import jenkins
 from charmhelpers.core import hookenv
@@ -13,7 +8,11 @@ from charmhelpers.core.hookenv import ERROR
 
 from charms.layer.jenkins.credentials import Credentials
 
-RETRIABLE = (URLError, jenkins.JenkinsException)
+RETRIABLE = (
+    requests.exceptions.RequestException,
+    jenkins.JenkinsException,
+    )
+
 GET_TOKEN_SCRIPT = """
 user = hudson.model.User.get('{}')
 prop = user.getProperty(jenkins.security.ApiTokenProperty.class)
@@ -99,17 +98,17 @@ class Api(object):
         """Reload configuration from disk."""
         hookenv.log("Reloading configuration from disk")
         client = self._make_client()
-        request = Request(urljoin(self.url, "reload"), method="POST")
+        request = requests.Request("POST", urljoin(self.url, "reload"))
         try:
             client.jenkins_open(request)
-        except HTTPError as error:
+        except requests.exceptions.HTTPError as error:
             # We expect a 'Service Unavailable' error code and to be at the
             # home page.
-            if error.code != 503:
-                hookenv.log("Unexpected HTTP response code '%d'" % error.code)
+            if error.response.status_code != 503:
+                hookenv.log("Unexpected HTTP response code '%d'" % error.response.status_code)
                 raise
-            if error.url != self.url:
-                hookenv.log("Unexpected HTTP response url '%s'" % error.url)
+            if error.response.url != self.url:
+                hookenv.log("Unexpected HTTP response url '%s'" % error.response.url)
                 raise
         else:
             raise RuntimeError("Couldn't reload configuration")
