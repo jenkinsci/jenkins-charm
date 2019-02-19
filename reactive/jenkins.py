@@ -77,6 +77,15 @@ def install_jenkins():
     packages.install_jenkins()
 
 
+# This is intended for the release=bundle case, but upgrade-charm
+# is a good hint that we should upgrade everything possible.
+@hook("upgrade-charm")
+def upgrade_jenkins():
+    status_set("maintenance", "Upgrading Jenkins")
+    packages = Packages()
+    packages.install_jenkins()
+
+
 # Called once the jenkins package has been installed, but we didn't
 # perform any configuration yet. We'll not touch config.xml ever again,
 # since from this point it should be managed by the user (or by some
