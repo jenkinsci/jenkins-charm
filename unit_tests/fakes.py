@@ -47,7 +47,7 @@ class FakeJenkins(Fixture):
         return self.scripts[script]
 
     def jenkins_open(self, request):
-        response = self.responses[request.full_url]
+        response = self.responses[request.url]
         if isinstance(response, Exception):
             raise response
         return response
