@@ -4,10 +4,7 @@ from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
 
-from stubs.apt import (
-    AptStub,
-    AptStubLegacyJenkinsVersion,
-)
+from stubs.apt import AptStub
 
 from charms.layer.jenkins.packages import (
     APT_DEPENDENCIES,
@@ -150,6 +147,5 @@ class PackagesTest(CharmTest):
     def test_jenkins_version(self):
         self.assertEqual(self.packages.jenkins_version(), '2.150.1')
         # And now test older version.
-        self.apt = AptStubLegacyJenkinsVersion()
-        self.packages = Packages(apt=self.apt)
+        self.apt._set_jenkins_version('2.128.1')
         self.assertEqual(self.packages.jenkins_version(), '2.128.1')
