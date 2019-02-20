@@ -19,7 +19,7 @@ class AptStub(object):
         self.sources.append((source, key))
 
     def get_package_version(self, package, full_version=False):
-        return self._package_versions.get(package, None)
+        return self._package_versions[package]
 
     def _set_jenkins_version(self, jenkins_version):
         self._package_versions['jenkins'] = jenkins_version
