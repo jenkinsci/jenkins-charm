@@ -40,6 +40,9 @@ user.addProperty(property)
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
+    def __init__(self, packages=None):
+        self._packages = packages or Packages()
+
     @property
     def url(self):
         config = hookenv.config()
@@ -135,7 +138,7 @@ class Api(object):
         if token is None:
             client = jenkins.Jenkins(self.url, user, creds.password())
             # If we're using Jenkins >= 2.129 we need to request a new token.
-            jenkins_version = Packages().jenkins_version()
+            jenkins_version = self._packages.jenkins_version()
             if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
                 token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
             else:
