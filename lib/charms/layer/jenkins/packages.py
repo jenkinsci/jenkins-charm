@@ -17,6 +17,16 @@ APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
 APT_SOURCE = "deb http://pkg.jenkins-ci.org/%s binary/"
 
 
+def _juju_proxy_env():
+    proxy_env = {}
+    for protocol in ['FTP', 'HTTP', 'HTTPS', 'NO']:
+        envvar = '%s_PROXY' % (protocol)
+        juju_envvar = 'JUJU_CHARM_%s' % (envvar)
+        if juju_envvar in os.environ:
+            proxy_env[envvar.lower()] = os.environ[juju_envvar]
+    return proxy_env
+
+
 class Packages(object):
     """Manage Jenkins package dependencies."""
 
@@ -75,7 +85,15 @@ class Packages(object):
         hookenv.log("Getting remote jenkins package: %s" % url)
         tempdir = tempfile.mkdtemp()
         target = os.path.join(tempdir, 'jenkins.deb')
-        subprocess.check_call(("wget", "-q", "-O", target, url))
+
+        proxy_env = _juju_proxy_env()
+        try:
+            subprocess.check_call(("wget", "-q", "-O", target, url),
+                                  env={**os.environ, **proxy_env})
+        except subprocess.CalledProcessError: # pragma: no cover
+            if len(proxy_env) == 0:
+                raise
+            subprocess.check_call(("wget", "-q", "-O", target, url))
         self._install_local_deb(target)
         shutil.rmtree(tempdir)
 

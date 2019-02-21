@@ -102,6 +102,18 @@ class PackagesTest(CharmTest):
         finally:
             hookenv.config()["release"] = orig_release
 
+    def test_install_jenkins_remote_with_proxy(self):
+        """
+        If the 'release' config is set to a remote URL, then Jenkins will be
+        installed from the deb files pointed by that url.
+        """
+        env_backup = os.environ.copy()
+        try:
+            os.environ['JUJU_CHARM_HTTP_PROXY'] = "http://pr.oxy:1234"
+            self.test_install_jenkins_remote()
+        finally:
+            os.environ = env_backup
+
     def test_install_jenkins_lts_release(self):
         """
         If the 'release' config is set to 'lts', an APT source entry will be
