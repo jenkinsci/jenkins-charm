@@ -1,5 +1,3 @@
-import mock
-
 from fixtures import MonkeyPatch
 
 from testtools.matchers import (
@@ -12,6 +10,7 @@ from systemfixtures.matchers import HasOwnership
 from charmhelpers.core import hookenv
 
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.packages import Packages
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.api import (
     GET_LEGACY_TOKEN_SCRIPT,
@@ -21,6 +20,8 @@ from charms.layer.jenkins.api import (
 from testing import JenkinsTest
 from states import AptInstalledJenkins
 
+from stubs.apt import AptStub
+
 
 class UsersTest(JenkinsTest):
 
@@ -28,14 +29,15 @@ class UsersTest(JenkinsTest):
         super(UsersTest, self).setUp()
         self.useFixture(AptInstalledJenkins(self.fakes))
         self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
-        self.users = Users()
+        self.apt = AptStub()
+        self.packages = Packages(apt=self.apt)
+        self.users = Users(packages=self.packages)
 
-    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
-    def test_configure_admin_custom_password(self, _jenkins_version):
+    def test_configure_admin_custom_password(self):
         """
         If a password is provided, it's used to configure the admin user.
         """
-        _jenkins_version.return_value = '2.120.1'
+        self.apt._set_jenkins_version('2.120.1')
         config = hookenv.config()
         orig_password = config["password"]
         try:
@@ -55,14 +57,15 @@ class UsersTest(JenkinsTest):
         finally:
             config["password"] = orig_password
 
-    @mock.patch('charms.layer.jenkins.packages.Packages.jenkins_version')
-    def test_configure_admin_random_password(self, _jenkins_version):
+    def test_configure_admin_random_password(self):
         """
         If a password is not provided, a random one will be generated.
         """
-        _jenkins_version.return_value = '2.120.1'
+
         def pwgen(length):
             return "z"
+
+        self.apt._set_jenkins_version('2.120.1')
         script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="z")
         self.fakes.jenkins.scripts[script] = ""
 

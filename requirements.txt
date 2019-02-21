@@ -1,4 +1,3 @@
 charmhelpers
 flake8
-mock
 python-jenkins

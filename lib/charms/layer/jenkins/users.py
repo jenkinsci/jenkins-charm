@@ -7,17 +7,21 @@ from charmhelpers.core import host
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
+from charms.layer.jenkins.packages import Packages
 
 
 class Users(object):
     """Manage Jenkins users."""
+
+    def __init__(self, packages=None):
+        self._packages = packages or Packages()
 
     def configure_admin(self):
         """Configure the admin user."""
         hookenv.log("Configuring user for jenkins")
 
         admin = self._admin_data()
-        api = Api()
+        api = Api(packages=self._packages)
         api.update_password(admin.username, admin.password)
 
         # Save the password to a file. It's not used directly by this charm
