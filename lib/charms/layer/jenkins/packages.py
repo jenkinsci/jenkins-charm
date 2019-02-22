@@ -50,6 +50,9 @@ class Packages(object):
             self._setup_source(release)
         self._apt.queue_install(["jenkins"])
 
+    def jenkins_version(self):
+        return self._apt.get_package_version('jenkins', full_version=True)
+
     def _install_from_bundle(self):
         """Install Jenkins from bundled package."""
         # Check bundled package exists.

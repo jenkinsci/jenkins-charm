@@ -10,14 +10,17 @@ from systemfixtures.matchers import HasOwnership
 from charmhelpers.core import hookenv
 
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.packages import Packages
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.api import (
-    GET_TOKEN_SCRIPT,
+    GET_LEGACY_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
 )
 
 from testing import JenkinsTest
 from states import AptInstalledJenkins
+
+from stubs.apt import AptStub
 
 
 class UsersTest(JenkinsTest):
@@ -25,13 +28,16 @@ class UsersTest(JenkinsTest):
     def setUp(self):
         super(UsersTest, self).setUp()
         self.useFixture(AptInstalledJenkins(self.fakes))
-        self.fakes.jenkins.scripts[GET_TOKEN_SCRIPT.format("admin")] = "abc\n"
-        self.users = Users()
+        self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
+        self.apt = AptStub()
+        self.packages = Packages(apt=self.apt)
+        self.users = Users(packages=self.packages)
 
     def test_configure_admin_custom_password(self):
         """
         If a password is provided, it's used to configure the admin user.
         """
+        self.apt._set_jenkins_version('2.120.1')
         config = hookenv.config()
         orig_password = config["password"]
         try:
@@ -55,8 +61,11 @@ class UsersTest(JenkinsTest):
         """
         If a password is not provided, a random one will be generated.
         """
+
         def pwgen(length):
             return "z"
+
+        self.apt._set_jenkins_version('2.120.1')
         script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="z")
         self.fakes.jenkins.scripts[script] = ""
 

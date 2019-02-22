@@ -1,4 +1,5 @@
 import requests
+from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
 import jenkins
@@ -7,16 +8,25 @@ from charmhelpers.core.decorators import retry_on_exception
 from charmhelpers.core.hookenv import ERROR
 
 from charms.layer.jenkins.credentials import Credentials
+from charms.layer.jenkins.packages import Packages
 
 RETRIABLE = (
     requests.exceptions.RequestException,
     jenkins.JenkinsException,
     )
 
-GET_TOKEN_SCRIPT = """
+GET_LEGACY_TOKEN_SCRIPT = """
 user = hudson.model.User.get('{}')
 prop = user.getProperty(jenkins.security.ApiTokenProperty.class)
 println(prop.getApiToken())
+"""
+
+GET_NEW_TOKEN_SCRIPT = """
+user = hudson.model.User.get('{}')
+prop = user.getProperty(jenkins.security.ApiTokenProperty.class)
+result = prop.tokenStore.generateNewToken("token-created-by-script")
+user.save()
+println(result.plainValue)
 """
 
 # flake8: noqa
@@ -29,6 +39,9 @@ user.addProperty(property)
 
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
+
+    def __init__(self, packages=None):
+        self._packages = packages or Packages()
 
     @property
     def url(self):
@@ -124,7 +137,12 @@ class Api(object):
         # TODO: also handle regenerated tokens
         if token is None:
             client = jenkins.Jenkins(self.url, user, creds.password())
-            token = client.run_script(GET_TOKEN_SCRIPT.format(user)).strip()
+            # If we're using Jenkins >= 2.129 we need to request a new token.
+            jenkins_version = self._packages.jenkins_version()
+            if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
+                token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
+            else:
+                token = client.run_script(GET_LEGACY_TOKEN_SCRIPT.format(user)).strip()
             creds.token(token)
 
         client = jenkins.Jenkins(self.url, user, token)

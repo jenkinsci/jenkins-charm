@@ -143,3 +143,9 @@ class PackagesTest(CharmTest):
                 "Release 'foo' configuration not recognised", str(error))
         finally:
             hookenv.config()["release"] = orig_release
+
+    def test_jenkins_version(self):
+        self.assertEqual(self.packages.jenkins_version(), '2.150.1')
+        # And now test older version.
+        self.apt._set_jenkins_version('2.128.1')
+        self.assertEqual(self.packages.jenkins_version(), '2.128.1')

@@ -9,10 +9,14 @@ from testing import JenkinsTest
 from states import JenkinsConfiguredAdmin
 
 from charms.layer.jenkins.api import (
-    GET_TOKEN_SCRIPT,
+    GET_LEGACY_TOKEN_SCRIPT,
+    GET_NEW_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
     Api,
 )
+from charms.layer.jenkins.packages import Packages
+
+from stubs.apt import AptStub
 
 
 class ApiTest(JenkinsTest):
@@ -20,13 +24,17 @@ class ApiTest(JenkinsTest):
     def setUp(self):
         super(ApiTest, self).setUp()
         self.useFixture(JenkinsConfiguredAdmin(self.fakes))
-        self.fakes.jenkins.scripts[GET_TOKEN_SCRIPT.format("admin")] = "abc\n"
-        self.api = Api()
+        self.fakes.jenkins.scripts[GET_LEGACY_TOKEN_SCRIPT.format("admin")] = "abc\n"
+        self.fakes.jenkins.scripts[GET_NEW_TOKEN_SCRIPT.format("admin")] = "xyz\n"
+        self.apt = AptStub()
+        self.packages = Packages(apt=self.apt)
+        self.api = Api(packages=self.packages)
 
     def test_wait_transient_failure(self):
         """
         Wait for Jenkins to be fully up, even in spite of transient failures.
         """
+        self.apt._set_jenkins_version('2.120.1')
         get_whoami = self.fakes.jenkins.get_whoami
         tries = []
 
@@ -46,6 +54,7 @@ class ApiTest(JenkinsTest):
         The update_password() method runs a groovy script to update the
         password for the given user.
         """
+        self.apt._set_jenkins_version('2.120.1')
         username = "joe"
         password = "new"
         script = UPDATE_PASSWORD_SCRIPT.format(
@@ -55,12 +64,18 @@ class ApiTest(JenkinsTest):
 
     def test_version(self):
         """The version() method returns the version of the Jenkins server."""
+        self.apt._set_jenkins_version('2.120.1')
+        self.assertEqual("2.0.0", self.api.version())
+
+    def test_new_token_script(self):
+        self.apt._set_jenkins_version('2.150.1')
         self.assertEqual("2.0.0", self.api.version())
 
     def test_add(self):
         """
         A slave node can be added by specifying executors and labels.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.api.add_node("slave-0", 1, labels=["python"])
         [node] = self.fakes.jenkins.nodes
         self.assertEqual("slave-0", node.host)
@@ -73,6 +88,7 @@ class ApiTest(JenkinsTest):
         """
         If a node already exists, nothing is done.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.fakes.jenkins.create_node("slave-0", 1, "slave-0")
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(1, len(self.fakes.jenkins.nodes))
@@ -81,6 +97,7 @@ class ApiTest(JenkinsTest):
         """
         Transient failures get retried.
         """
+        self.apt._set_jenkins_version('2.120.1')
         create_node = self.fakes.jenkins.create_node
         tries = []
 
@@ -100,6 +117,7 @@ class ApiTest(JenkinsTest):
         """
         If errors persist, we give up.
         """
+        self.apt._set_jenkins_version('2.120.1')
 
         def failure(*args, **kwargs):
             raise JenkinsException("error")
@@ -113,6 +131,7 @@ class ApiTest(JenkinsTest):
         If adding a node apparently succeeds, but actually didn't then we
         log an error.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.fakes.jenkins.create_node = lambda *args, **kwargs: None
         self.api.add_node("slave-0", 1, labels=["python"])
         self.assertEqual(
@@ -122,6 +141,7 @@ class ApiTest(JenkinsTest):
         """
         A slave node can be deleted by specifyng its host name.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.api.add_node("slave-0", 1, labels=["python"])
         self.api.delete_node("slave-0")
         self.assertEqual([], self.fakes.jenkins.nodes)
@@ -130,6 +150,7 @@ class ApiTest(JenkinsTest):
         """
         If a slave node doesn't exists, deleting it is a no-op.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.api.delete_node("slave-0")
         self.assertEqual([], self.fakes.jenkins.nodes)
 
@@ -145,6 +166,7 @@ class ApiTest(JenkinsTest):
         The reload method POSTs a request to the '/reload' URL, expecting
         a 503 on the homepage (which happens after redirection).
         """
+        self.apt._set_jenkins_version('2.120.1')
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.api.reload()
@@ -153,6 +175,7 @@ class ApiTest(JenkinsTest):
         """
         If the error code is not 403, the error is propagated.
         """
+        self.apt._set_jenkins_version('2.120.1')
         error = self._make_httperror(self.api.url, 403, "Forbidden")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.assertRaises(HTTPError, self.api.reload)
@@ -161,6 +184,7 @@ class ApiTest(JenkinsTest):
         """
         If the error URL is not the root, the error is propagated.
         """
+        self.apt._set_jenkins_version('2.120.1')
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         error.response.url = urljoin(self.api.url, "/foo")
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
@@ -170,6 +194,7 @@ class ApiTest(JenkinsTest):
         """
         If the request unexpectedly succeeds, an error is raised.
         """
+        self.apt._set_jenkins_version('2.120.1')
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = "home"
         self.assertRaises(RuntimeError, self.api.reload)
 
