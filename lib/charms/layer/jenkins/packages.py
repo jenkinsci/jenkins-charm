@@ -6,31 +6,41 @@ import subprocess
 
 from testtools import try_import
 
-from charmhelpers.core import hookenv
+from charmhelpers.core import hookenv, host
 
 # XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
 
-APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
+APT_DEPENDENCIES = {
+    "xenial": ["daemon", "default-jre-headless"],
+    "bionic": ["daemon", "openjdk-11-jre-headless"],
+}
 APT_SOURCE = "deb http://pkg.jenkins-ci.org/%s binary/"
 
 
 class Packages(object):
     """Manage Jenkins package dependencies."""
 
-    def __init__(self, apt=apt):
+    def __init__(self, apt=apt, ch_host=None):
         """
         @param apt: An object implementing the charms.apt API from the apt
             charm layer (for testing).
+        @param ch_host: An object implementing the host API from
+            charmhelpers.core (for testing).
         """
         self._apt = apt
+        self._host = ch_host or host
+
+    def distro_codename(self):
+        """Return the distro release code name, e.g. 'precise' or 'trusty'."""
+        return self._host.lsb_release()['DISTRIB_CODENAME']
 
     def install_dependencies(self):
         """Install the deb dependencies of the Jenkins package."""
         hookenv.log("Installing jenkins dependencies and desired tools")
-        self._apt.queue_install(APT_DEPENDENCIES)
+        self._apt.queue_install(APT_DEPENDENCIES[self.distro_codename()])
 
     def install_tools(self):
         """Install the configured tools."""
