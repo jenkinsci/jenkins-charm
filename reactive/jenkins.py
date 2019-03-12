@@ -10,6 +10,7 @@ from charmhelpers.core.hookenv import (
     storage_get,
 )
 from charmhelpers.core.host import (
+    lsb_release,
     service_restart,
     service_start,
     service_stop,
@@ -42,7 +43,8 @@ from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
 from charms.layer.jenkins.storage import Storage
 
-DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
+DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in
+                       APT_DEPENDENCIES[lsb_release()['DISTRIB_CODENAME']]]
 
 
 # XXX This is for backward compatibility, since the pre-layered

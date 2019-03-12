@@ -5,6 +5,7 @@ from charmtest import CharmTest
 from charmhelpers.core import hookenv
 
 from stubs.apt import AptStub
+from stubs.host import CharmHelpersCoreHostStub
 
 from charms.layer.jenkins.packages import (
     APT_DEPENDENCIES,
@@ -18,7 +19,8 @@ class PackagesTest(CharmTest):
     def setUp(self):
         super(PackagesTest, self).setUp()
         self.apt = AptStub()
-        self.packages = Packages(apt=self.apt)
+        self.ch_host = CharmHelpersCoreHostStub()
+        self.packages = Packages(apt=self.apt, ch_host=self.ch_host)
         # XXX Not all charm files are populated in charm_dir() by default.
         # XXX See: https://github.com/freeekanayaka/charm-test/issues/2
         keyfile = "jenkins.io.key"
@@ -36,8 +38,16 @@ class PackagesTest(CharmTest):
         The Jenkins dependencies get installed by the install_dependencies
         method.
         """
+        # Our default distro version (xenial).
+        self.assertEqual(self.packages.distro_codename(), 'xenial')
         self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES, self.apt.installs)
+        self.assertEqual(APT_DEPENDENCIES['xenial'], self.apt.installs)
+        # Now check with a distro of bionic.
+        self.apt.installs = []
+        self.ch_host._set_distro_version('bionic')
+        self.assertEqual(self.packages.distro_codename(), 'bionic')
+        self.packages.install_dependencies()
+        self.assertEqual(APT_DEPENDENCIES['bionic'], self.apt.installs)
 
     def test_install_tools(self):
         """
