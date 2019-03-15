@@ -19,6 +19,7 @@ tags:
 subordinate: false
 series:
   - xenial
+  - bionic
 provides:
   website:
     interface: http
