@@ -4,13 +4,13 @@ maintainer: Free Ekanayaka <free.ekanayaka@canonical.com>
 description: |
   Jenkins is an extendable open source continuous
   integration server that monitors executions of
-  repeated jobs. The focus of Jenkins is the 
-  building/testing of software project continuously, 
+  repeated jobs. The focus of Jenkins is the
+  building/testing of software project continuously,
   and monitoring executions of externally-run jobs.
   More information at http://jenkins-ci.org/.
-  
+
   This charm provides the Jenkins master service,
-  and when paired with the jenkins-slave charm 
+  and when paired with the jenkins-slave charm
   provides an easy way to deploy Jenkins on Ubuntu
   server, and scale out Jenkins slaves.
 tags:
@@ -37,6 +37,14 @@ requires:
   zuul:
     interface: zuul
     optional: true
+resources:
+  jobs:
+    type: file
+    filename: jobs.tgz
+    description: |
+      A tar or zip archive containing Jenkins jobs files to be expanded
+      to the /var/lib/jenkins/jobs directory. This resource is required to
+      use the 'restore-jobs' action.
 storage:
   jenkins:
     type: filesystem
