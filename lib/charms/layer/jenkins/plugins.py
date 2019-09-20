@@ -57,18 +57,23 @@ class Plugins(object):
             wget_options = ("--no-check-certificate",)
         else:
             wget_options = ()
+        if config["plugins-force-reinstall"] == "no":
+            reinstall = False
+        else:
+            reinstall = True
+            wget_options = wget_options + ("-N",)
         paths = set()
         for plugin in plugins:
-            path = self._install_plugin(plugins_site, plugin, wget_options)
+            path = self._install_plugin(plugins_site, plugin, wget_options, reinstall)
             paths.add(path)
         return paths
 
-    def _install_plugin(self, plugins_site, plugin, wget_options):
+    def _install_plugin(self, plugins_site, plugin, wget_options, reinstall):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
         url = os.path.join(plugins_site, plugin_filename)
         plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
-        if not os.path.isfile(plugin_path):
+        if not os.path.isfile(plugin_path) or reinstall:
             hookenv.log("Installing plugin %s" % plugin_filename)
             command = ("wget",) + wget_options + ("-q", "-O", "-", url)
             plugin_data = subprocess.check_output(command)

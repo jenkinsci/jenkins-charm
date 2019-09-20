@@ -37,6 +37,12 @@ options:
     type: string
     default: "yes"
     description: Set to no to allow downloading from an invalid https site.
+  plugins-force-reinstall:
+      type: string
+      default: "no"
+      description: |
+        Set this to yes to force a reinstallation of plugins listed in plugins
+        config.
   remove-unlisted-plugins:
     type: string
     default: "no"

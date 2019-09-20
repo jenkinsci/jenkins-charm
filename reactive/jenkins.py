@@ -147,7 +147,7 @@ def configure_admin():
 
 # Called once we're bootstrapped and every time the configured plugins
 # change.
-@when("jenkins.configured.admin", "config.changed.plugins")
+@when("jenkins.configured.admin", "config.changed.plugins", "config.changed.plugins-force-reinstall")
 def configure_plugins():
     if get_state("extension.connected"):
         # We've been driven by an extension, let it take control over

@@ -106,6 +106,7 @@ class PluginsTest(CharmTest):
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
+            hookenv.config()["plugins-force-reinstall"] = "no"
             plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
             with open(plugin_path, "w"):
                 pass
@@ -131,5 +132,23 @@ class PluginsTest(CharmTest):
                 pass
             self.assertRaises(Exception,
                               self.plugins.install, "bad_plugin")
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
+
+    def test_install_force_reinstall(self):
+        """
+        If a plugin is already installed and plugin-force-reinstall is yes it
+        should get downloaded.
+        """
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            hookenv.config()["plugins-force-reinstall"] = "yes"
+            plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
+            with open(plugin_path, "w"):
+                pass
+            self.plugins.install("plugin")
+            commands = [proc.args[0] for proc in self.fakes.processes.procs]
+            self.assertIn("wget", commands)
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
