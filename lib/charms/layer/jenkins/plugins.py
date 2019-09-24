@@ -1,6 +1,9 @@
 import os
+import pwd
+import grp
 import glob
 import subprocess
+import time
 
 from charmhelpers.core import hookenv, host
 
@@ -57,29 +60,31 @@ class Plugins(object):
             wget_options = ("--no-check-certificate",)
         else:
             wget_options = ()
-        if config["plugins-force-reinstall"] == "no":
-            reinstall = False
+        if (config["plugins-force-reinstall"] == "no" and
+                config["plugins-auto-update"] == "no"):
+            update = False
         else:
-            reinstall = True
-            wget_options = wget_options + ("-N",)
+            update = True
+            wget_options = ("-N",) + wget_options
         paths = set()
         for plugin in plugins:
-            path = self._install_plugin(plugins_site, plugin, wget_options, reinstall)
+            path = self._install_plugin(plugins_site, plugin, wget_options, update)
             paths.add(path)
         return paths
 
-    def _install_plugin(self, plugins_site, plugin, wget_options, reinstall):
+    def _install_plugin(self, plugins_site, plugin, wget_options, update):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
         url = os.path.join(plugins_site, plugin_filename)
         plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
-        if not os.path.isfile(plugin_path) or reinstall:
+        if not os.path.isfile(plugin_path) or update:
             hookenv.log("Installing plugin %s" % plugin_filename)
-            command = ("wget",) + wget_options + ("-q", "-O", "-", url)
-            plugin_data = subprocess.check_output(command)
-            host.write_file(
-                plugin_path, plugin_data, owner="jenkins", group="jenkins",
-                perms=0o0744)
+            command = ("wget",) + wget_options + ("-q", url)
+            subprocess.check_output(command, cwd=paths.PLUGINS)
+            uid = pwd.getpwnam('jenkins').pw_uid
+            gid = grp.getgrnam('jenkins').gr_gid
+            os.chown(plugin_path, uid, gid)
+            os.chmod(plugin_path, 0o0744)
         else:
             hookenv.log("Plugin %s already installed" % plugin_filename)
         return plugin_path
@@ -95,3 +100,30 @@ class Plugins(object):
             return
         hookenv.log("Deleting unlisted plugin '%s'" % path)
         os.remove(path)
+
+    def update(self, plugins, path=None):
+        """Try to update the given plugins.
+
+        @params plugins: A whitespace-separated list of plugins to install.
+        """
+        plugins = plugins or ""
+        plugins = plugins.split()
+        path = path or paths.PLUGINS
+        last_update_file = os.path.join(path, "last_update.log")
+        if not os.path.isfile(last_update_file):
+            host.write_file(
+                last_update_file, "", owner="jenkins", group="jenkins",
+                perms=0o0744)
+            os.utime(last_update_file, (0, 0))
+        # Only try to update once every 30 min.
+        last_update_time = os.path.getmtime(last_update_file)
+        interval = (time.time() - (30 * 60))
+        if (last_update_time < interval):
+            hookenv.log("Updating plugins")
+            try:
+                self._install_plugins(plugins)
+                now = time.time()
+                os.utime(last_update_file, (now, now))
+            except:
+                hookenv.log("Plugin installation failed, check logs for details")
+                raise

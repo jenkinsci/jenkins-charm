@@ -163,6 +163,19 @@ def configure_plugins():
     set_state("jenkins.configured.plugins")
 
 
+# Called on every update-status but Plugins.update() will only check for
+# updates once every 30 minutes.
+@hook("update-status")
+def update_plugins():
+    status_set("maintenance", "Updating plugins")
+    remove_state("jenkins.configured.plugins")
+    plugins = Plugins()
+    plugins.update(config("plugins"))
+    api = Api()
+    api.wait()  # Wait for the service to be fully up
+    set_state("jenkins.configured.plugins")
+
+
 @when("jenkins.configured.tools",
       "jenkins.configured.admin",
       "jenkins.configured.plugins")

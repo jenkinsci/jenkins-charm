@@ -43,6 +43,12 @@ options:
       description: |
         Set this to yes to force a reinstallation of plugins listed in plugins
         config.
+  plugins-auto-update:
+      type: string
+      default: "yes"
+      description: |
+        Set this to yes to try to auto update plugins. The update will check for 
+        timestamp modifications on the .hpi files in the configured plugins-site.
   remove-unlisted-plugins:
     type: string
     default: "no"

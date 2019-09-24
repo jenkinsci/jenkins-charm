@@ -13,6 +13,41 @@ from charmtest import CharmTest
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.plugins import Plugins
 
+from systemfixtures.processes import Wget
+
+import io
+import argparse
+
+
+class Wget(Wget):
+
+    def __init__(self, locations=None):
+        self.locations = locations or {}
+
+    def __call__(self, proc_args):
+        cwd = proc_args.get("cwd") or ""
+        parser = argparse.ArgumentParser()
+        parser.add_argument("url")
+        parser.add_argument("-O", dest="output")
+        parser.add_argument("-q", dest="quiet", action="store_true")
+        parser.add_argument("-N", dest="timestamping", action="store_true")
+        parser.add_argument("--no-check-certificate", action="store_true")
+        args = parser.parse_args(proc_args["args"][1:])
+        content = self.locations[args.url]
+        file = args.url.split("/")[-1]
+        file_dir = os.path.join(cwd, file)
+        result = {}
+        if args.output == "-":
+            result["stdout"] = io.BytesIO(content)
+        elif (args.output is None):
+            with open(file_dir, "wb") as fd:
+                fd.write(content)
+        else:
+            with open(args.output, "wb") as fd:
+                fd.write(content)
+
+        return result
+
 
 class PluginsTest(CharmTest):
 
@@ -21,6 +56,7 @@ class PluginsTest(CharmTest):
         self.plugins = Plugins()
 
         self.fakes.fs.add(paths.PLUGINS)
+        self.fakes.processes.add(Wget())
         os.makedirs(paths.PLUGINS)
         self.fakes.users.add("jenkins", 123)
         self.fakes.groups.add("jenkins", 123)
@@ -52,8 +88,10 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["plugins-check-certificate"] = "no"
             self.plugins.install("plugin")
+            # commands = [proc.args[0] for proc in self.fakes.processes.procs]
+
             self.assertIn(
-                "--no-check-certificate", self.fakes.processes.procs[-4].args)
+                "--no-check-certificate", self.fakes.processes.procs[-3].args)
         finally:
             hookenv.config()["plugins-check-certificate"] = orig_plugins_check_certificate
 
@@ -107,6 +145,7 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
             hookenv.config()["plugins-force-reinstall"] = "no"
+            hookenv.config()["plugins-auto-update"] = "no"
             plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
             with open(plugin_path, "w"):
                 pass
@@ -152,3 +191,53 @@ class PluginsTest(CharmTest):
             self.assertIn("wget", commands)
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
+
+    def test_last_update_file_is_created(self):
+        """
+        The last_update.log must be created
+        """
+        hookenv.config()["plugins-auto-update"] = "yes"
+        last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
+        self.plugins.update("plugin")
+        self.assertThat(last_update_log_path, PathExists())
+
+    def test_update(self):
+        """
+        The given plugins are downloaded from the Jenkins site if newer
+        versions are available
+        """
+        hookenv.config()["plugins-auto-update"] = "yes"
+        plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
+        with open(plugin_path, "w"):
+            pass
+        self.plugins.update("plugin", paths.PLUGINS)
+        commands = [proc.args[0] for proc in self.fakes.processes.procs]
+        self.assertIn("wget", commands)
+
+    def test_skip_update(self):
+        """
+        The update is skipped if the last update has occurred
+        less than 30 minutes
+        """
+        hookenv.config()["remove-unlisted-plugins"] = "yes"
+        hookenv.config()["plugins-auto-update"] = "yes"
+        last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
+        with open(last_update_log_path, "w"):
+            pass
+        self.plugins.update("plugin")
+        commands = [proc.args[0] for proc in self.fakes.processes.procs]
+        self.assertNotIn("wget", commands)
+
+    def test_update_bad_plugin(self):
+        """
+        If plugin can't be downloaded we expect error message in the logs
+        """
+        def broken_download(*args, **kwargs):
+            raise Exception("error")
+
+        self.plugins._install_plugin = broken_download
+        plugin_path = os.path.join(paths.PLUGINS, "bad_plugin.hpi")
+        with open(plugin_path, "w"):
+            pass
+        self.assertRaises(Exception,
+                          self.plugins.update, "bad_plgin")
