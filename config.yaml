@@ -38,17 +38,19 @@ options:
     default: "yes"
     description: Set to no to allow downloading from an invalid https site.
   plugins-force-reinstall:
-      type: string
-      default: "no"
+      type: boolean
+      default: False
       description: |
-        Set this to yes to force a reinstallation of plugins listed in plugins
-        config.
+        Set this to True to force a reinstallation of plugins listed in plugins
+        config. The reinstallation will only happen when the plugin in plugins-site
+        has a timestamp newer than the local one. 
   plugins-auto-update:
-      type: string
-      default: "yes"
+      type: boolean
+      default: True
       description: |
-        Set this to yes to try to auto update plugins. The update will check for 
-        timestamp modifications on the .hpi files in the configured plugins-site.
+        This option enables auto update for plugins. The update will check for 
+        timestamp modifications on the .hpi files in the configured plugins-site
+        and will download plugins if newer files are available.
   remove-unlisted-plugins:
     type: string
     default: "no"

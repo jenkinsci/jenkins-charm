@@ -60,11 +60,8 @@ class Plugins(object):
             wget_options = ("--no-check-certificate",)
         else:
             wget_options = ()
-        if (config["plugins-force-reinstall"] == "no" and
-                config["plugins-auto-update"] == "no"):
-            update = False
-        else:
-            update = True
+        update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
+        if update:
             wget_options = ("-N",) + wget_options
         paths = set()
         for plugin in plugins:
@@ -124,6 +121,6 @@ class Plugins(object):
                 self._install_plugins(plugins)
                 now = time.time()
                 os.utime(last_update_file, (now, now))
-            except:
+            except Exception:
                 hookenv.log("Plugin installation failed, check logs for details")
                 raise
