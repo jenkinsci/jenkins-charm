@@ -13,41 +13,6 @@ from charmtest import CharmTest
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.plugins import Plugins
 
-from systemfixtures.processes import Wget
-
-import io
-import argparse
-
-
-class Wget(Wget):
-
-    def __init__(self, locations=None):
-        self.locations = locations or {}
-
-    def __call__(self, proc_args):
-        cwd = proc_args.get("cwd") or ""
-        parser = argparse.ArgumentParser()
-        parser.add_argument("url")
-        parser.add_argument("-O", dest="output")
-        parser.add_argument("-q", dest="quiet", action="store_true")
-        parser.add_argument("-N", dest="timestamping", action="store_true")
-        parser.add_argument("--no-check-certificate", action="store_true")
-        args = parser.parse_args(proc_args["args"][1:])
-        content = self.locations[args.url]
-        file = args.url.split("/")[-1]
-        file_dir = os.path.join(cwd, file)
-        result = {}
-        if args.output == "-":
-            result["stdout"] = io.BytesIO(content)
-        elif (args.output is None):
-            with open(file_dir, "wb") as fd:
-                fd.write(content)
-        else:
-            with open(args.output, "wb") as fd:
-                fd.write(content)
-
-        return result
-
 
 class PluginsTest(CharmTest):
 
@@ -56,7 +21,6 @@ class PluginsTest(CharmTest):
         self.plugins = Plugins()
 
         self.fakes.fs.add(paths.PLUGINS)
-        self.fakes.processes.add(Wget())
         os.makedirs(paths.PLUGINS)
         self.fakes.users.add("jenkins", 123)
         self.fakes.groups.add("jenkins", 123)
@@ -88,8 +52,6 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["plugins-check-certificate"] = "no"
             self.plugins.install("plugin")
-            # commands = [proc.args[0] for proc in self.fakes.processes.procs]
-
             self.assertIn(
                 "--no-check-certificate", self.fakes.processes.procs[-3].args)
         finally:
@@ -144,8 +106,8 @@ class PluginsTest(CharmTest):
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
-            hookenv.config()["plugins-force-reinstall"] = "no"
-            hookenv.config()["plugins-auto-update"] = "no"
+            hookenv.config()["plugins-force-reinstall"] = False
+            hookenv.config()["plugins-auto-update"] = False
             plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
             with open(plugin_path, "w"):
                 pass
@@ -182,7 +144,7 @@ class PluginsTest(CharmTest):
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
-            hookenv.config()["plugins-force-reinstall"] = "yes"
+            hookenv.config()["plugins-force-reinstall"] = True
             plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
             with open(plugin_path, "w"):
                 pass
@@ -196,7 +158,7 @@ class PluginsTest(CharmTest):
         """
         The last_update.log must be created
         """
-        hookenv.config()["plugins-auto-update"] = "yes"
+        hookenv.config()["plugins-auto-update"] = True
         last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
         self.plugins.update("plugin")
         self.assertThat(last_update_log_path, PathExists())
@@ -206,7 +168,7 @@ class PluginsTest(CharmTest):
         The given plugins are downloaded from the Jenkins site if newer
         versions are available
         """
-        hookenv.config()["plugins-auto-update"] = "yes"
+        hookenv.config()["plugins-auto-update"] = True
         plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
         with open(plugin_path, "w"):
             pass
@@ -220,7 +182,7 @@ class PluginsTest(CharmTest):
         less than 30 minutes
         """
         hookenv.config()["remove-unlisted-plugins"] = "yes"
-        hookenv.config()["plugins-auto-update"] = "yes"
+        hookenv.config()["plugins-auto-update"] = True
         last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
         with open(last_update_log_path, "w"):
             pass
@@ -240,4 +202,4 @@ class PluginsTest(CharmTest):
         with open(plugin_path, "w"):
             pass
         self.assertRaises(Exception,
-                          self.plugins.update, "bad_plgin")
+                          self.plugins.update, "bad_plugin")
