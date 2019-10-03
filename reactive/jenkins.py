@@ -1,3 +1,5 @@
+import time
+
 from urllib.parse import urlparse
 
 from charmhelpers.core import unitdata
@@ -167,17 +169,30 @@ def configure_plugins():
 # updates once every 30 minutes.
 @hook("update-status")
 def update_plugins():
-    status_set("maintenance", "Updating plugins")
-    remove_state("jenkins.configured.plugins")
-    plugins = Plugins()
-    plugins.update(config("plugins"))
-    api = Api()
-    api.wait()  # Wait for the service to be fully up
-    set_state("jenkins.configured.plugins")
+    last_update = unitdata.kv().get("jenkins.plugins.last_update")
+    if last_update is None:
+        unitdata.kv().set("jenkins.plugins.last_update", 0)
+        last_update = 0
+    # Only try to update plugins when the interval configured has passed
+    update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
+    if (last_update < update_interval):
+        status_set("maintenance", "Updating plugins")
+        remove_state("jenkins.updated.plugins")
+        plugins = Plugins()
+        plugins.update(config("plugins"))
+        api = Api()
+        api.wait()  # Wait for the service to be fully up
+        # Restart jenkins if any plugin got updated
+        last_restart = unitdata.kv().get("jenkins.last_restart")
+        if (last_restart <
+                unitdata.kv().get("jenkins.plugins.last_plugin_update_time")):
+            restart()
+        set_state("jenkins.updated.plugins")
 
 
 @when("jenkins.configured.tools",
       "jenkins.configured.admin",
+      "jenkins.updated.plugins",
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
@@ -269,6 +284,13 @@ def update_nrpe_config(nagios):
 def stop():
     service_stop("jenkins")
     status_set("maintenance", "Jenkins stopped")
+
+
+def restart():
+    api = Api()
+    api.restart()
+    api.wait()  # Wait for the service to be fully up
+    unitdata.kv().set("jenkins.last_restart", time.time())
 
 
 def set_jenkins_dir(storage_dir=paths.HOME):

@@ -1,4 +1,5 @@
 import os
+import time
 
 from testtools.matchers import (
     PathExists,
@@ -7,6 +8,7 @@ from testtools.matchers import (
 )
 
 from charmhelpers.core import hookenv
+from charmhelpers.core import unitdata
 
 from charmtest import CharmTest
 
@@ -52,8 +54,9 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["plugins-check-certificate"] = "no"
             self.plugins.install("plugin")
+            commands = [proc.args[0] for proc in self.fakes.processes.procs]
             self.assertIn(
-                "--no-check-certificate", self.fakes.processes.procs[-3].args)
+                "--no-check-certificate", self.fakes.processes.procs[-4].args)
         finally:
             hookenv.config()["plugins-check-certificate"] = orig_plugins_check_certificate
 
@@ -154,15 +157,6 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
-    def test_last_update_file_is_created(self):
-        """
-        The last_update.log must be created
-        """
-        hookenv.config()["plugins-auto-update"] = True
-        last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
-        self.plugins.update("plugin")
-        self.assertThat(last_update_log_path, PathExists())
-
     def test_update(self):
         """
         The given plugins are downloaded from the Jenkins site if newer
@@ -172,23 +166,9 @@ class PluginsTest(CharmTest):
         plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
         with open(plugin_path, "w"):
             pass
-        self.plugins.update("plugin", paths.PLUGINS)
-        commands = [proc.args[0] for proc in self.fakes.processes.procs]
-        self.assertIn("wget", commands)
-
-    def test_skip_update(self):
-        """
-        The update is skipped if the last update has occurred
-        less than 30 minutes
-        """
-        hookenv.config()["remove-unlisted-plugins"] = "yes"
-        hookenv.config()["plugins-auto-update"] = True
-        last_update_log_path = os.path.join(paths.PLUGINS, "last_update.log")
-        with open(last_update_log_path, "w"):
-            pass
         self.plugins.update("plugin")
         commands = [proc.args[0] for proc in self.fakes.processes.procs]
-        self.assertNotIn("wget", commands)
+        self.assertIn("wget", commands)
 
     def test_update_bad_plugin(self):
         """
