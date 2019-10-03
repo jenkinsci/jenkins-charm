@@ -1,5 +1,4 @@
 import os
-import time
 
 from testtools.matchers import (
     PathExists,
@@ -8,7 +7,6 @@ from testtools.matchers import (
 )
 
 from charmhelpers.core import hookenv
-from charmhelpers.core import unitdata
 
 from charmtest import CharmTest
 

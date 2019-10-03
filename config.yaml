@@ -51,6 +51,11 @@ options:
         This option enables auto update for plugins. The update will check for 
         timestamp modifications on the .hpi files in the configured plugins-site
         and will download plugins if newer files are available.
+  plugins-auto-update-interval:
+      type: int
+      default: 30
+      description: |
+        Interval which the auto update will check for new plugins.
   remove-unlisted-plugins:
     type: string
     default: "no"
