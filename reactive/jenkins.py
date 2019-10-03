@@ -183,11 +183,15 @@ def update_plugins():
         api = Api()
         api.wait()  # Wait for the service to be fully up
         # Restart jenkins if any plugin got updated
-        last_restart = unitdata.kv().get("jenkins.last_restart")
+        last_restart = unitdata.kv().get("jenkins.last_restart") or 0
+        last_plugin_update_time = (
+            unitdata.kv().get("jenkins.plugins.last_plugin_update_time") or 0)
         if (last_restart <
-                unitdata.kv().get("jenkins.plugins.last_plugin_update_time")):
+                last_plugin_update_time):
             restart()
+        unitdata.kv().set("jenkins.plugins.last_restart", time.time())
         set_state("jenkins.updated.plugins")
+    unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
 @when("jenkins.configured.tools",
