@@ -4,6 +4,7 @@ import grp
 import glob
 import subprocess
 import time
+import urllib
 
 from charmhelpers.core import hookenv, host, unitdata
 
@@ -57,12 +58,12 @@ class Plugins(object):
 
         # NOTE: by default wget verifies certificates as of 1.10.
         if config["plugins-check-certificate"] == "no":
-            wget_options = ("--no-check-certificate",)
+            wget_options = ["--no-check-certificate"]
         else:
-            wget_options = ()
+            wget_options = []
         update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
         if update:
-            wget_options = ("-N",) + wget_options
+            wget_options.append("-N")
         paths = set()
         for plugin in plugins:
             path = self._install_plugin(plugins_site, plugin, wget_options, update)
@@ -72,6 +73,7 @@ class Plugins(object):
     def _install_plugin(self, plugins_site, plugin, wget_options, update):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
+        plugin_filename = urllib.parse.quote(plugin_filename)
         url = os.path.join(plugins_site, plugin_filename)
         plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
         if not os.path.isfile(plugin_path) or update:
@@ -81,7 +83,7 @@ class Plugins(object):
             else:
                 last_update = 0
             hookenv.log("Installing plugin %s" % plugin_filename)
-            command = ("wget",) + wget_options + ("-q", url)
+            command = ["wget"] + wget_options + ["-q", url]
             subprocess.check_output(command, cwd=paths.PLUGINS)
             if os.path.getmtime(plugin_path) != last_update:
                 uid = pwd.getpwnam('jenkins').pw_uid
