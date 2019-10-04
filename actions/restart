@@ -1,0 +1,25 @@
+#!/usr/local/sbin/charm-env python3
+
+from charmhelpers.core.hookenv import (
+    action_fail,
+    action_set,
+)
+
+from charms.apt import status_set
+
+from charms.layer.jenkins.api import Api
+
+
+def restart():
+    status_set("maintenance", "Restarting Jenkins")
+    api = Api()
+    api.restart()
+    api.wait()  # Wait for the service to be fully up
+    action_set({'output': "Jenkins restarted with success",
+                'outcome': 'Success'})
+
+
+try:
+    restart()
+except Exception as e:
+    action_fail("Failed to restart jenkins: {}".format(str(e)))
