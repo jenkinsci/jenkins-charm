@@ -73,7 +73,6 @@ class Plugins(object):
     def _install_plugin(self, plugins_site, plugin, wget_options, update):
         """Download and install a given plugin."""
         plugin_filename = "%s.hpi" % plugin
-        plugin_filename = urllib.parse.quote(plugin_filename)
         url = os.path.join(plugins_site, plugin_filename)
         plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
         if not os.path.isfile(plugin_path) or update:
