@@ -115,8 +115,7 @@ class Api(object):
         self._execute_action(action, fail_message)
 
     def restart(self):
-        """Execute a safe restart which waits for all jobs to complete and
-        then restarts"""
+        """Execute a safe restart. Wait for jobs, and restart"""
         hookenv.log("Waiting for all jobs to complete and restarting jenkins")
         action = "safeRestart"
         fail_message = "Couldn't restart jenkins"
