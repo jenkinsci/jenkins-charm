@@ -171,6 +171,16 @@ class ApiTest(JenkinsTest):
         self.fakes.jenkins.responses[urljoin(self.api.url, "reload")] = error
         self.api.reload()
 
+    def test_restart(self):
+        """
+        The reload method POSTs a request to the '/reload' URL, expecting
+        a 503 on the homepage (which happens after redirection).
+        """
+        self.apt._set_jenkins_version('2.120.1')
+        error = self._make_httperror(self.api.url, 503, "Service Unavailable")
+        self.fakes.jenkins.responses[urljoin(self.api.url, "safeRestart")] = error
+        self.api.restart()
+
     def test_reload_unexpected_error(self):
         """
         If the error code is not 403, the error is propagated.

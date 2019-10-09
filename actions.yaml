@@ -1,0 +1,2 @@
+restart:
+  description: Wait for all jobs to be completed and restart jenkins.
