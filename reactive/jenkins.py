@@ -1,3 +1,5 @@
+import time
+
 from urllib.parse import urlparse
 
 from charmhelpers.core import unitdata
@@ -145,9 +147,11 @@ def configure_admin():
     set_state("jenkins.configured.admin")
 
 
-# Called once we're bootstrapped and every time the configured plugins
-# change.
+# Called once we're bootstrapped, every time the configured plugins
+# or plugins-force-reinstall change.
 @when("jenkins.configured.admin", "config.changed.plugins")
+@when("jenkins.configured.admin", "config.changed.plugins",
+      "config.changed.plugins-force-reinstall")
 def configure_plugins():
     if get_state("extension.connected"):
         # We've been driven by an extension, let it take control over
@@ -163,8 +167,38 @@ def configure_plugins():
     set_state("jenkins.configured.plugins")
 
 
+# Called on every update-status but Plugins.update() will only check for
+# updates once every 30 minutes.
+@hook("update-status")
+def update_plugins():
+    last_update = unitdata.kv().get("jenkins.plugins.last_update")
+    if last_update is None:
+        unitdata.kv().set("jenkins.plugins.last_update", 0)
+        last_update = 0
+    # Only try to update plugins when the interval configured has passed
+    update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
+    if (last_update < update_interval):
+        status_set("maintenance", "Updating plugins")
+        remove_state("jenkins.updated.plugins")
+        plugins = Plugins()
+        plugins.update(config("plugins"))
+        api = Api()
+        api.wait()  # Wait for the service to be fully up
+        # Restart jenkins if any plugin got updated
+        last_restart = unitdata.kv().get("jenkins.last_restart") or 0
+        last_plugin_update_time = (
+            unitdata.kv().get("jenkins.plugins.last_plugin_update_time") or 0)
+        if (last_restart <
+                last_plugin_update_time):
+            restart()
+        unitdata.kv().set("jenkins.plugins.last_restart", time.time())
+        set_state("jenkins.updated.plugins")
+    unitdata.kv().set("jenkins.plugins.last_update", time.time())
+
+
 @when("jenkins.configured.tools",
       "jenkins.configured.admin",
+      "jenkins.updated.plugins",
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
@@ -256,6 +290,13 @@ def update_nrpe_config(nagios):
 def stop():
     service_stop("jenkins")
     status_set("maintenance", "Jenkins stopped")
+
+
+def restart():
+    api = Api()
+    api.restart()
+    api.wait()  # Wait for the service to be fully up
+    unitdata.kv().set("jenkins.last_restart", time.time())
 
 
 def set_jenkins_dir(storage_dir=paths.HOME):

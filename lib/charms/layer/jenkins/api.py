@@ -110,21 +110,17 @@ class Api(object):
     def reload(self):
         """Reload configuration from disk."""
         hookenv.log("Reloading configuration from disk")
-        client = self._make_client()
-        request = requests.Request("POST", urljoin(self.url, "reload"))
-        try:
-            client.jenkins_open(request)
-        except requests.exceptions.HTTPError as error:
-            # We expect a 'Service Unavailable' error code and to be at the
-            # home page.
-            if error.response.status_code != 503:
-                hookenv.log("Unexpected HTTP response code '%d'" % error.response.status_code)
-                raise
-            if error.response.url != self.url:
-                hookenv.log("Unexpected HTTP response url '%s'" % error.response.url)
-                raise
-        else:
-            raise RuntimeError("Couldn't reload configuration")
+        action = "reload"
+        fail_message = "Couldn't reload configuration"
+        self._execute_action(action, fail_message)
+
+    def restart(self):
+        """Execute a safe restart. Wait for jobs, and restart"""
+        hookenv.log("Waiting for all jobs to complete and restarting jenkins")
+        action = "safeRestart"
+        fail_message = "Couldn't restart jenkins"
+        self._execute_action(action, fail_message)
+
 
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
@@ -148,3 +144,23 @@ class Api(object):
         client = jenkins.Jenkins(self.url, user, token)
         client.get_whoami()
         return client
+
+    def _check_response(self, error):
+        # We expect a 'Service Unavailable' error code and to be at the
+        # home page.
+        if error.response.status_code != 503:
+            hookenv.log("Unexpected HTTP response code '%d'" % error.response.status_code)
+            raise
+        if error.response.url != self.url:
+            hookenv.log("Unexpected HTTP response url '%s'" % error.response.url)
+            raise
+
+    def _execute_action(self, action, fail_message):
+        client = self._make_client()
+        request = requests.Request("POST", urljoin(self.url, action))
+        try:
+            client.jenkins_open(request)
+        except requests.exceptions.HTTPError as error:
+            self._check_response(error)
+        else:
+            raise RuntimeError(fail_message)

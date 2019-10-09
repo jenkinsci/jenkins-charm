@@ -52,6 +52,7 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["plugins-check-certificate"] = "no"
             self.plugins.install("plugin")
+            commands = [proc.args[0] for proc in self.fakes.processes.procs]
             self.assertIn(
                 "--no-check-certificate", self.fakes.processes.procs[-4].args)
         finally:
@@ -106,6 +107,8 @@ class PluginsTest(CharmTest):
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
+            hookenv.config()["plugins-force-reinstall"] = False
+            hookenv.config()["plugins-auto-update"] = False
             plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
             with open(plugin_path, "w"):
                 pass
@@ -133,3 +136,48 @@ class PluginsTest(CharmTest):
                               self.plugins.install, "bad_plugin")
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
+
+    def test_install_force_reinstall(self):
+        """
+        If a plugin is already installed and plugin-force-reinstall is yes it
+        should get downloaded.
+        """
+        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        try:
+            hookenv.config()["remove-unlisted-plugins"] = "yes"
+            hookenv.config()["plugins-force-reinstall"] = True
+            plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
+            with open(plugin_path, "w"):
+                pass
+            self.plugins.install("plugin")
+            commands = [proc.args[0] for proc in self.fakes.processes.procs]
+            self.assertIn("wget", commands)
+        finally:
+            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
+
+    def test_update(self):
+        """
+        The given plugins are downloaded from the Jenkins site if newer
+        versions are available
+        """
+        hookenv.config()["plugins-auto-update"] = True
+        plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
+        with open(plugin_path, "w"):
+            pass
+        self.plugins.update("plugin")
+        commands = [proc.args[0] for proc in self.fakes.processes.procs]
+        self.assertIn("wget", commands)
+
+    def test_update_bad_plugin(self):
+        """
+        If plugin can't be downloaded we expect error message in the logs
+        """
+        def broken_download(*args, **kwargs):
+            raise Exception("error")
+
+        self.plugins._install_plugin = broken_download
+        plugin_path = os.path.join(paths.PLUGINS, "bad_plugin.hpi")
+        with open(plugin_path, "w"):
+            pass
+        self.assertRaises(Exception,
+                          self.plugins.update, "bad_plugin")
