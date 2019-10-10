@@ -178,7 +178,7 @@ def update_plugins():
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
         status_set("maintenance", "Updating plugins")
-        remove_state("jenkins.updated.plugins")
+        remove_state("jenkins.configured.plugins")
         plugins = Plugins()
         plugins.update(config("plugins"))
         api = Api()
@@ -191,13 +191,12 @@ def update_plugins():
                 last_plugin_update_time):
             restart()
         unitdata.kv().set("jenkins.plugins.last_restart", time.time())
-        set_state("jenkins.updated.plugins")
+        set_state("jenkins.configured.plugins")
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
 @when("jenkins.configured.tools",
       "jenkins.configured.admin",
-      "jenkins.updated.plugins",
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
