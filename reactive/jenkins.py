@@ -149,9 +149,8 @@ def configure_admin():
 
 # Called once we're bootstrapped, every time the configured plugins
 # or plugins-force-reinstall change.
-@when("jenkins.configured.admin", "config.changed.plugins")
-@when("jenkins.configured.admin", "config.changed.plugins",
-      "config.changed.plugins-force-reinstall")
+@when("jenkins.configured.admin")
+@when_any("config.changed.plugins", "config.changed.plugins-force-reinstall")
 def configure_plugins():
     if get_state("extension.connected"):
         # We've been driven by an extension, let it take control over
@@ -179,7 +178,6 @@ def update_plugins():
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
         status_set("maintenance", "Updating plugins")
-        remove_state("jenkins.updated.plugins")
         plugins = Plugins()
         plugins.update(config("plugins"))
         api = Api()
@@ -192,13 +190,11 @@ def update_plugins():
                 last_plugin_update_time):
             restart()
         unitdata.kv().set("jenkins.plugins.last_restart", time.time())
-        set_state("jenkins.updated.plugins")
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
 @when("jenkins.configured.tools",
       "jenkins.configured.admin",
-      "jenkins.updated.plugins",
       "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
