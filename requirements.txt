@@ -1,3 +1,4 @@
 charmhelpers
 flake8
+packaging
 python-jenkins
