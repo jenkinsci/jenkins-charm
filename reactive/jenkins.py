@@ -164,6 +164,7 @@ def configure_plugins():
     api = Api()
     api.wait()  # Wait for the service to be fully up
     set_state("jenkins.configured.plugins")
+    unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
 # Called on every update-status but Plugins.update() will only check for
