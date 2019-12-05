@@ -49,21 +49,6 @@ class PluginsTest(CharmTest):
 
         mock_restart_jenkins.assert_called_with()
 
-    def test_install_no_certificate_check(self):
-        """
-        If plugins-check-certificate is set to 'no', the plugins site
-        certificate won't be validated.
-        """
-        orig_plugins_check_certificate = hookenv.config()["plugins-check-certificate"]
-        try:
-            hookenv.config()["plugins-check-certificate"] = "no"
-            self.plugins.install("plugin")
-            commands = [proc.args[0] for proc in self.fakes.processes.procs]
-            self.assertIn(
-                "--no-check-certificate", self.fakes.processes.procs[-4].args)
-        finally:
-            hookenv.config()["plugins-check-certificate"] = orig_plugins_check_certificate
-
     def test_install_dont_remove_unlisted(self):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
