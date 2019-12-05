@@ -1,5 +1,7 @@
 import os
 
+from unittest import mock
+
 from testtools.matchers import (
     PathExists,
     FileContains,
@@ -25,23 +27,27 @@ class PluginsTest(CharmTest):
         self.fakes.users.add("jenkins", 123)
         self.fakes.groups.add("jenkins", 123)
         self.orig_plugins_site = hookenv.config()["plugins-site"]
-        hookenv.config()["plugins-site"] = "http://x/"
+        # hookenv.config()["plugins-site"] = "http://x/"
         self.fakes.processes.wget.locations["http://x/plugin.hpi"] = b"data"
 
     def tearDown(self):
         super(PluginsTest, self).tearDown()
         hookenv.config()["plugins-site"] = self.orig_plugins_site
 
-    def test_install(self):
+    @mock.patch("charms.layer.jenkins.plugins.Plugins._restart_jenkins")
+    def test_install(self, mock_restart_jenkins):
         """
         The given plugins are downloaded from the Jenkins site.
         """
-        self.plugins.install("plugin")
-        self.assertEqual(
-            ["stop", "start"],
-            self.fakes.processes.systemctl.actions["jenkins"])
-        plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
-        self.assertThat(plugin_path, FileContains("data"))
+        plugin_name = "ansicolor"
+        installed_plugin = ""
+        installed_plugin.join(self.plugins.install(plugin_name))
+        plugin_path = os.path.join(paths.PLUGINS, installed_plugin)
+        self.assertTrue(
+            os.path.exists(plugin_path),
+            msg="Plugin not installed in the proper directory")
+
+        mock_restart_jenkins.assert_called_with()
 
     def test_install_no_certificate_check(self):
         """
