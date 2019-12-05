@@ -48,25 +48,25 @@ class Plugins(object):
 
         # Restarting jenkins to pickup configuration changes
         self._restart_jenkins()
+        return installed_plugins
 
     def _install_plugins(self, plugins):
         """Install the plugins with the given names."""
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
         plugins_site = config["plugins-site"]
-        plugin_extension = config["plugins-site-extension"] or None
         plugin_paths = set()
         for plugin in plugins:
             plugin_path = self._install_plugin(
-                plugin, plugins_site, plugin_extension)
+                plugin, plugins_site)
             plugin_paths.add(plugin_path)
         return plugin_paths
 
-    def _install_plugin(self, plugin, plugins_site, plugin_extension):
+    def _install_plugin(self, plugin, plugins_site):
         # TODO verify if plugin is available and in the latest version before
         #      installing it
         plugin_url = (
-                "%s/%s.%s" % (plugins_site, plugin, plugin_extension))
+                "%s/%s.hpi" % (plugins_site, plugin))
         return self._download_plugin(plugin, plugin_url)
 
     # Keeping the funcionality while the new _install_plugins()
