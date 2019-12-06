@@ -173,13 +173,25 @@ class ApiTest(JenkinsTest):
 
     def test_restart(self):
         """
-        The reload method POSTs a request to the '/reload' URL, expecting
+        The restart method POSTs a request to the '/safeRestart' URL, expecting
         a 503 on the homepage (which happens after redirection).
         """
         self.apt._set_jenkins_version('2.120.1')
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         self.fakes.jenkins.responses[urljoin(self.api.url, "safeRestart")] = error
         self.api.restart()
+
+    def test_get_plugin_version(self):
+        """
+        If the plugin is installed it will return its version
+        otherwise it will return false.
+        """
+        self.fakes.jenkins.scripts[
+            "println(Jenkins.instance.updateCenter.getPlugin(\"installed-plugin\")?.version)"] = "1"
+        self.fakes.jenkins.scripts[
+            "println(Jenkins.instance.updateCenter.getPlugin(\"not-installed-plugin\")?.version)"] = "null"
+        self.assertEqual(self.api.get_plugin_version("installed-plugin"), "1")
+        self.assertFalse(self.api.get_plugin_version("not-installed-plugin"))
 
     def test_reload_unexpected_error(self):
         """
