@@ -69,6 +69,18 @@ class Api(object):
         client.run_script(UPDATE_PASSWORD_SCRIPT.format(
             username=username, password=password))
 
+    def get_plugin_version(self, plugin):
+        """Get the installed version of a given plugin
+
+        If the plugin is not installed returns False
+        """
+        client = self._make_client()
+        script = "println(Jenkins.instance.updateCenter.getPlugin(\"{}\")?.version)".format(plugin)
+        version = client.run_script(script)
+        if version == "null":
+            return False
+        return version
+
     def add_node(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
         self.wait()
