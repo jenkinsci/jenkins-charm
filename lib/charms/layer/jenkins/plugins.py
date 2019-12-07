@@ -54,20 +54,27 @@ class Plugins(object):
         """Install the plugins with the given names."""
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
+        update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
         plugins_site = config["plugins-site"]
         plugin_paths = set()
         for plugin in plugins:
             plugin_path = self._install_plugin(
-                plugin, plugins_site)
+                plugin, plugins_site, update)
             plugin_paths.add(plugin_path)
         return plugin_paths
 
-    def _install_plugin(self, plugin, plugins_site):
-        # TODO verify if plugin is available and in the latest version before
-        #      installing it
-        plugin_url = (
+    def _install_plugin(self, plugin, plugins_site, update):
+        # TODO verify if plugin is in the latest version before
+        #      installing it. Used by update()
+
+        # Verify if the plugin is not installed before installing it
+        plugin_version = self._get_plugin_version(plugin)
+        if not plugin_version or update:
+            hookenv.log("Installing plugin %s" % plugin)
+            plugin_url = (
                 "%s/%s.hpi" % (plugins_site, plugin))
-        return self._download_plugin(plugin, plugin_url)
+            return self._download_plugin(plugin, plugin_url)
+        hookenv.log("Plugin %s-%s already installed" % (plugin, plugin_version))
 
     # Keeping the funcionality while the new _install_plugins()
     # doens't verify for installed plugins
@@ -172,3 +179,7 @@ class Plugins(object):
         api.restart()
         api.wait()  # Wait for the service to be fully up
         unitdata.kv().set("jenkins.last_restart", time.time())
+
+    def _get_plugin_version(self, plugin):
+        api = Api()
+        return api.get_plugin_version(plugin)
