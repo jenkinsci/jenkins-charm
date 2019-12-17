@@ -46,6 +46,23 @@ class PluginsTest(CharmTest):
 
         mock_restart_jenkins.assert_called_with()
 
+    @mock.patch("test_plugins.Plugins._install_plugins")
+    @mock.patch("test_plugins.Plugins._get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
+    def test_install_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_install_plugins, mock_restart_jenkins):
+        """
+        The given plugins are downloaded from the Jenkins site.
+        """
+        def failed_install(*args, **kwargs):
+            raise Exception("error")
+
+        plugin_name = "bad_plugin"
+        mock_get_plugins_to_install.return_value = {plugin_name}
+        mock_install_plugins.return_value = failed_install
+        mock_get_plugin_version.return_value = False
+        self.assertRaises(Exception, self.plugins.install, plugin_name)
+        mock_restart_jenkins.assert_not_called()
+
     @mock.patch("test_plugins.Plugins._remove_plugin")
     @mock.patch("test_plugins.Plugins._install_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
@@ -123,32 +140,9 @@ class PluginsTest(CharmTest):
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
-            hookenv.config()["plugins-force-reinstall"] = False
             hookenv.config()["plugins-auto-update"] = False
             self.plugins.install(plugin_name)
             mock_download_plugin.assert_not_called()
-        finally:
-            hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
-
-    @mock.patch("test_plugins.Plugins._download_plugin")
-    @mock.patch("test_plugins.Plugins._get_latest_version")
-    @mock.patch("test_plugins.Plugins._get_plugin_version")
-    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_force_reinstall(self, mock_get_plugins_to_install, mock_get_latest_version, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
-        """
-        If a plugin is already installed and plugin-force-reinstall is yes it
-        should get downloaded.
-        """
-        plugin_name = "plugin"
-        mock_get_plugins_to_install.return_value = {plugin_name}
-        mock_get_plugin_version.return_value = "1"
-        mock_get_latest_version.return_value = "1"
-        orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
-        try:
-            hookenv.config()["remove-unlisted-plugins"] = "yes"
-            hookenv.config()["plugins-force-reinstall"] = True
-            self.plugins.install(plugin_name)
-            mock_download_plugin.assert_called_with(plugin_name, mock.ANY)
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
