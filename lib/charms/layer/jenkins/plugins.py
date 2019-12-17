@@ -78,61 +78,6 @@ class Plugins(object):
             return self._download_plugin(plugin, plugin_url)
         hookenv.log("Plugin %s-%s already installed" % (plugin, plugin_version))
 
-    # Keeping the funcionality while the new _install_plugins()
-    # doens't verify for installed plugins
-    def _install_plugins_old(self, plugins):
-        """Install the plugins with the given names."""
-        config = hookenv.config()
-        plugins_site = config["plugins-site"]
-
-        hookenv.log("Fetching plugins from %s" % plugins_site)
-
-        # NOTE: by default wget verifies certificates as of 1.10.
-        if config["plugins-check-certificate"] == "no":
-            wget_options = ["--no-check-certificate"]
-        else:
-            wget_options = []
-        update = config["plugins-auto-update"]
-        if update:
-            wget_options.append("-N")
-        paths = set()
-        for plugin in plugins:
-            path = self._install_plugin_old(plugins_site, plugin, wget_options, update)
-            paths.add(path)
-        return paths
-
-    # Keeping the funcionality while the new _install_plugins()
-    # doens't verify for installed plugins
-    def _install_plugin_old(self, plugins_site, plugin, wget_options, update):
-        """Download and install a given plugin."""
-        plugin_filename = "%s.hpi" % plugin
-        url = os.path.join(plugins_site, plugin_filename)
-        plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
-        if not os.path.isfile(plugin_path) or update:
-            # Get when was the last time this plugin was updated
-            if os.path.isfile(plugin_path):
-                last_update = os.path.getmtime(plugin_path)
-            else:
-                last_update = 0
-            hookenv.log("Installing plugin %s" % plugin_filename)
-            command = ["wget"] + wget_options + ["-q", url]
-            subprocess.check_output(command, cwd=paths.PLUGINS)
-            if os.path.getmtime(plugin_path) != last_update:
-                uid = pwd.getpwnam('jenkins').pw_uid
-                gid = grp.getgrnam('jenkins').gr_gid
-                os.chown(plugin_path, uid, gid)
-                os.chmod(plugin_path, 0o0744)
-                hookenv.log("A new version of %s has been installed" % plugin_filename)
-                unitdata.kv().set('jenkins.plugins.last_plugin_update_time', time.time())
-
-            else:
-                hookenv.log("Plugin %s is already in latest version"
-                            % plugin_filename)
-
-        else:
-            hookenv.log("Plugin %s already installed" % plugin_filename)
-        return plugin_path
-
     def _remove_plugins(self, paths):
         """Remove the plugins at the given paths."""
         for path in paths:
