@@ -54,7 +54,7 @@ class Plugins(object):
         """Install the plugins with the given names."""
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
-        update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
+        update = config["plugins-auto-update"]
         plugins_site = config["plugins-site"]
         plugin_paths = set()
         for plugin in plugins:
@@ -92,7 +92,7 @@ class Plugins(object):
             wget_options = ["--no-check-certificate"]
         else:
             wget_options = []
-        update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
+        update = config["plugins-auto-update"]
         if update:
             wget_options.append("-N")
         paths = set()
