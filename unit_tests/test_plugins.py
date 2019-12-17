@@ -109,15 +109,17 @@ class PluginsTest(CharmTest):
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
     @mock.patch("test_plugins.Plugins._download_plugin")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_already_installed(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
+    def test_install_already_installed(self, mock_get_plugins_to_install, mock_get_latest_version, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}
         mock_get_plugin_version.return_value = "1"
+        mock_get_latest_version.return_value = "1"
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
@@ -129,9 +131,10 @@ class PluginsTest(CharmTest):
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
     @mock.patch("test_plugins.Plugins._download_plugin")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_force_reinstall(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
+    def test_install_force_reinstall(self, mock_get_plugins_to_install, mock_get_latest_version, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
         """
         If a plugin is already installed and plugin-force-reinstall is yes it
         should get downloaded.
@@ -139,6 +142,7 @@ class PluginsTest(CharmTest):
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}
         mock_get_plugin_version.return_value = "1"
+        mock_get_latest_version.return_value = "1"
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
@@ -163,23 +167,25 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
-    def test_update(self, mock_restart_jenkins):
+    @mock.patch("test_plugins.Plugins._download_plugin")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
+    @mock.patch("test_plugins.Plugins._get_plugin_version")
+    def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_restart_jenkins):
         """
-        The given plugins are downloaded from the Jenkins site if newer
+        The given plugins are installed from the Jenkins site if newer
         versions are available
         """
-        hookenv.config()["plugins-auto-update"] = True
-        plugin_path = os.path.join(paths.PLUGINS, "plugin.hpi")
-        orig_plugins_site = hookenv.config()["plugins-site"]
+        plugin_name = "plugin"
+        mock_get_plugin_version.return_value = "1"
+        mock_get_latest_version.return_value = "1.1"
+        orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
         try:
-            hookenv.config()["plugins-site"] = "http://x/"
-            with open(plugin_path, "w"):
-                pass
-            self.plugins.update("plugin")
-            commands = [proc.args[0] for proc in self.fakes.processes.procs]
-            self.assertIn("wget", commands)
+            hookenv.config()["plugins-auto-update"] = True
+            self.plugins.update(plugin_name)
+            mock_download_plugin.assert_called_with(plugin_name)
         finally:
-            hookenv.config()["plugins-site"] = orig_plugins_site
+            hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
+
 
     def test_update_bad_plugin(self, mock_restart_jenkins):
         """

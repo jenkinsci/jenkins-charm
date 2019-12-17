@@ -68,8 +68,10 @@ class Plugins(object):
         #      installing it. Used by update()
 
         # Verify if the plugin is not installed before installing it
+        # or if it needs an update
         plugin_version = self._get_plugin_version(plugin)
-        if not plugin_version or update:
+        latest_version = self._get_latest_version(plugin)
+        if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s" % plugin)
             plugin_url = (
                 "%s/%s.hpi" % (plugins_site, plugin))
@@ -158,7 +160,16 @@ class Plugins(object):
         return uc.download_plugin(
                 plugin, paths.PLUGINS, plugin_url=plugin_site)
 
-    def update(self, plugins, path=None):
+    def _get_plugin_info(self, plugin):
+        """Get info of the given plugin from the UpdateCenter"""
+        uc = UpdateCenter()
+        return uc.get_plugin_data(plugin)
+
+    def _get_latest_version(self, plugin):
+        """Get the latest available version of a plugin"""
+        return self._get_plugin_info(plugin)["version"]
+
+    def update(self, plugins):
         """Try to update the given plugins.
 
         @params plugins: A whitespace-separated list of plugins to install.
@@ -167,11 +178,9 @@ class Plugins(object):
         plugins = plugins.split()
         hookenv.log("Updating plugins")
         try:
-            # Keeping the funcionality while the new _install_plugins()
-            # doens't verify for installed plugins
-            self._install_plugins_old(plugins)
+            self._install_plugins(plugins)
         except Exception:
-            hookenv.log("Plugin installation failed, check logs for details")
+            hookenv.log("Plugin update failed, check logs for details")
             raise
 
     def _restart_jenkins(self):
