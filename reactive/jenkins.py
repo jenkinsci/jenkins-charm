@@ -166,7 +166,7 @@ def configure_plugins():
 
 
 # Called on every update-status but Plugins.update() will only check for
-# updates once every 30 minutes.
+# updates once every 30 minutes(default config).
 @hook("update-status")
 def update_plugins():
     last_update = unitdata.kv().get("jenkins.plugins.last_update")
@@ -181,14 +181,6 @@ def update_plugins():
         plugins.update(config("plugins"))
         api = Api()
         api.wait()  # Wait for the service to be fully up
-        # Restart jenkins if any plugin got updated
-        last_restart = unitdata.kv().get("jenkins.last_restart") or 0
-        last_plugin_update_time = (
-            unitdata.kv().get("jenkins.plugins.last_plugin_update_time") or 0)
-        if (last_restart <
-                last_plugin_update_time):
-            restart()
-        unitdata.kv().set("jenkins.plugins.last_restart", time.time())
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
@@ -285,13 +277,6 @@ def update_nrpe_config(nagios):
 def stop():
     service_stop("jenkins")
     status_set("maintenance", "Jenkins stopped")
-
-
-def restart():
-    api = Api()
-    api.restart()
-    api.wait()  # Wait for the service to be fully up
-    unitdata.kv().set("jenkins.last_restart", time.time())
 
 
 def set_jenkins_dir(storage_dir=paths.HOME):

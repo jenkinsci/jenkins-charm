@@ -8,7 +8,7 @@ import urllib
 
 from jenkins_plugin_manager.plugin import UpdateCenter
 
-from charmhelpers.core import hookenv, host, unitdata
+from charmhelpers.core import hookenv, host
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
@@ -47,7 +47,7 @@ class Plugins(object):
                     "away." % ", ".join(unlisted_plugins))
 
         # Restarting jenkins to pickup configuration changes
-        self._restart_jenkins()
+        Api().restart()
         return installed_plugins
 
     def _install_plugins(self, plugins):
@@ -64,19 +64,17 @@ class Plugins(object):
         return plugin_paths
 
     def _install_plugin(self, plugin, plugins_site, update):
-        # TODO verify if plugin is in the latest version before
-        #      installing it. Used by update()
-
         # Verify if the plugin is not installed before installing it
         # or if it needs an update
-        plugin_version = self._get_plugin_version(plugin)
+        plugin_version = Api().get_plugin_version(plugin)
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s" % plugin)
             plugin_url = (
                 "%s/%s.hpi" % (plugins_site, plugin))
             return self._download_plugin(plugin, plugin_url)
-        hookenv.log("Plugin %s-%s already installed" % (plugin, plugin_version))
+        hookenv.log("Plugin %s-%s already installed" % (
+            plugin, plugin_version))
 
     def _remove_plugins(self, paths):
         """Remove the plugins at the given paths."""
@@ -123,17 +121,15 @@ class Plugins(object):
         plugins = plugins.split()
         hookenv.log("Updating plugins")
         try:
-            self._install_plugins(plugins)
+            installed_plugins = self._install_plugins(plugins)
         except Exception:
             hookenv.log("Plugin update failed, check logs for details")
             raise
-
-    def _restart_jenkins(self):
-        api = Api()
-        api.restart()
-        api.wait()  # Wait for the service to be fully up
-        unitdata.kv().set("jenkins.last_restart", time.time())
-
-    def _get_plugin_version(self, plugin):
-        api = Api()
-        return api.get_plugin_version(plugin)
+        for first in installed_plugins:
+            break
+        if first is None:
+            hookenv.log("No plugins updated")
+            return
+        else:
+            Api().restart()
+            return installed_plugins

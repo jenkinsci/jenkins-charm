@@ -1,9 +1,11 @@
 import requests
+import time
 from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
 import jenkins
-from charmhelpers.core import hookenv
+from charmhelpers.core import hookenv, unitdata
+
 from charmhelpers.core.decorators import retry_on_exception
 from charmhelpers.core.hookenv import ERROR
 
@@ -132,6 +134,9 @@ class Api(object):
         action = "safeRestart"
         fail_message = "Couldn't restart jenkins"
         self._execute_action(action, fail_message)
+        self.wait()
+        unitdata.kv().set("jenkins.last_restart", time.time())
+
 
 
     # Wait up to 140 seconds for Jenkins to be fully up.
