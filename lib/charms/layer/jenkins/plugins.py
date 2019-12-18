@@ -64,8 +64,10 @@ class Plugins(object):
         return plugin_paths
 
     def _install_plugin(self, plugin, plugins_site, update):
-        # Verify if the plugin is not installed before installing it
-        # or if it needs an update
+        """
+        Verify if the plugin is not installed before installing it
+        or if it needs an update .
+        """
         plugin_version = Api().get_plugin_version(plugin)
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
@@ -125,6 +127,7 @@ class Plugins(object):
         except Exception:
             hookenv.log("Plugin update failed, check logs for details")
             raise
+
         for first in installed_plugins:
             break
         if first is None:
