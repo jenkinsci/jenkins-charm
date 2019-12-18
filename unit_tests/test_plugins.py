@@ -33,9 +33,10 @@ class PluginsTest(CharmTest):
         super(PluginsTest, self).tearDown()
         hookenv.config()["plugins-site"] = self.orig_plugins_site
 
-    # def test_restart_jenkins(self, mock_restart_jenkins):
-
     def test_remove_plugin(self, mock_restart_jenkins):
+        """
+        The given plugin file is removed from disk.
+        """
         plugin_name = "plugin"
         plugin_path = os.path.join(paths.PLUGINS, "{}-1.jpi".format(plugin_name))
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
@@ -46,11 +47,7 @@ class PluginsTest(CharmTest):
             # When using a non-existent path it returns None
             self.assertIsNone(self.plugins._remove_plugin(plugin_name))
             self.plugins._remove_plugin(plugin_path)
-            # we can't use os.path.join() as paths.PLUGINS is an absolute path
-            unlisted_plugin_path = "{}{}".format(
-                self.fakes.fs.root.path, plugin_path)
             self.assertThat(plugin_path, Not(PathExists()))
-            self.assertThat(unlisted_plugin_path, Not(PathExists()))
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
@@ -70,27 +67,28 @@ class PluginsTest(CharmTest):
 
         mock_restart_jenkins.assert_called_with()
 
-    @mock.patch("test_plugins.Plugins._install_plugins")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_install_plugins, mock_restart_jenkins):
+    def test_install_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_restart_jenkins):
         """
-        The given plugins are downloaded from the Jenkins site.
+        When install fails it should log and raise an error
         """
         def failed_install(*args, **kwargs):
-            raise Exception("error")
+            raise Exception()
 
         plugin_name = "bad_plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}
-        mock_install_plugins.return_value = failed_install
         mock_get_plugin_version.return_value = False
+        self.plugins._install_plugins = failed_install
+
         self.assertRaises(Exception, self.plugins.install, plugin_name)
+        self.assertEqual(
+            "INFO: Plugin installation failed, check logs for details",
+            self.fakes.juju.log[-1])
         mock_restart_jenkins.assert_not_called()
 
-    # @mock.patch("test_plugins.Plugins._remove_plugin")
     @mock.patch("test_plugins.Plugins._install_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    # def test_install_do_remove_unlisted(self, mock_get_plugins_to_install, mock_install_plugins, mock_remove_plugin, mock_restart_jenkins):
     def test_install_do_remove_unlisted(self, mock_get_plugins_to_install, mock_install_plugins, mock_restart_jenkins):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
@@ -107,9 +105,6 @@ class PluginsTest(CharmTest):
             with open(unlisted_plugin, "w"):
                 pass
             self.plugins.install(plugin_name)
-            # we can't use os.path.join() as paths.PLUGINS is an absolute path
-            unlisted_plugin_path = "{}{}".format(
-                self.fakes.fs.root.path, os.path.join(paths.PLUGINS, "unlisted.jpi"))
             self.assertThat(unlisted_plugin, Not(PathExists()))
 
         finally:
@@ -127,7 +122,16 @@ class PluginsTest(CharmTest):
         plugin_path = os.path.join(paths.PLUGINS, "{}-1.jpi".format(plugin_name))
         mock_get_plugins_to_install.return_value = {plugin_name}
         mock_install_plugins.return_value = {plugin_path}
+        unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.jpi")
+        unlisted_plugin_path = "{}{}".format(
+                self.fakes.fs.root.path, os.path.join(paths.PLUGINS, "unlisted.jpi"))
+        with open(unlisted_plugin, "w"):
+            pass
         self.plugins.install(plugin_name)
+        self.assertEqual(
+            "INFO: Unlisted plugins: ({}) Not removed. Set "
+            "remove-unlisted-plugins to 'yes' to clear them "
+            "away.".format(unlisted_plugin_path), self.fakes.juju.log[-1])
         mock_remove_plugin.assert_not_called()
 
     @mock.patch("test_plugins.Plugins._install_plugins")
@@ -186,9 +190,9 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
-    @mock.patch("test_plugins.Plugins._download_plugin")
-    @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
+    @mock.patch("test_plugins.Plugins._download_plugin")
     def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_restart_jenkins):
         """
         The given plugins are installed from the Jenkins site if newer
@@ -196,16 +200,34 @@ class PluginsTest(CharmTest):
         """
         plugin_name = "plugin"
         mock_get_plugin_version.return_value = "1"
+        mock_get_latest_version.return_value = "1.1"
+        orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
+        try:
+            hookenv.config()["plugins-auto-update"] = True
+            self.plugins.update(plugin_name)
+            mock_download_plugin.assert_called_with(plugin_name, mock.ANY)
+            mock_restart_jenkins.assert_called_with()
+        finally:
+            hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
+
+    @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
+    @mock.patch("test_plugins.Plugins._download_plugin")
+    def test_dont_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_restart_jenkins):
+        """
+        No plugins are reinstalled if not necessary.
+        """
+        plugin_name = "plugin"
+        mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
         try:
             hookenv.config()["plugins-auto-update"] = True
-            # result = self.plugins.update(plugin_name)
-            # self.plugins.update(plugin_name)
-            # mock_download_plugin.assert_called_with(plugin_name)
-            # self.plugins.update(plugin_name)
-            # Assert that no plugins are updated when not necessary
-            # self.assertIsNone(self.plugins.update(plugin_name))
+            self.plugins.update(plugin_name)
+            mock_download_plugin.assert_not_called()
+            self.assertEqual(
+                "INFO: No plugins updated",
+                self.fakes.juju.log[-1])
 
         finally:
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
