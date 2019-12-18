@@ -1,10 +1,5 @@
 import os
-import pwd
-import grp
 import glob
-import subprocess
-import time
-import urllib
 
 from jenkins_plugin_manager.plugin import UpdateCenter
 
