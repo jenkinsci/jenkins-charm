@@ -1,12 +1,11 @@
 import os
 import glob
 
-from jenkins_plugin_manager.plugin import UpdateCenter
-
 from charmhelpers.core import hookenv, host
-
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
+
+from jenkins_plugin_manager.plugin import UpdateCenter
 
 
 class Plugins(object):
@@ -20,14 +19,14 @@ class Plugins(object):
         hookenv.log("Starting plugins installation process")
         plugins = plugins or ""
         plugins = plugins.split()
-        plugins = (self._get_plugins_to_install(plugins))
+        plugins = self._get_plugins_to_install(plugins)
 
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
         existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
         try:
             installed_plugins = self._install_plugins(plugins)
-        except:
+        except Exception:
             hookenv.log("Plugin installation failed, check logs for details")
             raise
 
@@ -116,6 +115,7 @@ class Plugins(object):
         """
         plugins = plugins or ""
         plugins = plugins.split()
+        plugins = self._get_plugins_to_install(plugins)
         hookenv.log("Updating plugins")
         try:
             installed_plugins = self._install_plugins(plugins)
