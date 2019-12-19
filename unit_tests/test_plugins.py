@@ -190,15 +190,17 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._download_plugin")
-    def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_restart_jenkins):
+    def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
         The given plugins are installed from the Jenkins site if newer
         versions are available
         """
         plugin_name = "plugin"
+        mock_get_plugins_to_install.return_value = {plugin_name}
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1.1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
@@ -210,14 +212,16 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
 
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._download_plugin")
-    def test_dont_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_restart_jenkins):
+    def test_dont_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
         No plugins are reinstalled if not necessary.
         """
         plugin_name = "plugin"
+        mock_get_plugins_to_install.return_value = {plugin_name}
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
@@ -231,6 +235,26 @@ class PluginsTest(CharmTest):
 
         finally:
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
+
+    @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
+    def test_update_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_restart_jenkins):
+        """
+        When install fails it should log and raise an error
+        """
+        def failed_install(*args, **kwargs):
+            raise Exception()
+
+        plugin_name = "bad_plugin"
+        mock_get_plugins_to_install.return_value = {plugin_name}
+        mock_get_plugin_version.return_value = False
+        self.plugins._install_plugins = failed_install
+
+        self.assertRaises(Exception, self.plugins.update, plugin_name)
+        self.assertEqual(
+            "INFO: Plugin update failed, check logs for details",
+            self.fakes.juju.log[-1])
+        mock_restart_jenkins.assert_not_called()
 
     def test_update_bad_plugin(self, mock_restart_jenkins):
         """
