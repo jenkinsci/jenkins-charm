@@ -5,8 +5,10 @@ import tempfile
 import subprocess
 
 from testtools import try_import
-
+from pkg_resources import parse_version
 from charmhelpers.core import hookenv, host
+
+from jenkins_plugin_manager.core import JenkinsCore
 
 # XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors
@@ -32,6 +34,7 @@ class Packages(object):
         """
         self._apt = apt
         self._host = ch_host or host
+        self._jc = JenkinsCore()
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
@@ -110,3 +113,12 @@ class Packages(object):
         with open(keyfile, "r") as k:
             key = k.read()
         self._apt.add_source(source, key=key)
+
+    def _bundle_download(self):
+        return
+
+    def jenkins_upgradable(self):
+        if (parse_version(self._jc.load_latest_core_version()) >
+                parse_version(self.jenkins_version())):
+            return True
+        return False

@@ -1,5 +1,7 @@
 import os
 
+from unittest import mock
+
 from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
@@ -159,3 +161,15 @@ class PackagesTest(CharmTest):
         # And now test older version.
         self.apt._set_jenkins_version('2.128.1')
         self.assertEqual(self.packages.jenkins_version(), '2.128.1')
+
+    @mock.patch("jenkins_plugin_manager.core.JenkinsCore.load_latest_core_version")
+    def test_jenkins_upgradable(self, mock_load_latest_core_version):
+        print(Packages.__dict__)
+        self.apt._set_jenkins_version('2.128.1')
+        mock_load_latest_core_version.return_value = '2.128.1'
+        self.assertFalse(self.packages.jenkins_upgradable())
+        mock_load_latest_core_version.return_value = '2.128.2'
+        self.assertTrue(self.packages.jenkins_upgradable())
+
+    def test_bundle_download(self):
+        self.packages._bundle_download()
