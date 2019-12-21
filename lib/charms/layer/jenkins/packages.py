@@ -34,7 +34,11 @@ class Packages(object):
         """
         self._apt = apt
         self._host = ch_host or host
-        self._jc = JenkinsCore()
+        core_url = hookenv.config()["bundle-site"]
+        if core_url == "":
+            self._jc = JenkinsCore()
+        else:
+            self._jc = JenkinsCore(hookenv.config()["bundle-site"])
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
@@ -118,7 +122,14 @@ class Packages(object):
         return
 
     def jenkins_upgradable(self):
-        if (parse_version(self._jc.load_latest_core_version()) >
+        """
+            Verify if there's a new version of jenkins available.
+            Note: When bundle-site is not set the return will always
+            be True.
+        """
+        if hookenv.config()["bundle-site"] == "":
+            return True
+        if (parse_version(self._jc.core_version) >
                 parse_version(self.jenkins_version())):
             return True
         return False
