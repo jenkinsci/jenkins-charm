@@ -1,9 +1,11 @@
 import requests
+import time
 from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
 import jenkins
-from charmhelpers.core import hookenv
+from charmhelpers.core import hookenv, unitdata
+
 from charmhelpers.core.decorators import retry_on_exception
 from charmhelpers.core.hookenv import ERROR
 
@@ -69,6 +71,18 @@ class Api(object):
         client.run_script(UPDATE_PASSWORD_SCRIPT.format(
             username=username, password=password))
 
+    def get_plugin_version(self, plugin):
+        """Get the installed version of a given plugin
+
+        If the plugin is not installed returns False
+        """
+        client = self._make_client()
+        script = 'println(Jenkins.instance.updateCenter.getPlugin("{}")?.version)'.format(plugin)
+        version = client.run_script(script)
+        if version == "null":
+            return False
+        return version
+
     def add_node(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
         self.wait()
@@ -120,6 +134,9 @@ class Api(object):
         action = "safeRestart"
         fail_message = "Couldn't restart jenkins"
         self._execute_action(action, fail_message)
+        self.wait()
+        unitdata.kv().set("jenkins.last_restart", time.time())
+
 
 
     # Wait up to 140 seconds for Jenkins to be fully up.

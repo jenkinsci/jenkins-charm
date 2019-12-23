@@ -1,3 +1,4 @@
 charmhelpers
 flake8
 python-jenkins
+git+https://git.launchpad.net/jenkins-plugin-manager

@@ -1,14 +1,11 @@
 import os
-import pwd
-import grp
 import glob
-import subprocess
-import time
-import urllib
 
-from charmhelpers.core import hookenv, host, unitdata
-
+from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.api import Api
+
+from jenkins_plugin_manager.plugin import UpdateCenter
 
 
 class Plugins(object):
@@ -19,21 +16,18 @@ class Plugins(object):
 
         @params plugins: A whitespace-separated list of plugins to install.
         """
+        hookenv.log("Starting plugins installation process")
         plugins = plugins or ""
         plugins = plugins.split()
-        hookenv.log("Stopping jenkins for plugin update(s)")
-        host.service_stop("jenkins")
-        hookenv.log("Installing plugins (%s)" % " ".join(plugins))
+        plugins = self._get_plugins_to_install(plugins)
 
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
-
-        existing_plugins = set(glob.glob("%s/*.hpi" % paths.PLUGINS))
+        existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
         try:
             installed_plugins = self._install_plugins(plugins)
-        except:
+        except Exception:
             hookenv.log("Plugin installation failed, check logs for details")
-            host.service_start("jenkins")  # Make sure we don't leave jenkins down
             raise
 
         unlisted_plugins = existing_plugins - installed_plugins
@@ -46,59 +40,37 @@ class Plugins(object):
                     "remove-unlisted-plugins to 'yes' to clear them "
                     "away." % ", ".join(unlisted_plugins))
 
-        hookenv.log("Starting jenkins to pickup configuration changes")
-        host.service_start("jenkins")
+        # Restarting jenkins to pickup configuration changes
+        Api().restart()
+        return installed_plugins
 
     def _install_plugins(self, plugins):
         """Install the plugins with the given names."""
+        hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
+        update = config["plugins-auto-update"]
         plugins_site = config["plugins-site"]
-
-        hookenv.log("Fetching plugins from %s" % plugins_site)
-
-        # NOTE: by default wget verifies certificates as of 1.10.
-        if config["plugins-check-certificate"] == "no":
-            wget_options = ["--no-check-certificate"]
-        else:
-            wget_options = []
-        update = config["plugins-force-reinstall"] or config["plugins-auto-update"]
-        if update:
-            wget_options.append("-N")
-        paths = set()
+        plugin_paths = set()
         for plugin in plugins:
-            path = self._install_plugin(plugins_site, plugin, wget_options, update)
-            paths.add(path)
-        return paths
+            plugin_path = self._install_plugin(
+                plugin, plugins_site, update)
+            plugin_paths.add(plugin_path)
+        return plugin_paths
 
-    def _install_plugin(self, plugins_site, plugin, wget_options, update):
-        """Download and install a given plugin."""
-        plugin_filename = "%s.hpi" % plugin
-        url = os.path.join(plugins_site, plugin_filename)
-        plugin_path = os.path.join(paths.PLUGINS, plugin_filename)
-        if not os.path.isfile(plugin_path) or update:
-            # Get when was the last time this plugin was updated
-            if os.path.isfile(plugin_path):
-                last_update = os.path.getmtime(plugin_path)
-            else:
-                last_update = 0
-            hookenv.log("Installing plugin %s" % plugin_filename)
-            command = ["wget"] + wget_options + ["-q", url]
-            subprocess.check_output(command, cwd=paths.PLUGINS)
-            if os.path.getmtime(plugin_path) != last_update:
-                uid = pwd.getpwnam('jenkins').pw_uid
-                gid = grp.getgrnam('jenkins').gr_gid
-                os.chown(plugin_path, uid, gid)
-                os.chmod(plugin_path, 0o0744)
-                hookenv.log("A new version of %s has been installed" % plugin_filename)
-                unitdata.kv().set('jenkins.plugins.last_plugin_update_time', time.time())
-
-            else:
-                hookenv.log("Plugin %s is already in latest version"
-                            % plugin_filename)
-
-        else:
-            hookenv.log("Plugin %s already installed" % plugin_filename)
-        return plugin_path
+    def _install_plugin(self, plugin, plugins_site, update):
+        """
+        Verify if the plugin is not installed before installing it
+        or if it needs an update .
+        """
+        plugin_version = Api().get_plugin_version(plugin)
+        latest_version = self._get_latest_version(plugin)
+        if not plugin_version or (update and plugin_version != latest_version):
+            hookenv.log("Installing plugin %s" % plugin)
+            plugin_url = (
+                "%s/%s.hpi" % (plugins_site, plugin))
+            return self._download_plugin(plugin, plugin_url)
+        hookenv.log("Plugin %s-%s already installed" % (
+            plugin, plugin_version))
 
     def _remove_plugins(self, paths):
         """Remove the plugins at the given paths."""
@@ -112,16 +84,50 @@ class Plugins(object):
         hookenv.log("Deleting unlisted plugin '%s'" % path)
         os.remove(path)
 
-    def update(self, plugins, path=None):
+    def _get_plugins_to_install(self, plugins, uc=None):
+        """Get all plugins needed to be installed"""
+        uc = uc or UpdateCenter()
+        plugins_and_dependencies = uc.get_plugins(plugins)
+        if plugins == plugins_and_dependencies:
+            return plugins
+        else:
+            return self._get_plugins_to_install(plugins_and_dependencies, uc)
+
+    def _download_plugin(self, plugin, plugin_site):
+        """Get dependencies of the given plugin(s)"""
+        uc = UpdateCenter()
+        return uc.download_plugin(
+                plugin, paths.PLUGINS, plugin_url=plugin_site)
+
+    def _get_plugin_info(self, plugin):
+        """Get info of the given plugin from the UpdateCenter"""
+        uc = UpdateCenter()
+        return uc.get_plugin_data(plugin)
+
+    def _get_latest_version(self, plugin):
+        """Get the latest available version of a plugin"""
+        return self._get_plugin_info(plugin)["version"]
+
+    def update(self, plugins):
         """Try to update the given plugins.
 
         @params plugins: A whitespace-separated list of plugins to install.
         """
         plugins = plugins or ""
         plugins = plugins.split()
+        plugins = self._get_plugins_to_install(plugins)
         hookenv.log("Updating plugins")
         try:
-            self._install_plugins(plugins)
+            installed_plugins = self._install_plugins(plugins)
         except Exception:
-            hookenv.log("Plugin installation failed, check logs for details")
+            hookenv.log("Plugin update failed, check logs for details")
             raise
+
+        for first in installed_plugins:
+            break
+        if first is None:
+            hookenv.log("No plugins updated")
+            return
+        else:
+            Api().restart()
+            return installed_plugins

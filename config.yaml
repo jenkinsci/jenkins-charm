@@ -37,13 +37,6 @@ options:
     type: string
     default: "yes"
     description: Set to no to allow downloading from an invalid https site.
-  plugins-force-reinstall:
-      type: boolean
-      default: False
-      description: >
-        Set this to True to force a reinstallation of plugins listed in plugins
-        config. The reinstallation will only happen when the plugin in plugins-site
-        has a timestamp newer than the local one. 
   plugins-auto-update:
       type: boolean
       default: True

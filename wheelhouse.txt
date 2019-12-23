@@ -1,2 +1,3 @@
 # We require a version of python-jenkins that uses requests.
 python-jenkins>=0.4.16
+git+ssh://git.launchpad.net/jenkins-plugin-manager 
