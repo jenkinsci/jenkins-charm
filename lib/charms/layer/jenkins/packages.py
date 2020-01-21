@@ -38,7 +38,7 @@ class Packages(object):
         if core_url == "":
             self._jc = JenkinsCore()
         else:
-            self._jc = JenkinsCore(hookenv.config()["bundle-site"])
+            self._jc = JenkinsCore(jenkins_core_url=hookenv.config()["bundle-site"])
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
@@ -72,12 +72,17 @@ class Packages(object):
 
     def _install_from_bundle(self):
         """Install Jenkins from bundled package."""
-        # Check bundled package exists.
-        charm_dir = hookenv.charm_dir()
-        bundle_path = os.path.join(charm_dir, "files", "jenkins.deb")
-        if not os.path.isfile(bundle_path):
-            message = "'%s' doesn't exist. No package bundled." % (bundle_path)
-            raise Exception(message)
+        config = hookenv.config()
+        if config["bundle-site"] == "":
+            # Check bundled package exists.
+            charm_dir = hookenv.charm_dir()
+            bundle_path = os.path.join(charm_dir, "files", "jenkins.deb")
+            if not os.path.isfile(bundle_path):
+                message = "'%s' doesn't exist. No package bundled." % (bundle_path)
+                raise Exception(message)
+        else:
+            bundle_path = os.path.join(hookenv.charm_dir(), "jenkins.deb")
+            self._bundle_download(bundle_path)
         hookenv.log(
             "Installing from bundled Jenkins package: %s:" % bundle_path)
         self._install_local_deb(bundle_path)
@@ -118,8 +123,10 @@ class Packages(object):
             key = k.read()
         self._apt.add_source(source, key=key)
 
-    def _bundle_download(self):
-        return
+    def _bundle_download(self, path=None):
+        hookenv.log(
+            "Downloading bundle from %s" % self._jc.jenkins_repo)
+        self._jc.get_binary_package(path)
 
     def jenkins_upgradable(self):
         """

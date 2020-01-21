@@ -20,7 +20,7 @@ options:
     default: ""
     description: >
       Site to download deb packages from when installing jenkins from bundle. 
-      If this configuration not set, the jenkins deb package needs to be manually 
+      If this configuration is not set, the jenkins deb package needs to be manually 
       copied over to the charm files/ dir before deployment and named jenkins.deb.
   username:
     type: string
