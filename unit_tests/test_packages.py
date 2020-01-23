@@ -1,4 +1,5 @@
 import os
+import glob
 
 from unittest import mock
 
@@ -210,10 +211,10 @@ class PackagesTest(CharmTest):
         orig_bundle_site = hookenv.config()["bundle-site"]
         try:
             hookenv.config()["release"] = "bundle"
-            hookenv.config()["bundle-site"] = "http://test"
-            bundle_path = os.path.join(hookenv.charm_dir(), "jenkins.deb")
+            hookenv.config()["bundle-site"] = "https://pkg.jenkins.io"
+            bundle_path = os.path.join(hookenv.charm_dir(), "files")
             self.packages.install_jenkins()
-            self.assertThat(bundle_path, PathExists())
+            self.assertTrue(glob.glob('%s/jenkins_*.deb' % bundle_path))
             self.assertEqual(
                 ["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
