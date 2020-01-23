@@ -1,0 +1,17 @@
+#!/usr/local/sbin/charm-env python3
+
+from charmhelpers.core.hookenv import (
+    action_fail,
+)
+
+import reactive.jenkins as Jenkins
+
+
+def upgrade():
+    Jenkins.upgrade_jenkins()
+
+
+try:
+    upgrade()
+except Exception as e:
+    action_fail("Failed to upgrade jenkins: {}".format(str(e)))
