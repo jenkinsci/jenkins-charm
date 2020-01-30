@@ -6,15 +6,22 @@ options:
   release:
     type: string
     default: lts
-    description: |
-     Source of Jenkins, options include:
-     - lts: use the most recent Jenkins LTS release.
-     - trunk: use the most recent Jenkins release.
-     - bundle: use a bundled deb package. The jenkins deb package needs to be
-               manually copied over to the charm files/ dir before deployment
-               and named jenkins.deb. It can be downloaded from
-               http://pkg.jenkins-ci.org/debian/
-     - http(s)://...: http(s) link to a retrievable jenkins deb
+    description: >
+      Source of Jenkins, options include:
+      - lts: use the most recent Jenkins LTS release.
+      - trunk: use the most recent Jenkins release.
+      - bundle: use a bundled deb package. The bundle-site configuration should 
+      be set or the jenkins deb package needs to be manually copied over to the 
+      charm files/ dir before deployment and named jenkins.deb. It can be 
+      downloaded from http://pkg.jenkins-ci.org/debian/
+      - http(s)://...: http(s) link to a retrievable jenkins deb
+  bundle-site:
+    type: string
+    default: ""
+    description: >
+      Site to download deb packages from when installing jenkins from bundle. 
+      If this configuration is not set, the jenkins deb package needs to be manually 
+      copied over to the charm files/ dir before deployment and named jenkins.deb.
   username:
     type: string
     default: admin

@@ -5,8 +5,10 @@ import tempfile
 import subprocess
 
 from testtools import try_import
-
+from pkg_resources import parse_version
 from charmhelpers.core import hookenv, host
+
+from jenkins_plugin_manager.core import JenkinsCore
 
 # XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors
@@ -32,6 +34,11 @@ class Packages(object):
         """
         self._apt = apt
         self._host = ch_host or host
+        core_url = hookenv.config()["bundle-site"]
+        if core_url == "":
+            self._jc = JenkinsCore()
+        else:
+            self._jc = JenkinsCore(jenkins_core_url=hookenv.config()["bundle-site"])
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
@@ -65,12 +72,19 @@ class Packages(object):
 
     def _install_from_bundle(self):
         """Install Jenkins from bundled package."""
-        # Check bundled package exists.
-        charm_dir = hookenv.charm_dir()
-        bundle_path = os.path.join(charm_dir, "files", "jenkins.deb")
-        if not os.path.isfile(bundle_path):
-            message = "'%s' doesn't exist. No package bundled." % (bundle_path)
-            raise Exception(message)
+        config = hookenv.config()
+        if config["bundle-site"] == "":
+            # Check bundled package exists.
+            charm_dir = hookenv.charm_dir()
+            bundle_path = os.path.join(charm_dir, "files", "jenkins.deb")
+            if not os.path.isfile(bundle_path):
+                message = "'%s' doesn't exist. No package bundled." % (bundle_path)
+                raise Exception(message)
+        else:
+            self._jc.jenkins_repo = hookenv.config()["bundle-site"]
+            download_path = os.path.join(hookenv.charm_dir(), "files")
+            self._bundle_download(download_path)
+            bundle_path = os.path.join(download_path, "jenkins_%s_all.deb" % self._jc.core_version)
         hookenv.log(
             "Installing from bundled Jenkins package: %s:" % bundle_path)
         self._install_local_deb(bundle_path)
@@ -110,3 +124,21 @@ class Packages(object):
         with open(keyfile, "r") as k:
             key = k.read()
         self._apt.add_source(source, key=key)
+
+    def _bundle_download(self, path=None):
+        hookenv.log(
+            "Downloading bundle from %s" % self._jc.jenkins_repo)
+        self._jc.get_binary_package(path)
+
+    def jenkins_upgradable(self):
+        """
+            Verify if there's a new version of jenkins available.
+            Note: When bundle-site is not set the return will always
+            be True.
+        """
+        if hookenv.config()["bundle-site"] == "":
+            return True
+        if (parse_version(self._jc.core_version) >
+                parse_version(self.jenkins_version())):
+            return True
+        return False

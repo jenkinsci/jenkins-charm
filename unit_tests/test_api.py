@@ -187,9 +187,9 @@ class ApiTest(JenkinsTest):
         otherwise it will return false.
         """
         self.fakes.jenkins.scripts[
-            "println(Jenkins.instance.updateCenter.getPlugin(\"installed-plugin\")?.version)"] = "1"
+            "println(Jenkins.instance.pluginManager.plugins.find{it.shortName == 'installed-plugin'}?.version)"] = "1"
         self.fakes.jenkins.scripts[
-            "println(Jenkins.instance.updateCenter.getPlugin(\"not-installed-plugin\")?.version)"] = "null"
+            "println(Jenkins.instance.pluginManager.plugins.find{it.shortName == 'not-installed-plugin'}?.version)"] = "null"
         self.assertEqual(self.api.get_plugin_version("installed-plugin"), "1")
         self.assertFalse(self.api.get_plugin_version("not-installed-plugin"))
 

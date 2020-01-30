@@ -1,4 +1,12 @@
 import os
+import glob
+
+from unittest import mock
+
+from testtools.matchers import (
+    PathExists,
+    Not,
+)
 
 from charmtest import CharmTest
 
@@ -88,8 +96,9 @@ class PackagesTest(CharmTest):
         orig_release = hookenv.config()["release"]
         try:
             hookenv.config()["release"] = "bundle"
-            error = self.assertRaises(Exception, self.packages.install_jenkins)
             path = os.path.join(hookenv.charm_dir(), "files", "jenkins.deb")
+            self.assertThat(path, Not(PathExists()))
+            error = self.assertRaises(Exception, self.packages._install_from_bundle)
             self.assertEqual(
                 "'{}' doesn't exist. No package bundled.".format(path),
                 str(error))
@@ -159,3 +168,55 @@ class PackagesTest(CharmTest):
         # And now test older version.
         self.apt._set_jenkins_version('2.128.1')
         self.assertEqual(self.packages.jenkins_version(), '2.128.1')
+
+    def test_jenkins_upgradable_without_bundle_site(self):
+        """
+        Jenkins should always be upgradable when bundle-site
+        isn't set.
+        """
+        self.assertTrue(self.packages.jenkins_upgradable())
+        self.apt._set_jenkins_version('2.128.1')
+        self.packages._jc.core_version = '2.128.1'
+        self.assertTrue(self.packages.jenkins_upgradable())
+
+    @mock.patch("charms.layer.jenkins.packages.JenkinsCore")
+    def test_jenkins_upgradable_with_bundle_site(self, mock_jenkins_core_version):
+        """
+        If the latest jenkins package version available in bundle-site is
+        higher than the installed one, jenkins will be upgradable.
+        """
+        orig_bundle_site = hookenv.config()["bundle-site"]
+        try:
+            hookenv.config()["bundle-site"] = "http://test"
+            self.packages = Packages(apt=self.apt, ch_host=self.ch_host)
+            self.apt._set_jenkins_version('2.128.1')
+            self.packages._jc.core_version = '2.128.2'
+            self.assertTrue(self.packages.jenkins_upgradable())
+            self.packages._jc.core_version = '2.128.1'
+            self.assertFalse(self.packages.jenkins_upgradable())
+        finally:
+            hookenv.config()["bundle-site"] = orig_bundle_site
+
+    def test_bundle_download(self):
+        bundle_path = os.path.join(hookenv.charm_dir(), "jenkins.deb")
+        self.packages._bundle_download(bundle_path)
+        self.assertThat(bundle_path, PathExists())
+
+    def test_install_jenkins_bundle_download(self):
+        """
+        If the 'release' config is set to 'bundle' and bundle-site is set,
+        then Jenkins will be downloaded and installed from bundle-site.
+        """
+        orig_release = hookenv.config()["release"]
+        orig_bundle_site = hookenv.config()["bundle-site"]
+        try:
+            hookenv.config()["release"] = "bundle"
+            hookenv.config()["bundle-site"] = "https://pkg.jenkins.io"
+            bundle_path = os.path.join(hookenv.charm_dir(), "files")
+            self.packages.install_jenkins()
+            self.assertTrue(glob.glob('%s/jenkins_*.deb' % bundle_path))
+            self.assertEqual(
+                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+        finally:
+            hookenv.config()["release"] = orig_release
+            hookenv.config()["bundle-site"] = orig_bundle_site

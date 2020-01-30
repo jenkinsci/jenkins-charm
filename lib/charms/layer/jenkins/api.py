@@ -38,7 +38,6 @@ property = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword(
 user.addProperty(property)
 """
 
-
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
@@ -77,7 +76,7 @@ class Api(object):
         If the plugin is not installed returns False
         """
         client = self._make_client()
-        script = 'println(Jenkins.instance.updateCenter.getPlugin("{}")?.version)'.format(plugin)
+        script = "println(Jenkins.instance.pluginManager.plugins.find{{it.shortName == '{}'}}?.version)".format(plugin)
         version = client.run_script(script)
         if version == "null":
             return False

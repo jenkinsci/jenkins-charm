@@ -85,9 +85,13 @@ def install_jenkins():
 # is a good hint that we should upgrade everything possible.
 @hook("upgrade-charm")
 def upgrade_jenkins():
-    status_set("maintenance", "Upgrading Jenkins")
-    packages = Packages()
-    packages.install_jenkins()
+    if config("release") == "bundle":
+        packages = Packages()
+        if packages.jenkins_upgradable():
+            status_set("maintenance", "Upgrading Jenkins")
+            packages.install_jenkins()
+        else:
+            log("No newer jenkins package is available")
 
 
 # Called once the jenkins package has been installed, but we didn't
