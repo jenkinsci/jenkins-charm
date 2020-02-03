@@ -1,2 +1,4 @@
 restart:
   description: Wait for all jobs to be completed and restart jenkins.
+upgrade:
+  description: Upgrade jenkins package when using bundle.
