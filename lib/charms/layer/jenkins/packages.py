@@ -1,8 +1,10 @@
+import glob
 import os
 import os.path
+import re
 import shutil
-import tempfile
 import subprocess
+import tempfile
 
 from testtools import try_import
 from pkg_resources import parse_version
@@ -142,3 +144,18 @@ class Packages(object):
                 parse_version(self.jenkins_version())):
             return True
         return False
+
+    def clean_old_plugins(self):
+        """
+        Remove old plugins directories created by jenkins.deb and old versions
+        of this charm.
+        """
+        # Remove detached-plugins extracted from jenkins.deb
+        shutil.rmtree("/var/cache/jenkins/war/WEB-INF/detached-plugins")
+        # Remove old plugins from old charm versions
+        for directory in glob("/srv/mnt/jenkins/plugins/*/"):
+            shutil.rmtree(directory)
+        # Remove plugin files with no version in its name
+        for plugin_file in glob("/srv/mnt/jenkins/plugins/*.jpi"):
+            if not re.search(r"\d\.jpi", plugin_file):
+                os.remove(plugin_file)

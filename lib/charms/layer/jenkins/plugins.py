@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
