@@ -1,4 +1,3 @@
-import glob
 import os
 import os.path
 import re
@@ -6,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 
+from glob import glob
 from testtools import try_import
 from pkg_resources import parse_version
 from charmhelpers.core import hookenv, host
