@@ -1,6 +1,6 @@
 import os
-import glob
 
+from glob import glob
 from unittest import mock
 
 from testtools.matchers import (
@@ -34,6 +34,13 @@ class PackagesTest(CharmTest):
         keyfile = "jenkins.io.key"
         os.symlink(os.path.join(os.getcwd(), keyfile),
                    os.path.join(hookenv.charm_dir(), keyfile))
+
+        jenkins_dir = "/srv/mnt/jenkins"
+        jenkins_cache_dir = "/var/cache/jenkins/war/WEB-INF"
+        self.fakes.fs.add(jenkins_dir)
+        self.fakes.fs.add(jenkins_cache_dir)
+        os.makedirs(jenkins_dir)
+        os.makedirs(jenkins_cache_dir)
 
     def tearDown(self):
         # Reset installs and sources after each test
@@ -214,9 +221,38 @@ class PackagesTest(CharmTest):
             hookenv.config()["bundle-site"] = "https://pkg.jenkins.io"
             bundle_path = os.path.join(hookenv.charm_dir(), "files")
             self.packages.install_jenkins()
-            self.assertTrue(glob.glob('%s/jenkins_*.deb' % bundle_path))
+            self.assertTrue(glob('%s/jenkins_*.deb' % bundle_path))
             self.assertEqual(
                 ["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
             hookenv.config()["bundle-site"] = orig_bundle_site
+
+    def test_clean_old_plugins(self):
+        """
+        Make sure old plugin directories are excluded.
+        """
+        plugins_dir = "/srv/mnt/jenkins/plugins"
+        plugins = ["test1_plugin", "test2_plugin", "test3_plugin"]
+        kept_plugins = []
+        detached_plugins_dir = "/var/cache/jenkins/war/WEB-INF/detached-plugins"
+
+        os.mkdir(plugins_dir)
+        os.mkdir(detached_plugins_dir)
+        for plugin in plugins:
+            # Create old plugins directories and .jpi files with no version
+            os.mkdir(os.path.join(plugins_dir, plugin))
+            with open(os.path.join(plugins_dir, "%s.jpi" % plugin), "w") as fd:
+                fd.write("")
+            # Create plugins with version that should not be removed
+            plugin_to_keep = os.path.join(plugins_dir, "%s-1.jpi" % plugin)
+            kept_plugins.append(plugin_to_keep)
+            with open(plugin_to_keep, "w") as fd:
+                fd.write("")
+
+        self.packages.clean_old_plugins()
+        self.assertThat(plugins_dir, PathExists())
+        self.assertThat(detached_plugins_dir, Not(PathExists()))
+        self.assertEqual(glob("/srv/mnt/jenkins/plugins/*/"), [])
+        remaining_plugins = glob("/srv/mnt/jenkins/plugins/*.jpi")
+        self.assertCountEqual(remaining_plugins, kept_plugins)
