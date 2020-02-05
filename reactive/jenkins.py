@@ -90,6 +90,7 @@ def upgrade_jenkins():
         if packages.jenkins_upgradable():
             status_set("maintenance", "Upgrading Jenkins")
             packages.install_jenkins()
+            packages.clean_old_plugins()
         else:
             log("No newer jenkins package is available")
 
