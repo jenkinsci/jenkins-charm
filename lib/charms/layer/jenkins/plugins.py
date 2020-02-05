@@ -65,7 +65,7 @@ class Plugins(object):
         plugin_version = Api().get_plugin_version(plugin)
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
-            hookenv.log("Installing plugin %s" % plugin)
+            hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
             plugin_url = (
                 "%s/%s.hpi" % (plugins_site, plugin))
             return self._download_plugin(plugin, plugin_url)
