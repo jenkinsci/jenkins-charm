@@ -2,6 +2,7 @@
 
 from charmhelpers.core.hookenv import (
     action_fail,
+    action_set,
 )
 
 import reactive.jenkins as Jenkins
@@ -9,6 +10,8 @@ import reactive.jenkins as Jenkins
 
 def upgrade():
     Jenkins.upgrade_jenkins()
+    action_set({'output': "Jenkins has been upgraded",
+                'outcome': 'Success'})
 
 
 try:
