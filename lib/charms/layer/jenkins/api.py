@@ -195,7 +195,8 @@ class Api(object):
         request = requests.Request("POST", urljoin(self.url, action))
         try:
             # Jenkins doesn't return an error for some actions
-            if client.jenkins_open(request):
+            if (client.jenkins_open(request) and
+                (action == "quietDown" or action == "cancelQuietDown")):
                 return
         except requests.exceptions.HTTPError as error:
             self._check_response(error)
