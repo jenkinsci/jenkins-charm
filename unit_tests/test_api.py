@@ -193,6 +193,34 @@ class ApiTest(JenkinsTest):
         self.assertEqual(self.api.get_plugin_version("installed-plugin"), "1")
         self.assertFalse(self.api.get_plugin_version("not-installed-plugin"))
 
+    def test_quiet_down(self):
+        """
+        The restart method POSTs a request to the '/safeRestart' URL, expecting
+        a 503 on the homepage (which happens after redirection).
+        """
+        self.apt._set_jenkins_version('2.120.1')
+        success = Response()
+        success.status_code = 200
+        self.fakes.jenkins.responses[urljoin(self.api.url, "quietDown")] = success
+        self.api.quiet_down()
+        self.assertEqual(
+            "INFO: Jenkins is in Quiet mode.",
+            self.fakes.juju.log[-1])
+
+    def test_cancel_quiet_down(self):
+        """
+        The restart method POSTs a request to the '/safeRestart' URL, expecting
+        a 503 on the homepage (which happens after redirection).
+        """
+        self.apt._set_jenkins_version('2.120.1')
+        success = Response()
+        success.status_code = 200
+        self.fakes.jenkins.responses[urljoin(self.api.url, "cancelQuietDown")] = success
+        self.api.cancel_quiet_down()
+        self.assertEqual(
+            "INFO: Quiet mode has been cancelled",
+            self.fakes.juju.log[-1])
+
     def test_reload_unexpected_error(self):
         """
         If the error code is not 403, the error is propagated.
