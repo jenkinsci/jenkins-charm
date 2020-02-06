@@ -9,6 +9,7 @@ from glob import glob
 from testtools import try_import
 from pkg_resources import parse_version
 from charmhelpers.core import hookenv, host
+from charms.layer.jenkins import paths
 
 from jenkins_plugin_manager.core import JenkinsCore
 
@@ -151,11 +152,15 @@ class Packages(object):
         of this charm.
         """
         # Remove detached-plugins extracted from jenkins.deb
-        shutil.rmtree("/var/cache/jenkins/war/WEB-INF/detached-plugins")
+        hookenv.log(
+            "Removing outdated detached plugins from jenkins.deb")
+        os.system("sudo rm -r /var/cache/jenkins/war/WEB-INF/detached-plugins")
         # Remove old plugins from old charm versions
-        for directory in glob("/srv/mnt/jenkins/plugins/*/"):
-            shutil.rmtree(directory)
+        hookenv.log(
+            "Removing plugins from old charm versions")
+        for directory in glob("%s/*/" % paths.PLUGINS):
+            os.system("sudo rm -r %s" % directory)
         # Remove plugin files with no version in its name
-        for plugin_file in glob("/srv/mnt/jenkins/plugins/*.jpi"):
+        for plugin_file in glob("%s/*.jpi" % paths.PLUGINS):
             if not re.search(r"\d\.jpi", plugin_file):
-                os.remove(plugin_file)
+                os.system("sudo rm %s" % plugin_file)
