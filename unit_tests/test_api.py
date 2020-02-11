@@ -172,10 +172,8 @@ class ApiTest(JenkinsTest):
         self.api.reload()
 
     def test_restart(self):
-        """
-        The restart method POSTs a request to the '/safeRestart' URL, expecting
-        a 503 on the homepage (which happens after redirection).
-        """
+        # The restart method POSTs a request to the '/safeRestart' URL, expecting
+        # a 503 on the homepage (which happens after redirection).
         self.apt._set_jenkins_version('2.120.1')
         error = self._make_httperror(self.api.url, 503, "Service Unavailable")
         self.fakes.jenkins.responses[urljoin(self.api.url, "safeRestart")] = error
@@ -194,10 +192,7 @@ class ApiTest(JenkinsTest):
         self.assertFalse(self.api.get_plugin_version("not-installed-plugin"))
 
     def test_quiet_down(self):
-        """
-        The restart method POSTs a request to the '/safeRestart' URL, expecting
-        a 503 on the homepage (which happens after redirection).
-        """
+        """If quiet_down is called it will log to juju logs"""
         self.apt._set_jenkins_version('2.120.1')
         success = Response()
         success.status_code = 200
@@ -208,10 +203,7 @@ class ApiTest(JenkinsTest):
             self.fakes.juju.log[-1])
 
     def test_cancel_quiet_down(self):
-        """
-        The restart method POSTs a request to the '/safeRestart' URL, expecting
-        a 503 on the homepage (which happens after redirection).
-        """
+        """If cancel_quiet_down is called it will log to juju logs"""
         self.apt._set_jenkins_version('2.120.1')
         success = Response()
         success.status_code = 200

@@ -230,9 +230,7 @@ class PackagesTest(CharmTest):
             hookenv.config()["bundle-site"] = orig_bundle_site
     @mock.patch("charms.layer.jenkins.packages.os.system")
     def test_clean_old_plugins(self, mock_os_system):
-        """
-        Make sure old plugin directories are excluded.
-        """
+        """Make sure old plugin directories are excluded."""
         plugins = ["test1_plugin", "test2_plugin", "test3_plugin"]
         kept_plugins = []
         detached_plugins_dir = "/var/cache/jenkins/war/WEB-INF/detached-plugins"
