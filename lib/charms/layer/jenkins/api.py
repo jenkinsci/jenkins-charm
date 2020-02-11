@@ -128,7 +128,7 @@ class Api(object):
         self._execute_action(action, fail_message)
 
     def restart(self):
-        """Execute a safe restart. Wait for jobs, and restart"""
+        """Execute a safe restart. Wait for jobs, and restart."""
         hookenv.log("Waiting for all jobs to complete and restarting jenkins")
         action = "safeRestart"
         fail_message = "Couldn't restart jenkins"
@@ -137,10 +137,8 @@ class Api(object):
         unitdata.kv().set("jenkins.last_restart", time.time())
 
     def quiet_down(self):
-        """
-        Put Jenkins in a Quiet mode, in preparation for a restart.
-        In that mode Jenkins doesn’t start any build.
-        """
+        """Put Jenkins in a Quiet mode, in preparation for a restart.
+        In that mode Jenkins doesn’t start any build."""
         hookenv.log("Putting Jenkins in Quiet mode.")
         action = "quietDown"
         fail_message = "Couldn't put jenkins in Quiet mode"
@@ -149,7 +147,7 @@ class Api(object):
         self.wait()
 
     def cancel_quiet_down(self):
-        """Cancel the quietDown mode"""
+        """Cancel the quietDown mode."""
         hookenv.log("Cancelling Quiet mode.")
         action = "cancelQuietDown"
         fail_message = "Couldn't cancel Quiet mode"

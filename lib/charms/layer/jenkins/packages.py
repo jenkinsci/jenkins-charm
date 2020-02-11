@@ -151,16 +151,13 @@ class Packages(object):
         Remove old plugins directories created by jenkins.deb and old versions
         of this charm.
         """
-        # Remove detached-plugins extracted from jenkins.deb
-        hookenv.log(
-            "Removing outdated detached plugins from jenkins.deb")
+        hookenv.log("Removing outdated detached plugins from jenkins.deb")
         os.system("sudo rm -r /var/cache/jenkins/war/WEB-INF/detached-plugins")
-        # Remove old plugins from old charm versions
-        hookenv.log(
-            "Removing plugins from old charm versions")
+        hookenv.log("Removing plugins from old charm versions")
         for directory in glob("%s/*/" % paths.PLUGINS):
             os.system("sudo rm -r %s" % directory)
         # Remove plugin files with no version in its name
         for plugin_file in glob("%s/*.jpi" % paths.PLUGINS):
             if not re.search(r"\d\.jpi", plugin_file):
+                hookenv.log("Removing old plugin %s" % plugin_file)
                 os.system("sudo rm %s" % plugin_file)
