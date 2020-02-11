@@ -54,7 +54,12 @@ class Plugins(object):
         for plugin in plugins:
             plugin_path = self._install_plugin(
                 plugin, plugins_site, update)
-            plugin_paths.add(plugin_path)
+            if plugin_path is None:
+                pass
+            elif plugin_path:
+                plugin_paths.add(plugin_path)
+            else:
+                hookenv.log("Failed to download %s" % plugin)
         return plugin_paths
 
     def _install_plugin(self, plugin, plugins_site, update):
@@ -123,9 +128,7 @@ class Plugins(object):
             hookenv.log("Plugin update failed, check logs for details")
             raise
 
-        for first in installed_plugins:
-            break
-        if first is None:
+        if len(installed_plugins) == 0:
             hookenv.log("No plugins updated")
             return
         else:
