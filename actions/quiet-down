@@ -1,0 +1,24 @@
+#!/usr/local/sbin/charm-env python3
+
+from charmhelpers.core.hookenv import (
+    action_fail,
+    action_set,
+)
+
+from charms.apt import status_set
+
+from charms.layer.jenkins.api import Api
+
+
+def quiet_down():
+    api = Api()
+    api.quiet_down()
+    status_set("maintenance", "Jenkins is in Quiet mode")
+    action_set({'output': "Jenkins has been put in Quiet mode",
+                'outcome': 'Success'})
+
+
+try:
+    quiet_down()
+except Exception as e:
+    action_fail("Failed to put jenkins in Quiet mode: {}".format(str(e)))

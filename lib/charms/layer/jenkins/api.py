@@ -128,7 +128,7 @@ class Api(object):
         self._execute_action(action, fail_message)
 
     def restart(self):
-        """Execute a safe restart. Wait for jobs, and restart"""
+        """Execute a safe restart. Wait for jobs, and restart."""
         hookenv.log("Waiting for all jobs to complete and restarting jenkins")
         action = "safeRestart"
         fail_message = "Couldn't restart jenkins"
@@ -136,7 +136,26 @@ class Api(object):
         self.wait()
         unitdata.kv().set("jenkins.last_restart", time.time())
 
+    def quiet_down(self):
+        """Put Jenkins in a Quiet mode.
 
+        In that mode Jenkins doesn’t start any build.
+        It is a preparation for a restart"""
+        hookenv.log("Putting Jenkins in Quiet mode.")
+        action = "quietDown"
+        fail_message = "Couldn't put jenkins in Quiet mode"
+        self._execute_action(action, fail_message)
+        hookenv.log("Jenkins is in Quiet mode.")
+        self.wait()
+
+    def cancel_quiet_down(self):
+        """Cancel the quietDown mode."""
+        hookenv.log("Cancelling Quiet mode.")
+        action = "cancelQuietDown"
+        fail_message = "Couldn't cancel Quiet mode"
+        self._execute_action(action, fail_message)
+        hookenv.log("Quiet mode has been cancelled")
+        self.wait()
 
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
@@ -175,7 +194,10 @@ class Api(object):
         client = self._make_client()
         request = requests.Request("POST", urljoin(self.url, action))
         try:
-            client.jenkins_open(request)
+            # Jenkins doesn't return an error for some actions
+            if (client.jenkins_open(request) and
+                (action == "quietDown" or action == "cancelQuietDown")):
+                return
         except requests.exceptions.HTTPError as error:
             self._check_response(error)
         else:

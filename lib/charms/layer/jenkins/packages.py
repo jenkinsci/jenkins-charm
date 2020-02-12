@@ -1,12 +1,15 @@
 import os
 import os.path
+import re
 import shutil
-import tempfile
 import subprocess
+import tempfile
 
+from glob import glob
 from testtools import try_import
 from pkg_resources import parse_version
 from charmhelpers.core import hookenv, host
+from charms.layer.jenkins import paths
 
 from jenkins_plugin_manager.core import JenkinsCore
 
@@ -142,3 +145,19 @@ class Packages(object):
                 parse_version(self.jenkins_version())):
             return True
         return False
+
+    def clean_old_plugins(self):
+        """
+        Remove old plugins directories created by jenkins.deb and old versions
+        of this charm.
+        """
+        hookenv.log("Removing outdated detached plugins from jenkins.deb")
+        os.system("sudo rm -r /var/cache/jenkins/war/WEB-INF/detached-plugins")
+        hookenv.log("Removing plugins from old charm versions")
+        for directory in glob("%s/*/" % paths.PLUGINS):
+            os.system("sudo rm -r %s" % directory)
+        # Remove plugin files with no version in its name
+        for plugin_file in glob("%s/*.jpi" % paths.PLUGINS):
+            if not re.search(r"\d\.jpi", plugin_file):
+                hookenv.log("Removing old plugin %s" % plugin_file)
+                os.system("sudo rm %s" % plugin_file)

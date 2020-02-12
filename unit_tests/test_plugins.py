@@ -189,6 +189,23 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
+    @mock.patch("test_plugins.Plugins._download_plugin")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
+    @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
+    def test_install_fail(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_get_latest_version, mock_download_plugin, mock_restart_jenkins):
+        """If a plugin is already installed, it doesn't get downloaded."""
+        plugin_name = "plugin"
+        mock_get_plugins_to_install.return_value = {plugin_name}
+        mock_get_plugin_version.return_value = False
+        mock_get_latest_version.return_value = "1"
+        mock_download_plugin.return_value = False
+        hookenv.config()["remove-unlisted-plugins"] = "yes"
+        self.plugins.install(plugin_name)
+        self.assertEqual(
+            "INFO: Failed to download plugin",
+            self.fakes.juju.log[-1])
+
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")

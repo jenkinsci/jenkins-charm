@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
@@ -54,7 +54,12 @@ class Plugins(object):
         for plugin in plugins:
             plugin_path = self._install_plugin(
                 plugin, plugins_site, update)
-            plugin_paths.add(plugin_path)
+            if plugin_path is None:
+                pass
+            elif plugin_path:
+                plugin_paths.add(plugin_path)
+            else:
+                hookenv.log("Failed to download %s" % plugin)
         return plugin_paths
 
     def _install_plugin(self, plugin, plugins_site, update):
@@ -65,7 +70,7 @@ class Plugins(object):
         plugin_version = Api().get_plugin_version(plugin)
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
-            hookenv.log("Installing plugin %s" % plugin)
+            hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
             plugin_url = (
                 "%s/%s.hpi" % (plugins_site, plugin))
             return self._download_plugin(plugin, plugin_url)
@@ -123,9 +128,7 @@ class Plugins(object):
             hookenv.log("Plugin update failed, check logs for details")
             raise
 
-        for first in installed_plugins:
-            break
-        if first is None:
+        if len(installed_plugins) == 0:
             hookenv.log("No plugins updated")
             return
         else:

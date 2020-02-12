@@ -1,6 +1,6 @@
 import os
-import glob
 
+from glob import glob
 from unittest import mock
 
 from testtools.matchers import (
@@ -11,6 +11,8 @@ from testtools.matchers import (
 from charmtest import CharmTest
 
 from charmhelpers.core import hookenv
+
+from charms.layer.jenkins import paths
 
 from stubs.apt import AptStub
 from stubs.host import CharmHelpersCoreHostStub
@@ -34,6 +36,12 @@ class PackagesTest(CharmTest):
         keyfile = "jenkins.io.key"
         os.symlink(os.path.join(os.getcwd(), keyfile),
                    os.path.join(hookenv.charm_dir(), keyfile))
+
+        jenkins_cache_dir = "/var/cache/jenkins/war/WEB-INF"
+        self.fakes.fs.add(paths.PLUGINS)
+        self.fakes.fs.add(jenkins_cache_dir)
+        os.makedirs(paths.PLUGINS)
+        os.makedirs(jenkins_cache_dir)
 
     def tearDown(self):
         # Reset installs and sources after each test
@@ -214,9 +222,39 @@ class PackagesTest(CharmTest):
             hookenv.config()["bundle-site"] = "https://pkg.jenkins.io"
             bundle_path = os.path.join(hookenv.charm_dir(), "files")
             self.packages.install_jenkins()
-            self.assertTrue(glob.glob('%s/jenkins_*.deb' % bundle_path))
+            self.assertTrue(glob('%s/jenkins_*.deb' % bundle_path))
             self.assertEqual(
                 ["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
             hookenv.config()["bundle-site"] = orig_bundle_site
+    @mock.patch("charms.layer.jenkins.packages.os.system")
+    def test_clean_old_plugins(self, mock_os_system):
+        """Make sure old plugin directories are excluded."""
+        plugins = ["test1_plugin", "test2_plugin", "test3_plugin"]
+        kept_plugins = []
+        detached_plugins_dir = "/var/cache/jenkins/war/WEB-INF/detached-plugins"
+        os_expected_calls = [mock.call("sudo rm -r %s" % detached_plugins_dir)]
+
+        os.mkdir(detached_plugins_dir)
+        for plugin in plugins:
+            # Create old plugins directories and .jpi files with no version
+            plugin_dir = os.path.join(paths.PLUGINS, plugin)
+            plugin_file = os.path.join(paths.PLUGINS, "%s.jpi" % plugin)
+            os.mkdir(plugin_dir)
+            with open(plugin_file, "w") as fd:
+                fd.write("")
+            # And expect them to be removed
+            os_expected_calls.append(mock.call("sudo rm -r %s/" % plugin_dir))
+            os_expected_calls.append(mock.call("sudo rm %s" % plugin_file))
+
+            # Create plugins with version that should not be removed
+            plugin_to_keep = os.path.join(paths.PLUGINS, "%s-1.jpi" % plugin)
+            kept_plugins.append(plugin_to_keep)
+            with open(plugin_to_keep, "w") as fd:
+                fd.write("")
+
+        self.packages.clean_old_plugins()
+        self.assertThat(paths.PLUGINS, PathExists())
+        self.assertCountEqual(mock_os_system.mock_calls, os_expected_calls)
+        mock_os_system.assert_has_calls(os_expected_calls, any_order=True)
