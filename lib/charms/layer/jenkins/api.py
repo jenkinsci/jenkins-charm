@@ -137,8 +137,10 @@ class Api(object):
         unitdata.kv().set("jenkins.last_restart", time.time())
 
     def quiet_down(self):
-        """Put Jenkins in a Quiet mode, in preparation for a restart.
-        In that mode Jenkins doesn’t start any build."""
+        """Put Jenkins in a Quiet mode.
+
+        In that mode Jenkins doesn’t start any build.
+        It is a preparation for a restart"""
         hookenv.log("Putting Jenkins in Quiet mode.")
         action = "quietDown"
         fail_message = "Couldn't put jenkins in Quiet mode"

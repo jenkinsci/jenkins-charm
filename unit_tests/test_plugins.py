@@ -194,9 +194,7 @@ class PluginsTest(CharmTest):
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     def test_install_fail(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_get_latest_version, mock_download_plugin, mock_restart_jenkins):
-        """
-        If a plugin is already installed, it doesn't get downloaded.
-        """
+        """If a plugin is already installed, it doesn't get downloaded."""
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}
         mock_get_plugin_version.return_value = False
