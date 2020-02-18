@@ -71,6 +71,23 @@ class ApiTest(JenkinsTest):
         self.apt._set_jenkins_version('2.150.1')
         self.assertEqual("2.0.0", self.api.version())
 
+    def test_regenerate_broken_token(self):
+        # When a token is not working a new will will be created
+        self.apt._set_jenkins_version('2.120.1')
+        get_whoami = self.fakes.jenkins.get_whoami
+        tries = []
+
+        def auth_failure():
+            try:
+                if not tries:
+                    raise JenkinsException("[401]")
+                get_whoami()
+            finally:
+                tries.append(True)
+
+        self.fakes.jenkins.get_whoami = auth_failure
+        self.assertIsNone(self.api.wait())
+
     def test_add(self):
         """
         A slave node can be added by specifying executors and labels.

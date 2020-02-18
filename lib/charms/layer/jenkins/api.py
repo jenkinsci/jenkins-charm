@@ -165,20 +165,28 @@ class Api(object):
         user = creds.username()
         token = creds.token()
 
-        # TODO: also handle regenerated tokens
         if token is None:
-            client = jenkins.Jenkins(self.url, user, creds.password())
-            # If we're using Jenkins >= 2.129 we need to request a new token.
-            jenkins_version = self._packages.jenkins_version()
-            if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
-                token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
-            else:
-                token = client.run_script(GET_LEGACY_TOKEN_SCRIPT.format(user)).strip()
-            creds.token(token)
+            creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
 
         client = jenkins.Jenkins(self.url, user, token)
-        client.get_whoami()
+        try:
+            client.get_whoami()
+        # Handling token regeneration when the current token is invalid.
+        # Then re-raise the exception as expected, so the retry kicks off.
+        except jenkins.JenkinsException as e:
+            if "401" in str(e):
+                creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
+            raise
         return client
+
+    def _get_token(self, user, password, jenkins_version):
+        client = jenkins.Jenkins(self.url, user, password)
+        # If we're using Jenkins >= 2.129 we need to request a new token.
+        if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
+            token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
+        else:
+            token = client.run_script(GET_LEGACY_TOKEN_SCRIPT.format(user)).strip()
+        return token
 
     def _check_response(self, error):
         # We expect a 'Service Unavailable' error code and to be at the
