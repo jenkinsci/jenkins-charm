@@ -172,7 +172,7 @@ class Api(object):
         try:
             client.get_whoami()
         # Handling token regeneration when the current token is invalid.
-        # Otherwise, re-raise the exception.
+        # Then re-raise the exception as expected, so the retry kicks off.
         except jenkins.JenkinsException as e:
             if "401" in str(e):
                 creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
