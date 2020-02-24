@@ -17,6 +17,7 @@ subordinate: false
 series:
   - xenial
   - bionic
+  - focal
 provides:
   website:
     interface: http
