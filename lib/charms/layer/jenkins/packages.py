@@ -21,6 +21,7 @@ apt = try_import("charms.apt")
 APT_DEPENDENCIES = {
     "xenial": ["daemon", "default-jre-headless"],
     "bionic": ["daemon", "openjdk-8-jre-headless"],
+    "focal": ["daemon", "openjdk-8-jre-headless"],
 }
 APT_SOURCE = "deb http://pkg.jenkins-ci.org/%s binary/"
 
