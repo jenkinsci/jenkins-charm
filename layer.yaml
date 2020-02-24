@@ -8,6 +8,6 @@ includes:
   - interface:nrpe-external-master
 options:
   basic:
-    packages: ['python3-testtools', 'pwgen']
+    packages: ['net-tools', 'python3-testtools', 'pwgen']
     include_system_packages: true
 repo: https://github.com/freeekanayaka/layer-jenkins.git
