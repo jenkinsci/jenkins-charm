@@ -102,7 +102,8 @@ class Plugins(object):
         """Get dependencies of the given plugin(s)"""
         uc = UpdateCenter()
         return uc.download_plugin(
-                plugin, paths.PLUGINS, plugin_url=plugin_site)
+                plugin, paths.PLUGINS, plugin_url=plugin_site,
+                with_version=False)
 
     def _get_plugin_info(self, plugin):
         """Get info of the given plugin from the UpdateCenter"""
