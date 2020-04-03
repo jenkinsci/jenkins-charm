@@ -39,7 +39,7 @@ class Packages(object):
         self._apt = apt
         self._host = ch_host or host
         core_url = hookenv.config()["bundle-site"]
-        if core_url == "":
+        if core_url == "" or core_url == "https://pkg.jenkins.io":
             self._jc = JenkinsCore()
         else:
             self._jc = JenkinsCore(jenkins_core_url=hookenv.config()["bundle-site"])
