@@ -1,5 +1,6 @@
 import glob
 import os
+import urllib
 
 from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
@@ -10,6 +11,15 @@ from jenkins_plugin_manager.plugin import UpdateCenter
 
 class Plugins(object):
     """Manage Jenkins plugins."""
+
+    def __init__(self):
+        plugins_site = hookenv.config()["plugins-site"]
+        try:
+            update_center = plugins_site + "/update-center.json"
+            urllib.request.urlopen(update_center)
+            self.update_center = UpdateCenter(uc_url=update_center)
+        except urllib.error.HTTPError:
+            self.update_center = UpdateCenter()
 
     def install(self, plugins):
         """Install the given plugins, optionally removing unlisted ones.
@@ -91,7 +101,7 @@ class Plugins(object):
 
     def _get_plugins_to_install(self, plugins, uc=None):
         """Get all plugins needed to be installed"""
-        uc = uc or UpdateCenter()
+        uc = uc or self.update_center
         plugins_and_dependencies = uc.get_plugins(plugins)
         if plugins == plugins_and_dependencies:
             return plugins
@@ -100,14 +110,14 @@ class Plugins(object):
 
     def _download_plugin(self, plugin, plugin_site):
         """Get dependencies of the given plugin(s)"""
-        uc = UpdateCenter()
+        uc = self.update_center
         return uc.download_plugin(
                 plugin, paths.PLUGINS, plugin_url=plugin_site,
                 with_version=False)
 
     def _get_plugin_info(self, plugin):
         """Get info of the given plugin from the UpdateCenter"""
-        uc = UpdateCenter()
+        uc = self.update_center
         return uc.get_plugin_data(plugin)
 
     def _get_latest_version(self, plugin):

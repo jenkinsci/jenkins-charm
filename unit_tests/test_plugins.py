@@ -285,3 +285,17 @@ class PluginsTest(CharmTest):
             pass
         self.assertRaises(Exception,
                           self.plugins.update, "bad_plugin")
+
+    def test_using_json_from_plugin_site(self, mock_restart_jenkins):
+        """
+        If the configured plugin-site has an update-center.json file,
+        it should be used instead of the default one.
+
+        """
+        self.plugins = Plugins()
+        orig_plugins_site = hookenv.config()["plugins-site"]
+        try:
+            hookenv.config()["plugins-site"] = "https://updates.jenkins.io/stable/"
+            self.plugins = Plugins()
+        finally:
+            hookenv.config()["plugins-site"] = orig_plugins_site
