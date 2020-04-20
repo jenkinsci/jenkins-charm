@@ -3,6 +3,7 @@ import os
 import urllib
 
 from charmhelpers.core import hookenv, host
+from charmhelpers.core.hookenv import status_set
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
 
@@ -13,13 +14,20 @@ class Plugins(object):
     """Manage Jenkins plugins."""
 
     def __init__(self):
-        plugins_site = hookenv.config()["plugins-site"]
-        try:
-            update_center = plugins_site + "/update-center.json"
-            urllib.request.urlopen(update_center)
-            self.update_center = UpdateCenter(uc_url=update_center)
-        except urllib.error.HTTPError:
+        if hookenv.config()["plugins-site"] == "https://updates.jenkins-ci.org/latest/":
             self.update_center = UpdateCenter()
+        else:
+            plugins_site = hookenv.config()["plugins-site"]
+            try:
+                update_center = plugins_site + "/update-center.json"
+                urllib.request.urlopen(update_center)
+                self.update_center = UpdateCenter(uc_url=update_center)
+            except urllib.error.HTTPError:
+                status_set(
+                    "blocked",
+                    "The configured plugin-site doesn't provide an "
+                    "update-center.json file or is not acessible.")
+                raise
 
     def install(self, plugins):
         """Install the given plugins, optionally removing unlisted ones.
