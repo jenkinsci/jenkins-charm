@@ -310,9 +310,5 @@ class PluginsTest(CharmTest):
         try:
             hookenv.config()["plugins-site"] = "https://updates.jenkins.io/not-valid/"
             self.assertRaises(Exception, Plugins)
-            self.assertEqual(
-                "INFO: status-set failed: blocked The configured plugin-site "
-                "doesn't provide an update-center.json file or is not acessible.",
-                self.fakes.juju.log[-1])
         finally:
             hookenv.config()["plugins-site"] = orig_plugins_site
