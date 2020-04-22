@@ -1,4 +1,5 @@
 import os
+import urllib
 from unittest import mock
 
 from testtools.matchers import (
@@ -12,6 +13,7 @@ from charmtest import CharmTest
 
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.plugins import Plugins
+
 
 
 @mock.patch("charms.layer.jenkins.api.Api.restart")
@@ -285,3 +287,28 @@ class PluginsTest(CharmTest):
             pass
         self.assertRaises(Exception,
                           self.plugins.update, "bad_plugin")
+
+    def test_using_json_from_plugin_site(self, mock_restart_jenkins):
+        """
+        If the configured plugin-site has an update-center.json file,
+        it should be used instead of the default one.
+        """
+        self.plugins = Plugins()
+        orig_plugins_site = hookenv.config()["plugins-site"]
+        try:
+            hookenv.config()["plugins-site"] = "https://updates.jenkins.io/stable/"
+            self.plugins = Plugins()
+        finally:
+            hookenv.config()["plugins-site"] = orig_plugins_site
+
+    def test_broken_json_from_plugin_site(self, mock_restart_jenkins):
+        """
+        If the configured plugin-site has no update-center.json file,
+        it should error.
+        """
+        orig_plugins_site = hookenv.config()["plugins-site"]
+        try:
+            hookenv.config()["plugins-site"] = "https://updates.jenkins.io/not-valid/"
+            self.assertRaises(Exception, Plugins)
+        finally:
+            hookenv.config()["plugins-site"] = orig_plugins_site

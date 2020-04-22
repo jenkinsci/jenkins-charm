@@ -40,6 +40,7 @@ from charms.layer.jenkins.configuration import (
 )
 from charms.layer.jenkins.users import Users
 from charms.layer.jenkins.plugins import Plugins
+from charms.layer.jenkins.plugins import PluginSiteError
 from charms.layer.jenkins.api import Api
 from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
@@ -62,6 +63,14 @@ def exec_install_hooks():
 def install_dependencies():
     packages = Packages()
     packages.install_dependencies()
+
+
+def plugins_layer():
+    try:
+        plugins = Plugins()
+    except PluginSiteError as e:
+        status_set("error", e.message)
+        return plugins
 
 
 # Dynamically create an OR-ed chain of @when_not, so install_dependencies
@@ -166,7 +175,7 @@ def configure_plugins():
         return
     status_set("maintenance", "Configuring plugins")
     remove_state("jenkins.configured.plugins")
-    plugins = Plugins()
+    plugins = plugins_layer()
     plugins.install(config("plugins"))
     api = Api()
     api.wait()  # Wait for the service to be fully up
@@ -186,7 +195,7 @@ def update_plugins():
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
         status_set("maintenance", "Updating plugins")
-        plugins = Plugins()
+        plugins = plugins_layer()
         plugins.update(config("plugins"))
         api = Api()
         api.wait()  # Wait for the service to be fully up
