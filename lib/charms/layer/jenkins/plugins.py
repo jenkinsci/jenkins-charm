@@ -3,11 +3,16 @@ import os
 import urllib
 
 from charmhelpers.core import hookenv, host
-from charmhelpers.core.hookenv import status_set
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
 
 from jenkins_plugin_manager.plugin import UpdateCenter
+
+
+class PluginSiteError(Exception):
+    def __init__(self):
+        self.message = ("The configured plugin-site doesn't provide an "
+                        "update-center.json file or is not acessible.")
 
 
 class Plugins(object):
@@ -23,11 +28,7 @@ class Plugins(object):
                 urllib.request.urlopen(update_center)
                 self.update_center = UpdateCenter(uc_url=update_center)
             except urllib.error.HTTPError:
-                status_set(
-                    "blocked",
-                    "The configured plugin-site doesn't provide an "
-                    "update-center.json file or is not acessible.")
-                raise
+                raise PluginSiteError()
 
     def install(self, plugins):
         """Install the given plugins, optionally removing unlisted ones.
