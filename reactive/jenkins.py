@@ -70,7 +70,7 @@ def plugins_layer():
         plugins = Plugins()
     except PluginSiteError as e:
         status_set("error", e.message)
-        return plugins
+    return plugins
 
 
 # Dynamically create an OR-ed chain of @when_not, so install_dependencies
