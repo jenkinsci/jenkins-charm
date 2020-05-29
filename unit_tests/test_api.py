@@ -271,3 +271,13 @@ class ApiTest(JenkinsTest):
             self.assertEqual(self.api.url, 'http://localhost:8080/jenkins/')
         finally:
             config["public-url"] = orig_public_url
+
+    def test_get_node_secret(self):
+        def failure(*args, **kwargs):
+            raise JenkinsException("error")
+
+        self.fakes.jenkins.scripts[
+            "println(jenkins.model.Jenkins.getInstance().getComputer(\"jenkins-slave-0\").getJnlpMac())"] = "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2"
+        self.assertEqual(self.api.get_node_secret("jenkins-slave-0"), "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2")
+        self.fakes.jenkins.run_script = failure
+        self.assertFalse(self.api.get_node_secret("jenkins-slave-10"))
