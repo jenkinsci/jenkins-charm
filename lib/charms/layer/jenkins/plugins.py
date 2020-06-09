@@ -42,7 +42,7 @@ class Plugins(object):
 
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
-        existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
+        existing_plugins = set(glob.glob("%s/*.?pi" % paths.PLUGINS))
         try:
             installed_plugins = self._install_plugins(plugins)
         except Exception:
