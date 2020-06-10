@@ -44,11 +44,13 @@ class Plugins(object):
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
         existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
         try:
-            installed_plugins = self._install_plugins(plugins)
+            self._install_plugins(plugins)
         except Exception:
             hookenv.log("Plugin installation failed, check logs for details")
             raise
 
+        installed_plugins = set(map(lambda n: n.replace(n, "{}/{}.jpi".format(
+            paths.PLUGINS, n)), plugins))
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
