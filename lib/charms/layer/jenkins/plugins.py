@@ -39,10 +39,10 @@ class Plugins(object):
         plugins = plugins or ""
         plugins = plugins.split()
         plugins = self._get_plugins_to_install(plugins)
-
+        configured_plugins = hookenv.config()["plugins"].split()
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
-        existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
+        existing_plugins = set(glob.glob("%s/*.?pi" % paths.PLUGINS))
         try:
             self._install_plugins(plugins)
         except Exception:
@@ -50,7 +50,7 @@ class Plugins(object):
             raise
 
         installed_plugins = set(map(lambda n: n.replace(n, "{}/{}.jpi".format(
-            paths.PLUGINS, n)), plugins))
+            paths.PLUGINS, n)), configured_plugins))
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
