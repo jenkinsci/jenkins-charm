@@ -49,8 +49,8 @@ class Plugins(object):
             hookenv.log("Plugin installation failed, check logs for details")
             raise
 
-        installed_plugins = set(map(lambda n: n.replace(n, "{}/{}.jpi".format(
-            paths.PLUGINS, n)), configured_plugins))
+        plugin_file_names = tuple(map(lambda x: "/{}.jpi".format(x), configured_plugins))
+        installed_plugins = set(filter(lambda x: x.endswith(plugin_file_names), existing_plugins))
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
