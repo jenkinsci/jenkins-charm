@@ -42,7 +42,7 @@ class Plugins(object):
         configured_plugins = hookenv.config()["plugins"].split()
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
-        existing_plugins = set(glob.glob("%s/*.?pi" % paths.PLUGINS))
+        existing_plugins = set(glob.glob("%s/*.[h|j]pi" % paths.PLUGINS))
         try:
             self._install_plugins(plugins)
         except Exception:
