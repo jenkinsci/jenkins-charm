@@ -100,16 +100,29 @@ class PluginsTest(CharmTest):
         mock_get_plugins_to_install.return_value = {plugin_name}
         mock_install_plugins.return_value = {plugin_path}
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
+        orig_plugins = hookenv.config()["plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
-            unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.jpi")
-            with open(unlisted_plugin, "w"):
+            hookenv.config()["plugins"] = "plugin listed"
+            unlisted_plugins = []
+            unlisted_plugin_jpi = os.path.join(paths.PLUGINS, "unlisted.jpi")
+            unlisted_plugin_hpi = os.path.join(paths.PLUGINS, "unlisted.hpi")
+            listed_plugin = os.path.join(paths.PLUGINS, "listed.jpi")
+            plugin_path = os.path.join(paths.PLUGINS, "{}.jpi".format(plugin_name))
+            with open(listed_plugin, "w"):
                 pass
+            for unlisted_plugin in unlisted_plugins:
+                with open(unlisted_plugin, "w"):
+                    pass
             self.plugins.install(plugin_name)
-            self.assertThat(unlisted_plugin, Not(PathExists()))
+            self.assertThat(unlisted_plugin_jpi, Not(PathExists()))
+            self.assertThat(unlisted_plugin_hpi, Not(PathExists()))
+            self.assertThat(listed_plugin, PathExists())
 
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
+            hookenv.config()["plugins"] = orig_plugins
+            os.remove(listed_plugin)
 
     @mock.patch("test_plugins.Plugins._remove_plugin")
     @mock.patch("test_plugins.Plugins._install_plugins")
