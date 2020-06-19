@@ -96,7 +96,7 @@ class PluginsTest(CharmTest):
         are removed from disk.
         """
         plugin_name = "plugin"
-        dependency_plugin_name = "dependecy"
+        dependency_plugin_name = "dependency"
         plugin_path = os.path.join(paths.PLUGINS, "{}-1.jpi".format(plugin_name))
         plugin_list = "plugin listed"
 
@@ -105,7 +105,7 @@ class PluginsTest(CharmTest):
                 fake_result = plugin_list.split()
                 fake_result.append(dependency_plugin_name)
                 return fake_result
-            return {plugin_name, "dependecy"}
+            return {plugin_name, "dependency"}
 
         mock_get_plugins_to_install.side_effect = side_effect
         mock_install_plugins.return_value = {plugin_path}
