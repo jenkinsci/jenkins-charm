@@ -39,16 +39,18 @@ class Plugins(object):
         plugins = plugins or ""
         plugins = plugins.split()
         plugins = self._get_plugins_to_install(plugins)
-
+        configured_plugins = hookenv.config()["plugins"].split()
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
-        existing_plugins = set(glob.glob("%s/*.jpi" % paths.PLUGINS))
+        existing_plugins = set(glob.glob("%s/*.[h|j]pi" % paths.PLUGINS))
         try:
-            installed_plugins = self._install_plugins(plugins)
+            self._install_plugins(plugins)
         except Exception:
             hookenv.log("Plugin installation failed, check logs for details")
             raise
 
+        plugin_file_names = tuple(map(lambda x: "/{}.jpi".format(x), configured_plugins))
+        installed_plugins = set(filter(lambda x: x.endswith(plugin_file_names), existing_plugins))
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
