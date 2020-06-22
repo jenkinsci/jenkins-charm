@@ -39,7 +39,8 @@ class Plugins(object):
         plugins = plugins or ""
         plugins = plugins.split()
         plugins = self._get_plugins_to_install(plugins)
-        configured_plugins = hookenv.config()["plugins"].split()
+        configured_plugins = self._get_plugins_to_install(
+            hookenv.config()["plugins"].split())
         host.mkdir(
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
         existing_plugins = set(glob.glob("%s/*.[h|j]pi" % paths.PLUGINS))
