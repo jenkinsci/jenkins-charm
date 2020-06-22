@@ -96,33 +96,51 @@ class PluginsTest(CharmTest):
         are removed from disk.
         """
         plugin_name = "plugin"
+        dependency_plugin_name = "dependency"
         plugin_path = os.path.join(paths.PLUGINS, "{}-1.jpi".format(plugin_name))
-        mock_get_plugins_to_install.return_value = {plugin_name}
+        plugin_list = "plugin listed"
+
+        def side_effect(value):
+            if value == plugin_list.split():
+                fake_result = plugin_list.split()
+                fake_result.append(dependency_plugin_name)
+                return fake_result
+            return {plugin_name, "dependency"}
+
+        mock_get_plugins_to_install.side_effect = side_effect
         mock_install_plugins.return_value = {plugin_path}
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
         orig_plugins = hookenv.config()["plugins"]
         try:
             hookenv.config()["remove-unlisted-plugins"] = "yes"
             hookenv.config()["plugins"] = "plugin listed"
-            unlisted_plugins = []
             unlisted_plugin_jpi = os.path.join(paths.PLUGINS, "unlisted.jpi")
             unlisted_plugin_hpi = os.path.join(paths.PLUGINS, "unlisted.hpi")
             listed_plugin = os.path.join(paths.PLUGINS, "listed.jpi")
+            dependency_plugin = os.path.join(paths.PLUGINS, "{}.jpi".format(dependency_plugin_name))
             plugin_path = os.path.join(paths.PLUGINS, "{}.jpi".format(plugin_name))
             with open(listed_plugin, "w"):
                 pass
-            for unlisted_plugin in unlisted_plugins:
-                with open(unlisted_plugin, "w"):
-                    pass
+            with open(unlisted_plugin_jpi, "w"):
+                pass
+            with open(unlisted_plugin_hpi, "w"):
+                pass
+            with open(dependency_plugin, "w"):
+                pass
             self.plugins.install(plugin_name)
+            # Unlisted plugins should be removed
             self.assertThat(unlisted_plugin_jpi, Not(PathExists()))
             self.assertThat(unlisted_plugin_hpi, Not(PathExists()))
+            # Listed plugin should be kept even if they're not being updated
             self.assertThat(listed_plugin, PathExists())
+            # Dependency plugins should be kept
+            self.assertThat(dependency_plugin, PathExists())
 
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
             hookenv.config()["plugins"] = orig_plugins
             os.remove(listed_plugin)
+            os.remove(dependency_plugin)
 
     @mock.patch("test_plugins.Plugins._remove_plugin")
     @mock.patch("test_plugins.Plugins._install_plugins")
