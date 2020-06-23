@@ -9,6 +9,7 @@ from charmhelpers.core.hookenv import (
     in_relation_hook,
     relation_id,
     relation_get,
+    relation_set,
     storage_get,
 )
 from charmhelpers.core.host import (
@@ -225,6 +226,8 @@ def add_slaves(master):
         api.add_node(
             slave["slavehost"], slave["executors"],
             labels=slave["labels"] or ())
+        secret = api.get_node_secret(slave["slavehost"])
+        relation_set(secret=secret)
 
 
 @hook('jenkins-storage-attached')

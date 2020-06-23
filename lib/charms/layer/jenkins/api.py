@@ -157,6 +157,16 @@ class Api(object):
         hookenv.log("Quiet mode has been cancelled")
         self.wait()
 
+    def get_node_secret(self, node_name):
+        """Get node secret from jenkins."""
+        client = self._make_client()
+        cmd = "println(jenkins.model.Jenkins.getInstance().getComputer(\"{}\").getJnlpMac())".format(node_name)
+        try:
+            secret = client.run_script(cmd).strip()
+            return secret
+        except jenkins.JenkinsException:
+            return False
+
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def _make_client(self):
