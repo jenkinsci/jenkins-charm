@@ -45,7 +45,7 @@ class Plugins(object):
             paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
         existing_plugins = set(glob.glob("%s/*.[h|j]pi" % paths.PLUGINS))
         try:
-            self._install_plugins(plugins)
+            res = self._install_plugins(plugins)
         except Exception:
             hookenv.log("Plugin installation failed, check logs for details")
             raise
@@ -55,19 +55,29 @@ class Plugins(object):
         unlisted_plugins = existing_plugins - installed_plugins
         if unlisted_plugins:
             if hookenv.config()["remove-unlisted-plugins"] == "yes":
-                self._remove_plugins(unlisted_plugins)
+                removed_plugins = set(self._remove_plugins(unlisted_plugins))
             else:
                 hookenv.log(
                     "Unlisted plugins: (%s) Not removed. Set "
                     "remove-unlisted-plugins to 'yes' to clear them "
                     "away." % ", ".join(unlisted_plugins))
 
-        # Restarting jenkins to pickup configuration changes
-        Api().restart()
+        # Check if a change occurred, if a value different from None and False is in the set.
+        res.add(removed_plugins)
+        no_change = {None, False}
+        if not res - no_change:
+            hookenv.log("No change in the plugins. Not restarting jenkins.")
+        else:
+            # Restarting jenkins to pickup configuration changes
+            Api().restart()
         return installed_plugins
 
-    def _install_plugins(self, plugins):
-        """Install the plugins with the given names."""
+    def _install_plugins(self, plugins: list) -> set:
+        """Install the plugins with the given names.
+
+        :param plugins: List of the plugins to install.
+        :returns: A set of the paths of the new installed plugin or None if no change occurred.
+        """
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
         update = config["plugins-auto-update"]
@@ -76,18 +86,23 @@ class Plugins(object):
         for plugin in plugins:
             plugin_path = self._install_plugin(
                 plugin, plugins_site, update)
-            if plugin_path is None:
-                pass
-            elif plugin_path:
-                plugin_paths.add(plugin_path)
-            else:
+            if plugin_path is False:
                 hookenv.log("Failed to download %s" % plugin)
+            else:
+                plugin_paths.add(plugin_path)
         return plugin_paths
 
-    def _install_plugin(self, plugin, plugins_site, update):
+    def _install_plugin(self, plugin: str, plugins_site: str, update: bool) -> str:
         """
         Verify if the plugin is not installed before installing it
-        or if it needs an update .
+        or if it needs an update.
+
+        :param plugin: Name of the plugin to install.
+        :param plugins_site: url where the plugin are downloaded.
+        :param update: If True, will update the plugin if already installed. If False, will only install the plugin.
+
+        :returns: The path where the downloaded plugin will be installed if successful,
+        False if the download has an issue, and None if there is no change.
         """
         plugin_version = Api().get_plugin_version(plugin)
         latest_version = self._get_latest_version(plugin)
@@ -99,17 +114,29 @@ class Plugins(object):
         hookenv.log("Plugin %s-%s already installed" % (
             plugin, plugin_version))
 
-    def _remove_plugins(self, paths):
-        """Remove the plugins at the given paths."""
+    def _remove_plugins(self, paths: list) -> list:
+        """Remove the plugins at the given paths.
+        :param paths: List of the plugin's path to remove.
+        :returns: The list of the path of the removed plugin, or None if nothing occurred.
+        """
+        removed_plugins = []
         for path in paths:
-            self._remove_plugin(path)
+            removed_plugin = self._remove_plugin(path)
+            if removed_plugin:
+                removed_plugins.append(self._remove_plugin(path))
+        return removed_plugins
 
-    def _remove_plugin(self, path):
-        """Remove the plugin at the given path."""
+    def _remove_plugin(self, path: str) -> str:
+        """Remove the plugin at the given path.
+
+        :param path: The path of the plugin to remove.
+        :returns: None if nothing was deleted, the path of the deleted plugin otherwise.
+        """
         if not os.path.isfile(path):
             return
         hookenv.log("Deleting unlisted plugin '%s'" % path)
         os.remove(path)
+        return path
 
     def _get_plugins_to_install(self, plugins, uc=None):
         """Get all plugins needed to be installed"""
