@@ -38,7 +38,11 @@ class Plugins(object):
         hookenv.log("Starting plugins installation process")
         plugins = plugins or ""
         plugins = plugins.split()
-        plugins = self._get_plugins_to_install(plugins)
+        plugins, incompatible_plugins = self._get_plugins_to_install(plugins)
+        if len(incompatible_plugins) != 0:
+            hookenv.log("The following plugins require a higher jenkins version"
+                        " and were not installed: (%s)" % " ".join(
+                            incompatible_plugins))
         configured_plugins = self._get_plugins_to_install(
             hookenv.config()["plugins"].split())
         host.mkdir(
@@ -116,7 +120,7 @@ class Plugins(object):
         uc = uc or self.update_center
         plugins_and_dependencies = uc.get_plugins(plugins)
         if plugins == plugins_and_dependencies:
-            return plugins
+            return self._exclude_incompatible_plugins(plugins)
         else:
             return self._get_plugins_to_install(plugins_and_dependencies, uc)
 
@@ -136,6 +140,24 @@ class Plugins(object):
         """Get the latest available version of a plugin"""
         return self._get_plugin_info(plugin)["version"]
 
+    def _get_required_jenkins(self, plugin):
+        """Get the jenkins version required for a plugin"""
+        return self._get_plugin_info(plugin)["requiredCore"]
+
+    def _exclude_incompatible_plugins(self, plugins):
+        """Exclude plugins incompatible with the jenkins version"""
+        excluded_plugins = []
+        jenkins_version = Api().version()
+        for plugin in plugins:
+            required_version = self._get_required_jenkins(plugin)
+            if not self.update_center._check_min_core_version(
+                                    jenkins_version, required_version):
+                excluded_plugins.append(plugin)
+        plugins = [
+            plugin for plugin in plugins if plugin not in excluded_plugins]
+
+        return plugins, excluded_plugins
+
     def update(self, plugins):
         """Try to update the given plugins.
 
@@ -143,13 +165,19 @@ class Plugins(object):
         """
         plugins = plugins or ""
         plugins = plugins.split()
-        plugins = self._get_plugins_to_install(plugins)
+        plugins, incompatible_plugins = self._get_plugins_to_install(plugins)
         hookenv.log("Updating plugins")
         try:
             installed_plugins = self._install_plugins(plugins)
         except Exception:
             hookenv.log("Plugin update failed, check logs for details")
             raise
+
+        if len(incompatible_plugins) != 0:
+            hookenv.log("The following plugins require a higher jenkins version"
+                        " and were not installed: (%s)" % " ".join(
+                            incompatible_plugins))
+            hookenv.status_set("Blocked", "There were plugins not compatible with this jenkins version. Consider upgrading jenkins or removing the plugins.")
 
         if len(installed_plugins) == 0:
             hookenv.log("No plugins updated")
