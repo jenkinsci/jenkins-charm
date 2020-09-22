@@ -51,13 +51,15 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["remove-unlisted-plugins"] = orig_remove_unlisted_plugins
 
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
-    def test_install(self, mock_get_plugin_version, mock_restart_jenkins):
+    def test_install(self, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
         The given plugins are downloaded from the Jenkins site.
         """
         mock_get_plugin_version.return_value = False
         plugin_name = "ansicolor"
+        mock_get_plugins_to_install.return_value = {plugin_name}, {}
         installed_plugin = ""
         installed_plugin.join(self.plugins.install(plugin_name))
         plugin_path = os.path.join(paths.PLUGINS, installed_plugin)
@@ -68,9 +70,8 @@ class PluginsTest(CharmTest):
         mock_restart_jenkins.assert_called_with()
 
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_raises_error(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_get_plugin_version, mock_restart_jenkins):
+    def test_install_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_restart_jenkins):
         """
         When install fails it should log and raise an error
         """
@@ -79,7 +80,6 @@ class PluginsTest(CharmTest):
 
         plugin_name = "bad_plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = False
         self.plugins._install_plugins = failed_install
 
@@ -90,9 +90,8 @@ class PluginsTest(CharmTest):
         mock_restart_jenkins.assert_not_called()
 
     @mock.patch("test_plugins.Plugins._install_plugins")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_do_remove_unlisted(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_install_plugins, mock_restart_jenkins):
+    def test_install_do_remove_unlisted(self, mock_get_plugins_to_install, mock_install_plugins, mock_restart_jenkins):
         """
         If remove-unlisted-plugins is set to 'yes', then unlisted plugins
         are removed from disk.
@@ -146,9 +145,8 @@ class PluginsTest(CharmTest):
 
     @mock.patch("test_plugins.Plugins._remove_plugin")
     @mock.patch("test_plugins.Plugins._install_plugins")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_dont_remove_unlisted(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_install_plugins, mock_remove_plugin, mock_restart_jenkins):
+    def test_install_dont_remove_unlisted(self, mock_get_plugins_to_install, mock_install_plugins, mock_remove_plugin, mock_restart_jenkins):
         """
         If remove-unlisted-plugins is set to 'no', then unlisted plugins
         will be left on disk.
@@ -156,7 +154,6 @@ class PluginsTest(CharmTest):
         plugin_name = "plugin"
         plugin_path = os.path.join(paths.PLUGINS, "{}-1.jpi".format(plugin_name))
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_install_plugins.return_value = {plugin_path}
         unlisted_plugin = os.path.join(paths.PLUGINS, "unlisted.jpi")
         unlisted_plugin_path = "{}{}".format(
@@ -171,16 +168,14 @@ class PluginsTest(CharmTest):
         mock_remove_plugin.assert_not_called()
 
     @mock.patch("test_plugins.Plugins._install_plugins")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_skip_non_file_unlisted(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_install_plugins,  mock_restart_jenkins):
+    def test_install_skip_non_file_unlisted(self, mock_get_plugins_to_install, mock_install_plugins,  mock_restart_jenkins):
         """
         If an unlisted plugin is not actually a file, it's just skipped and
         doesn't get removed.
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_install_plugins.return_value = {
             os.path.join(paths.PLUGINS, "plugin.jpi")}
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
@@ -196,15 +191,13 @@ class PluginsTest(CharmTest):
     @mock.patch("test_plugins.Plugins._download_plugin")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_already_installed(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_get_latest_version, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
+    def test_install_already_installed(self, mock_get_plugins_to_install, mock_get_latest_version, mock_get_plugin_version, mock_download_plugin, mock_restart_jenkins):
         """
         If a plugin is already installed, it doesn't get downloaded.
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1"
         orig_remove_unlisted_plugins = hookenv.config()["remove-unlisted-plugins"]
@@ -234,13 +227,11 @@ class PluginsTest(CharmTest):
     @mock.patch("test_plugins.Plugins._download_plugin")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_install_fail(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_get_plugin_version, mock_get_latest_version, mock_download_plugin, mock_restart_jenkins):
+    def test_install_fail(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_get_latest_version, mock_download_plugin, mock_restart_jenkins):
         """If a plugin is already installed, it doesn't get downloaded."""
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = False
         mock_get_latest_version.return_value = "1"
         mock_download_plugin.return_value = False
@@ -250,20 +241,17 @@ class PluginsTest(CharmTest):
             "INFO: Failed to download plugin",
             self.fakes.juju.log[-1])
 
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._download_plugin")
-    def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_restart_jenkins):
+    def test_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
         The given plugins are installed from the Jenkins site if newer
         versions are available
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1.1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
@@ -275,18 +263,16 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
 
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._download_plugin")
-    def test_dont_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_restart_jenkins):
+    def test_dont_update(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
         No plugins are reinstalled if not necessary.
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
@@ -302,9 +288,8 @@ class PluginsTest(CharmTest):
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
 
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
-    @mock.patch("test_plugins.Plugins._exclude_incompatible_plugins")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
-    def test_update_raises_error(self, mock_get_plugins_to_install, mock_exclude_incompatible_plugins, mock_get_plugin_version, mock_restart_jenkins):
+    def test_update_raises_error(self, mock_get_plugins_to_install, mock_get_plugin_version, mock_restart_jenkins):
         """
         When install fails it should log and raise an error
         """
@@ -313,7 +298,6 @@ class PluginsTest(CharmTest):
 
         plugin_name = "bad_plugin"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
-        mock_exclude_incompatible_plugins.return_value = {plugin_name}, {}
         mock_get_plugin_version.return_value = False
         self.plugins._install_plugins = failed_install
 
@@ -362,15 +346,65 @@ class PluginsTest(CharmTest):
         finally:
             hookenv.config()["plugins-site"] = orig_plugins_site
 
-    def test__get_required_jenkins(self, mock_restart_jenkins):
-        self.plugins = Plugins()
-        orig_plugins_site = hookenv.config()["plugins-site"]
+    @mock.patch("test_plugins.Plugins._get_plugin_info")
+    def test__get_required_jenkins(self, mock_get_plugin_info, mock_restart_jenkins):
+        plugin_name = "plugin"
+        self.plugins._get_required_jenkins(plugin_name)
+        mock_get_plugin_info.assert_called_with(plugin_name)
+
+    @mock.patch("charmhelpers.core.hookenv.status_set")
+    @mock.patch("test_plugins.Plugins._get_plugins_to_install")
+    @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
+    @mock.patch("test_plugins.Plugins._get_latest_version")
+    @mock.patch("test_plugins.Plugins._download_plugin")
+    def test_update_incompatible(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_hookenv_status_set, mock_restart_jenkins):
+        """
+        Make sure imcompatible plugins are not installed and the charm goes into a blocked state.
+        """
+        plugin_name = "plugin"
+        mock_get_plugins_to_install.return_value = {}, {plugin_name}
+        mock_get_plugin_version.return_value = "1"
+        mock_get_latest_version.return_value = "1.1"
+        orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
         try:
-            hookenv.config()["plugins-site"] = "https://updates.jenkins.io/stable/"
-            self.plugins = Plugins()
-            print(self.plugins._get_required_jenkins("git"))
-            print(self.plugins._get_required_jenkins("git"))
-            to_install = self.plugins._get_plugins_to_install({"git", "github"})
-            print(to_install)
+            hookenv.config()["plugins-auto-update"] = True
+            self.plugins.update(plugin_name)
+            mock_hookenv_status_set.assert_called_with(
+                "Blocked",
+                "There were plugins not compatible with this jenkins version."
+                " Consider upgrading jenkins or removing the plugins.")
+            print(self.fakes.juju.log)
+            self.assertEqual(
+                "INFO: The following plugins require a higher jenkins version"
+                " and were not installed: ({})".format(
+                    plugin_name),
+                self.fakes.juju.log[-2])
         finally:
-            hookenv.config()["plugins-site"] = orig_plugins_site
+            hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
+
+    @mock.patch("jenkins_plugin_manager.plugin.UpdateCenter.get_plugins")
+    @mock.patch("test_plugins.Plugins._get_required_jenkins")
+    @mock.patch("charms.layer.jenkins.api.Api.version")
+    def test__get_plugins_to_install(self, mock_jenkins_version, mock_get_required_jenkins, mock_get_plugins, mock_restart_jenkins):
+        """
+        When getting plugins to install all incompatible plugins will be
+        removed from the list an returned separatedly.
+        """
+        plugins = ["plugin_one", "plugin_two"]
+        plugins_dependencies = ["plugin_three"]
+
+        def side_effect(value):
+            if value == "plugin_one":
+                return "2.204"
+            if value == "plugin_two":
+                return "2.203"
+            if value == "plugin_three":
+                return "2.203.1"
+
+        mock_jenkins_version.return_value = "2.203"
+        mock_get_plugins.return_value = plugins + plugins_dependencies
+        mock_get_required_jenkins.side_effect = side_effect
+
+        compatible_plugins, incompatible_plugins = self.plugins._get_plugins_to_install(plugins)
+        self.assertEqual(["plugin_two"], compatible_plugins)
+        self.assertEqual(["plugin_one", "plugin_three"], incompatible_plugins)
