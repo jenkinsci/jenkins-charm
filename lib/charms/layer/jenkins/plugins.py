@@ -68,7 +68,7 @@ class Plugins(object):
 
         # Restarting jenkins to pickup configuration changes
         Api().restart()
-        return installed_plugins
+        return installed_plugins, incompatible_plugins
 
     def _install_plugins(self, plugins):
         """Install the plugins with the given names."""
@@ -173,15 +173,9 @@ class Plugins(object):
             hookenv.log("Plugin update failed, check logs for details")
             raise
 
-        if len(incompatible_plugins) != 0:
-            hookenv.log("The following plugins require a higher jenkins version"
-                        " and were not installed: (%s)" % " ".join(
-                            incompatible_plugins))
-            hookenv.status_set("Blocked", "There were plugins not compatible with this jenkins version. Consider upgrading jenkins or removing the plugins.")
-
         if len(installed_plugins) == 0:
             hookenv.log("No plugins updated")
-            return
+            return [], incompatible_plugins
         else:
             Api().restart()
-            return installed_plugins
+            return installed_plugins, incompatible_plugins

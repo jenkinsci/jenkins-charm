@@ -61,7 +61,8 @@ class PluginsTest(CharmTest):
         plugin_name = "ansicolor"
         mock_get_plugins_to_install.return_value = {plugin_name}, {}
         installed_plugin = ""
-        installed_plugin.join(self.plugins.install(plugin_name))
+        installed_plugins, incompatible_plugins = self.plugins.install(plugin_name)
+        installed_plugin.join(installed_plugins)
         plugin_path = os.path.join(paths.PLUGINS, installed_plugin)
         self.assertTrue(
             os.path.exists(plugin_path),
@@ -352,33 +353,24 @@ class PluginsTest(CharmTest):
         self.plugins._get_required_jenkins(plugin_name)
         mock_get_plugin_info.assert_called_with(plugin_name)
 
-    @mock.patch("charmhelpers.core.hookenv.status_set")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_latest_version")
     @mock.patch("test_plugins.Plugins._download_plugin")
-    def test_update_incompatible(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_hookenv_status_set, mock_restart_jenkins):
+    def test_update_incompatible(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
-        Make sure imcompatible plugins are not installed and the charm goes into a blocked state.
+        Make sure imcompatible plugins are not installed.
         """
         plugin_name = "plugin"
-        mock_get_plugins_to_install.return_value = {}, {plugin_name}
+        mock_get_plugins_to_install.return_value = [], [plugin_name]
         mock_get_plugin_version.return_value = "1"
         mock_get_latest_version.return_value = "1.1"
         orig_plugins_auto_update = hookenv.config()["plugins-auto-update"]
         try:
             hookenv.config()["plugins-auto-update"] = True
-            self.plugins.update(plugin_name)
-            mock_hookenv_status_set.assert_called_with(
-                "Blocked",
-                "There were plugins not compatible with this jenkins version."
-                " Consider upgrading jenkins or removing the plugins.")
-            print(self.fakes.juju.log)
-            self.assertEqual(
-                "INFO: The following plugins require a higher jenkins version"
-                " and were not installed: ({})".format(
-                    plugin_name),
-                self.fakes.juju.log[-2])
+            updated_plugins, incompatible_plugins = self.plugins.update(plugin_name)
+            self.assertEqual(updated_plugins, [])
+            self.assertEqual(incompatible_plugins, [plugin_name])
         finally:
             hookenv.config()["plugins-auto-update"] = orig_plugins_auto_update
 
