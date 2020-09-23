@@ -1,6 +1,7 @@
 import glob
 import os
 import urllib
+from distutils.dir_util import copy_tree, remove_tree
 
 from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
@@ -179,3 +180,16 @@ class Plugins(object):
         else:
             Api().restart()
             return installed_plugins, incompatible_plugins
+
+    def backup(self):
+        """Backup plugins.
+        """
+        copy_tree(paths.PLUGINS, paths.PLUGINS_BACKUP)
+
+    def restore(self):
+        """Restore plugins from backup directory."""
+        copy_tree(paths.PLUGINS_BACKUP, paths.PLUGINS)
+
+    def clean_backup(self):
+        """Remove backup directory."""
+        remove_tree(paths.PLUGINS_BACKUP)

@@ -5,6 +5,7 @@ import os
 HOME = "/var/lib/jenkins"
 USERS = os.path.join(HOME, "users")
 PLUGINS = os.path.join(HOME, "plugins")
+PLUGINS_BACKUP = os.path.join(HOME, "plugins_charm_backup")
 SECRETS = os.path.join(HOME, "secrets")
 CONFIG_FILE = os.path.join(HOME, "config.xml")
 LOCATION_CONFIG_FILE =\
