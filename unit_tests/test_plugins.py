@@ -359,7 +359,7 @@ class PluginsTest(CharmTest):
     @mock.patch("test_plugins.Plugins._download_plugin")
     def test_update_incompatible(self, mock_download_plugin, mock_get_latest_version, mock_get_plugin_version, mock_get_plugins_to_install, mock_restart_jenkins):
         """
-        Make sure imcompatible plugins are not installed.
+        Make sure incompatible plugins are not installed.
         """
         plugin_name = "plugin"
         mock_get_plugins_to_install.return_value = [], [plugin_name]
@@ -380,7 +380,7 @@ class PluginsTest(CharmTest):
     def test__get_plugins_to_install(self, mock_jenkins_version, mock_get_required_jenkins, mock_get_plugins, mock_restart_jenkins):
         """
         When getting plugins to install all incompatible plugins will be
-        removed from the list an returned separatedly.
+        removed from the list and returned separately.
         """
         plugins = ["plugin_one", "plugin_two"]
         plugins_dependencies = ["plugin_three"]
