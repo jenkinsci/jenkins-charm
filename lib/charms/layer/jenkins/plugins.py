@@ -184,12 +184,15 @@ class Plugins(object):
     def backup(self):
         """Backup plugins.
         """
+        hookenv.log("Backing up plugins.")
         copy_tree(paths.PLUGINS, paths.PLUGINS_BACKUP)
 
     def restore(self):
         """Restore plugins from backup directory."""
+        hookenv.log("Restoring plugins from backup.")
         copy_tree(paths.PLUGINS_BACKUP, paths.PLUGINS)
 
     def clean_backup(self):
         """Remove backup directory."""
+        hookenv.log("Cleaning up backup plugins.")
         remove_tree(paths.PLUGINS_BACKUP)
