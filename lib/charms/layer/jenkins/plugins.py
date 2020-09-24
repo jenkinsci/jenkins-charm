@@ -190,6 +190,7 @@ class Plugins(object):
     def restore(self):
         """Restore plugins from backup directory."""
         hookenv.log("Restoring plugins from backup.")
+        remove_tree(paths.PLUGINS)
         copy_tree(paths.PLUGINS_BACKUP, paths.PLUGINS)
 
     def clean_backup(self):
