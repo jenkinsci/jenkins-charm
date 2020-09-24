@@ -178,10 +178,12 @@ def configure_plugins():
     remove_state("jenkins.configured.plugins")
     plugins = plugins_layer()
     plugins.backup()
-    installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
-    check_jenkins(plugins)
+    try:
+        installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
+        check_incompatible_plugins(incompatible_plugins)
+    except Exception:
+        recover_jenkins(plugins)
     set_state("jenkins.configured.plugins")
-    check_incompatible_plugins(incompatible_plugins)
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
@@ -199,9 +201,11 @@ def update_plugins():
         status_set("maintenance", "Updating plugins")
         plugins = plugins_layer()
         plugins.backup()
-        installed_plugins, incompatible_plugins = plugins.update(config("plugins"))
-        check_incompatible_plugins(incompatible_plugins)
-        check_jenkins(plugins)
+        try:
+            installed_plugins, incompatible_plugins = plugins.update(config("plugins"))
+            check_incompatible_plugins(incompatible_plugins)
+        except Exception:
+            recover_jenkins(plugins)
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
@@ -338,18 +342,16 @@ def check_incompatible_plugins(incompatible_plugins):
                    " the plugins.")
 
 
-def check_jenkins(plugins):
-    """ Check jenkins status and try to recover it in case of failure.
-    If jenkins api is not available then restore previous plugins and restart.
+def recover_jenkins(plugins):
+    """ Try to recover jenkins in case of failure.
+    Restore previous plugins and restart.
 
     @params plugins: An instace of Plugins().
     """
+    log("Jenkins api is unresponsive, trying to recover it.")
     api = Api()
-    try:
-        api.wait()  # Wait for the service to be fully up
-    except ConnectionRefusedError:
-        plugins.restore()
-        status_set("maintenance", "Restarting Jenkins")
-        service_restart('jenkins')
-        api.wait()  # Wait for the service to be fully up
+    plugins.restore()
+    status_set("maintenance", "Restarting Jenkins")
+    service_restart('jenkins')
+    api.wait()  # Wait for the service to be fully up
     plugins.clean_backup()
