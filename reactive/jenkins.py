@@ -11,12 +11,14 @@ from charmhelpers.core.hookenv import (
     relation_get,
     relation_set,
     storage_get,
+    resource_get,
 )
 from charmhelpers.core.host import (
     lsb_release,
     service_restart,
     service_start,
     service_stop,
+    symlink,
 )
 
 from charms.reactive import (
@@ -28,7 +30,10 @@ from charms.reactive import (
     remove_state,
 )
 from charms.reactive.bus import get_state
-from charms.reactive.helpers import data_changed
+from charms.reactive.helpers import (
+    data_changed,
+    any_file_changed,
+)
 from charms.reactive import RelationBase
 from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
@@ -203,6 +208,12 @@ def update_plugins():
         api = Api()
         api.wait()  # Wait for the service to be fully up
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
+
+    if resource_get('jcasc-file'):
+        symlink(resource_get('jcasc-file'), paths.JCAAC_FILE)
+        if any_file_changed([resource_get('jcasc-file'), ]):
+            api = Api()
+            api.jcaas_reload()
 
 
 @when("jenkins.configured.tools",

@@ -40,3 +40,8 @@ storage:
     type: filesystem
     description: Jenkins data.
     location: /srv/mnt/jenkins
+resources:
+  jcasc-file:
+    type: file
+    filename: jenkins.yaml
+    description: Jenkins configration as a code plugin file

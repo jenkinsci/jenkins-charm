@@ -38,6 +38,11 @@ property = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword(
 user.addProperty(property)
 """
 
+RELOAD_JCASC_SCRIPT = """
+import io.jenkins.plugins.casc.ConfigurationAsCode;
+ConfigurationAsCode.get().configure()
+"""
+
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
@@ -126,6 +131,11 @@ class Api(object):
         action = "reload"
         fail_message = "Couldn't reload configuration"
         self._execute_action(action, fail_message)
+
+    def jcaas_reload(self):
+        client = self._make_client()
+        client.run_script(RELOAD_JCASC_SCRIPT)
+        # TODO: reload on jacas config change - https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/docs/features/configurationReload.md
 
     def restart(self):
         """Execute a safe restart. Wait for jobs, and restart."""

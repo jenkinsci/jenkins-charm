@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from charmhelpers.core import hookenv
 from charmhelpers.core import templating
+from charmhelpers.core import host
 
 from charms.layer.jenkins import paths
 
@@ -33,6 +34,9 @@ class Configuration(object):
         templating.render(
             "jenkins-config.xml", paths.CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
+
+        if hookenv.resource_get('jcasc-file'):
+            host.symlink(hookenv.resource_get('jcasc-file'), paths.JCAAC_FILE)
 
         hookenv.open_port(PORT)
 
