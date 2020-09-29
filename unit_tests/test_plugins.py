@@ -400,3 +400,22 @@ class PluginsTest(CharmTest):
         compatible_plugins, incompatible_plugins = self.plugins._get_plugins_to_install(plugins)
         self.assertEqual(["plugin_two"], compatible_plugins)
         self.assertEqual(["plugin_one", "plugin_three"], incompatible_plugins)
+
+    def test__backup_restore_clean(self, mock_restart_jenkins):
+        """Test plugins backing up"""
+        self.assertThat(paths.PLUGINS_BACKUP, Not(PathExists()))
+        plugin_path = os.path.join(paths.PLUGINS, "plugin")
+        broken_plugin_path = os.path.join(paths.PLUGINS, "broken_plugin")
+        with open(plugin_path, "w"):
+            pass
+        self.plugins.backup()
+        os.remove(plugin_path)
+        with open(broken_plugin_path, "w"):
+            pass
+        self.assertThat(plugin_path, Not(PathExists()))
+        self.assertThat(paths.PLUGINS_BACKUP, PathExists())
+        self.plugins.restore()
+        self.assertThat(plugin_path, PathExists())
+        self.assertThat(broken_plugin_path, Not(PathExists()))
+        self.plugins.clean_backup()
+        self.assertThat(paths.PLUGINS_BACKUP, Not(PathExists()))
