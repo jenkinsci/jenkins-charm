@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 import urllib
 from distutils.dir_util import copy_tree, remove_tree
 
@@ -192,6 +193,7 @@ class Plugins(object):
         hookenv.log("Restoring plugins from backup.")
         remove_tree(paths.PLUGINS)
         copy_tree(paths.PLUGINS_BACKUP, paths.PLUGINS)
+        shutil.chown(paths.PLUGINS, user="jenkins", group="jenkins")
 
     def clean_backup(self):
         """Remove backup directory."""
