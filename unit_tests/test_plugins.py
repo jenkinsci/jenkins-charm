@@ -401,7 +401,8 @@ class PluginsTest(CharmTest):
         self.assertEqual(["plugin_two"], compatible_plugins)
         self.assertEqual(["plugin_one", "plugin_three"], incompatible_plugins)
 
-    def test__backup_restore_clean(self, mock_restart_jenkins):
+    @mock.patch("shutil.chown")
+    def test__backup_restore_clean(self, mock_shutil_chown, mock_restart_jenkins):
         """Test plugins backing up"""
         self.assertThat(paths.PLUGINS_BACKUP, Not(PathExists()))
         plugin_path = os.path.join(paths.PLUGINS, "plugin")
