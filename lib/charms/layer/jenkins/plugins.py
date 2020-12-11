@@ -88,6 +88,8 @@ class Plugins(object):
                 plugin_paths.add(plugin_path)
             else:
                 hookenv.log("Failed to download %s" % plugin)
+        # Make sure that the plugin directory is owned by jenkins
+        host.chownr(paths.PLUGINS, owner="jenkins", group="jenkins", chowntopdir=True)
         return plugin_paths
 
     def _install_plugin(self, plugin, plugins_site, update):
