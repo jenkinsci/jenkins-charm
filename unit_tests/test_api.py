@@ -12,6 +12,7 @@ from charms.layer.jenkins.api import (
     GET_LEGACY_TOKEN_SCRIPT,
     GET_NEW_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
+    SET_UPDATE_CENTER_SCRIPT,
     Api,
 )
 from charms.layer.jenkins.packages import Packages
@@ -281,3 +282,25 @@ class ApiTest(JenkinsTest):
         self.assertEqual(self.api.get_node_secret("jenkins-slave-0"), "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2")
         self.fakes.jenkins.run_script = failure
         self.assertFalse(self.api.get_node_secret("jenkins-slave-10"))
+
+    def test_set_update_center(self):
+        """
+        The set_update_center() method runs a groovy script to modify the
+        update center url.
+        """
+        url = "https://example.jenkins.io/update_center.json"
+        script = SET_UPDATE_CENTER_SCRIPT.format(
+            url=url)
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.set_update_center(url=url))
+
+    def test_reset_update_center(self):
+        """
+        The set_update_center() method runs a groovy script to modify the
+        update center url to default when 'default' is set to true.
+        """
+        url = "https://updates.jenkins.io/stable/update-center.json"
+        script = SET_UPDATE_CENTER_SCRIPT.format(
+            url=url)
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.set_update_center(default=True))

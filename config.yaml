@@ -79,3 +79,16 @@ options:
     description: |
       TCP port on which to listen for incoming connections from slaves.
       Set to -1 for a random port, or to 0 to disable JNLP entirely.
+  update-center:
+    type: string
+    default: ""
+    description: |
+      Configure a custom Update Center instead of getting plugins from updates.jenkins-ci.org.
+      Provide the whole path to update-center.json file.
+      Example: https://your-domain.com/current/update-center.json
+  update-center-ca:
+    type: string
+    default: ""
+    description: |
+      CA certificate for the update-center. This is required when setting update-center
+      because jenkins won't be able to validate your custom Update Center without it.

@@ -23,6 +23,8 @@ class ConfigurationTest(CharmTest):
 
     def setUp(self):
         super(ConfigurationTest, self).setUp()
+        self.fakes.users.add("jenkins", 123)
+        self.fakes.groups.add("jenkins", 123)
         self.useFixture(AptInstalledJenkins(self.fakes))
         self.configuration = Configuration()
 
@@ -119,3 +121,20 @@ class ConfigurationTest(CharmTest):
             fd.write("")
         self.configuration.migrate()
         self.assertThat(paths.LEGACY_BOOTSTRAP_FLAG, Not(FileExists()))
+
+    def test_update_center_ca(self):
+        ca_cert = """-----BEGIN CERTIFICATE-----
+-----END CERTIFICATE-----"""
+        orig_update_center_ca = hookenv.config()["update-center-ca"]
+        ca_cert_file = os.path.join(paths.UPDATE_CENTER_ROOT_CAS,
+                                    "default.crt")
+        try:
+            hookenv.config()["update-center-ca"] = ca_cert
+            self.configuration.set_update_center_ca()
+            print(self.fakes.juju.log)
+            self.assertThat(
+                ca_cert_file,
+                FileContains(
+                    matcher=Contains(ca_cert)))
+        finally:
+            hookenv.config()["update-center-ca"] = orig_update_center_ca
