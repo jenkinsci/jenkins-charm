@@ -357,6 +357,7 @@ def recover_jenkins(plugins):
     plugins.clean_backup()
 
 
+@when_not("config.default.update-center")
 @when("config.changed.update-center")
 def configure_update_center():
     """ Change Update Center configuration when
@@ -367,6 +368,7 @@ def configure_update_center():
     api.set_update_center(config("update-center"))
 
 
+@when_not("config.default.update-center")
 @when("config.changed.update-center-ca")
 def configure_update_center_ca():
     """ Configure Update Center CA when
