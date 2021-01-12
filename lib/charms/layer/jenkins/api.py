@@ -171,10 +171,9 @@ class Api(object):
         except jenkins.JenkinsException:
             return False
 
-    def set_update_center(self, url=None, default=False):
+    def set_update_center(self, url=None):
         """Set the update center or reset it to default"""
-        if default:
-           url = "https://updates.jenkins.io/stable/update-center.json"
+        url = url or "https://updates.jenkins.io/stable/update-center.json"
         client = self._make_client()
         client.run_script(SET_UPDATE_CENTER_SCRIPT.format(
             url=url))

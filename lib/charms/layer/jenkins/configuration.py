@@ -107,9 +107,5 @@ class Configuration(object):
         ca_cert = config["update-center-ca"]
         ca_cert_file = os.path.join(paths.UPDATE_CENTER_ROOT_CAS,
                                     "default.crt")
-        host.mkdir(paths.UPDATE_CENTER_ROOT_CAS, perms=0o755)
-        host.write_file(ca_cert_file, ca_cert, perms=0o755)
-        host.chownr(ca_cert_file,
-                    owner="jenkins",
-                    group="jenkins",
-                    chowntopdir=True)
+        host.mkdir(paths.UPDATE_CENTER_ROOT_CAS, owner="jenkins", group="jenkins", perms=0o750)
+        host.write_file(ca_cert_file, ca_cert, owner="jenkins", group="jenkins", perms=0o644)
