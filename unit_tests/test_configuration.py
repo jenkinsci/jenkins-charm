@@ -131,7 +131,6 @@ class ConfigurationTest(CharmTest):
         try:
             hookenv.config()["update-center-ca"] = ca_cert
             self.configuration.set_update_center_ca()
-            print(self.fakes.juju.log)
             self.assertThat(
                 ca_cert_file,
                 FileContains(
