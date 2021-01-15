@@ -174,6 +174,7 @@ class Api(object):
     def set_update_center(self, url=None):
         """Set the update center or reset it to default"""
         url = url or "https://updates.jenkins.io/stable/update-center.json"
+        hookenv.log("Configuring {} as new update center".format(url), level=DEBUG)
         client = self._make_client()
         client.run_script(SET_UPDATE_CENTER_SCRIPT.format(
             url=url))
