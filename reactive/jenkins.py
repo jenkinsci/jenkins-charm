@@ -355,3 +355,20 @@ def recover_jenkins(plugins):
     service_restart('jenkins')
     api.wait()  # Wait for the service to be fully up
     plugins.clean_backup()
+
+
+# Called when jenkins is fully bootstrapped and update-center changes
+@when("jenkins.configured.admin", "config.changed.update-center")
+def configure_update_center():
+    """ Change Update Center configuration when config has changed. """
+    log("Modifying Update Center url")
+    api = Api()
+    api.set_update_center(config("update-center"))
+
+# Called when jenkins is fully bootstrapped and update-center-ca changes
+@when("jenkins.configured.admin", "config.changed.update-center-ca")
+def configure_update_center_ca():
+    """ Configure Update Center CA when config has changed. """
+    log("Saving Update Center CA")
+    configuration = Configuration()
+    configuration.set_update_center_ca()

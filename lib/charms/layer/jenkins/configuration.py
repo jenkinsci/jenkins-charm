@@ -2,6 +2,7 @@ import os
 from urllib.parse import urlparse
 
 from charmhelpers.core import hookenv
+from charmhelpers.core import host
 from charmhelpers.core import templating
 
 from charms.layer.jenkins import paths
@@ -99,3 +100,12 @@ class Configuration(object):
             return True
 
         return False
+
+    def set_update_center_ca(self):
+        """Configure Jenkins Update Center CA cert"""
+        config = hookenv.config()
+        ca_cert = config["update-center-ca"]
+        ca_cert_file = os.path.join(paths.UPDATE_CENTER_ROOT_CAS,
+                                    "default.crt")
+        host.mkdir(paths.UPDATE_CENTER_ROOT_CAS, owner="jenkins", group="jenkins", perms=0o750)
+        host.write_file(ca_cert_file, ca_cert, owner="jenkins", group="jenkins", perms=0o644)

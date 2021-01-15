@@ -38,6 +38,10 @@ property = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword(
 user.addProperty(property)
 """
 
+# flake8: noqa
+SET_UPDATE_CENTER_SCRIPT = """
+Jenkins.instance.pluginManager.doSiteConfigure('{url}')
+"""
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
@@ -166,6 +170,14 @@ class Api(object):
             return secret
         except jenkins.JenkinsException:
             return False
+
+    def set_update_center(self, url=None):
+        """Set the update center or reset it to default"""
+        url = url or "https://updates.jenkins.io/stable/update-center.json"
+        hookenv.log("Configuring {} as new update center".format(url), level="DEBUG")
+        client = self._make_client()
+        client.run_script(SET_UPDATE_CENTER_SCRIPT.format(
+            url=url))
 
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)

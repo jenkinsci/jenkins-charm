@@ -46,14 +46,14 @@ options:
     description: Set to no to allow downloading from an invalid https site.
   plugins-auto-update:
       type: boolean
-      default: True
+      default: False
       description: >
         This option enables auto update for plugins. The update will check for 
         timestamp modifications on the .hpi files in the configured plugins-site
         and will download plugins if newer files are available.
   plugins-auto-update-interval:
       type: int
-      default: 30
+      default: 1440
       description: >
         Interval which the auto update will check for new plugins.
   remove-unlisted-plugins:
@@ -79,3 +79,16 @@ options:
     description: |
       TCP port on which to listen for incoming connections from slaves.
       Set to -1 for a random port, or to 0 to disable JNLP entirely.
+  update-center:
+    type: string
+    default: ""
+    description: |
+      Configure a custom Update Center instead of getting plugins from updates.jenkins-ci.org.
+      Provide the whole path to update-center.json file.
+      Example: https://your-domain.com/current/update-center.json
+  update-center-ca:
+    type: string
+    default: ""
+    description: |
+      CA certificate for the update-center. This is required when setting update-center
+      because jenkins won't be able to validate your custom Update Center without it.
