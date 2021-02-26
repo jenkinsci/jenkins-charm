@@ -192,13 +192,15 @@ def configure_plugins():
 @hook("update-status")
 def update_plugins():
     last_update = unitdata.kv().get("jenkins.plugins.last_update")
+    # Only runs if auto-update is configured
+    if not config("plugins-auto-update"):
+        return
     if last_update is None:
         unitdata.kv().set("jenkins.plugins.last_update", 0)
         last_update = 0
     # Only try to update plugins when the configured interval has passed
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
-        # status_set("maintenance", "Updating plugins")
         api = Api()
         # Update plugins info
         api.check_update_center()
