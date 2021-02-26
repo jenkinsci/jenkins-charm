@@ -48,14 +48,14 @@ options:
       type: boolean
       default: False
       description: >
-        This option enables auto update for plugins. The update will check for 
-        timestamp modifications on the .hpi files in the configured plugins-site
-        and will download plugins if newer files are available.
+        This option enables auto update for plugins. The routine will check for
+        new versions available based on update center's info, will update them
+        through jenkins and safe-restart once completed.
   plugins-auto-update-interval:
       type: int
       default: 1440
       description: >
-        Interval which the auto update will check for new plugins.
+        Interval which the auto-update will try to run(in minutes).
   remove-unlisted-plugins:
     type: string
     default: "no"
