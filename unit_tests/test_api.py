@@ -304,3 +304,57 @@ class ApiTest(JenkinsTest):
             url=url)
         self.fakes.jenkins.scripts[script] = ""
         self.assertIsNone(self.api.set_update_center())
+
+    def test_check_update_center(self):
+        """
+        The set_update_center() method runs a groovy script to modify the
+        update center url to default when no url value is given.
+        """
+        url = "https://updates.jenkins.io/stable/update-center.json"
+        script = SET_UPDATE_CENTER_SCRIPT.format(
+            url=url)
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.set_update_center())
+
+    def test_check_update_center(self):
+        """
+        The set_update_center() method runs a groovy script to modify the
+        update center url to default when no url value is given.
+        """
+        script = (
+            "Jenkins.instance.getUpdateCenter().getSites().each { site ->"
+            "  site.updateDirectlyNow(hudson.model.DownloadService.signatureCheck)"
+            "};"
+            "hudson.model.DownloadService.Downloadable.all().each { downloadable ->"
+            "  downloadable.updateNow();"
+            "}")
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.check_update_center())
+
+    def test_get_updatable_plugins(self):
+        """get_updatable_plugins() should return a list of plugins"""
+        script = (
+            "println(Jenkins.instance.pluginManager.activePlugins.findAll {"
+            "  it -> it.hasUpdate()"
+            "}.collect {"
+            "  it -> it.getShortName()"
+            "})")
+        self.fakes.jenkins.scripts[script] = "[ plugin1 plugin2 ]"
+        self.assertEqual(self.api.get_updatable_plugins(), ["plugin1", "plugin2"])
+
+    def test_update_plugins(self):
+        """update_plugins() should return the number of plugins updated
+        """
+        script = (
+            "def plugins = Jenkins.instance.pluginManager.activePlugins.findAll {"
+            "  it -> it.hasUpdate()"
+            "}.collect {"
+            "  it -> it.getShortName()"
+            "};"
+            "long count;"
+            "Jenkins.instance.pluginManager.install(plugins, false).each { plugin ->"
+            "  ++count"
+            "};"
+            "println(count)")
+        self.fakes.jenkins.scripts[script] = "2"
+        self.assertEqual(self.api.update_plugins(), 2)

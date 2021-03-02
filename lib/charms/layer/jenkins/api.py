@@ -188,7 +188,7 @@ class Api(object):
             "  site.updateDirectlyNow(hudson.model.DownloadService.signatureCheck)"
             "};"
             "hudson.model.DownloadService.Downloadable.all().each { downloadable ->"
-              "downloadable.updateNow();"
+            "  downloadable.updateNow();"
             "}")
         self._run_cmd(cmd)
 
@@ -225,7 +225,7 @@ class Api(object):
             "  ++count"
             "};"
             "println(count)")
-        return self._run_cmd(cmd)
+        return int(self._run_cmd(cmd))
 
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
