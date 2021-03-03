@@ -162,28 +162,6 @@ class Plugins(object):
 
         return plugins, excluded_plugins
 
-    def update(self, plugins):
-        """Try to update the given plugins.
-
-        @params plugins: A whitespace-separated list of plugins to install.
-        """
-        plugins = plugins or ""
-        plugins = plugins.split()
-        plugins, incompatible_plugins = self._get_plugins_to_install(plugins)
-        hookenv.log("Updating plugins")
-        try:
-            installed_plugins = self._install_plugins(plugins)
-        except Exception:
-            hookenv.log("Plugin update failed, check logs for details")
-            raise
-
-        if len(installed_plugins) == 0:
-            hookenv.log("No plugins updated")
-            return [], incompatible_plugins
-        else:
-            Api().restart()
-            return installed_plugins, incompatible_plugins
-
     def backup(self):
         """Backup plugins.
         """
