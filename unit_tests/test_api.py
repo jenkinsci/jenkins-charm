@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 from requests import Request, Response
 from requests.exceptions import HTTPError
+from unittest import mock
 
 from jenkins import JenkinsException
 
@@ -332,8 +333,7 @@ class ApiTest(JenkinsTest):
         self.assertEqual(self.api.get_updatable_plugins(), ["plugin1", "plugin2"])
 
     def test_update_plugins(self):
-        """update_plugins() should return the number of plugins updated
-        """
+        """update_plugins() should return the number of plugins updated"""
         script = (
             "def plugins = Jenkins.instance.pluginManager.activePlugins.findAll {"
             "  it -> it.hasUpdate()"
@@ -347,3 +347,17 @@ class ApiTest(JenkinsTest):
             "println(count)")
         self.fakes.jenkins.scripts[script] = "2"
         self.assertEqual(self.api.update_plugins(), 2)
+
+    @mock.patch("charms.layer.jenkins.api.Api.restart")
+    @mock.patch("charms.layer.jenkins.api.Api.update_plugins")
+    @mock.patch("charms.layer.jenkins.api.Api.get_updatable_plugins")
+    @mock.patch("charms.layer.jenkins.api.Api.check_update_center")
+    def test_try_update_plugins(self, mock_check_update_center, mock_get_updatable_plugins, mock_update_plugins, mock_restart):
+        """try_update_plugins() should return the number of plugins updated"""
+        plugins = ["plugin1", "plugin2"]
+        mock_get_updatable_plugins.return_value = plugins
+        # Test the update
+        self.assertEqual(self.api.try_update_plugins(), plugins)
+        # Test when there are no plugins to be updated
+        mock_get_updatable_plugins.return_value = []
+        self.assertEqual(self.api.try_update_plugins(), False)

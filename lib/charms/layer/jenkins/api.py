@@ -227,6 +227,21 @@ class Api(object):
             "println(count)")
         return int(self._run_cmd(cmd))
 
+    def try_update_plugins(self):
+        """Try to update plugins
+
+        :returns: Plugins that were updated or False.
+        :rtype: list or boolean
+        """
+        self.check_update_center()
+        plugins = self.get_updatable_plugins()
+        if len(plugins) > 0:
+            self.update_plugins()
+            self.restart()
+            return plugins
+        else:
+            return False
+
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def _make_client(self):
