@@ -202,12 +202,7 @@ def update_plugins():
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
         api = Api()
-        # Update plugins info
-        api.check_update_center()
-        plugins = api.get_updatable_plugins()
-        if len(plugins) > 0:
-            api.update_plugins()
-            api.restart()
+        api.try_update_plugins()
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 

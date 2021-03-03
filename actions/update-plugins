@@ -10,15 +10,12 @@ from charms.layer.jenkins.api import Api
 
 def update_plugins():
     api = Api()
-    api.check_update_center()
-    plugins = api.get_updatable_plugins()
-    if len(plugins) > 0:
-        api.update_plugins()
-        api.restart()
-        function_set({'output': "Updated plugins: {}".format(plugins),
+    result = api.try_update_plugins()
+    if result:
+        function_set({'output': "Updated plugins: {}".format(result),
                       'outcome': 'Success'})
     else:
-        function_set({'output': "No plugins available to be updated.",
+        function_set({'output': "None of the installed plugins need updating.",
                       'outcome': 'Success'})
 
 
