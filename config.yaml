@@ -49,7 +49,7 @@ options:
       default: False
       description: >
         This option enables auto update for plugins. The routine will check for
-        new versions available based on update center's info, will update them
+        new versions available based on Update Center's info, will update them
         through jenkins and safe-restart once completed.
   plugins-auto-update-interval:
       type: int
