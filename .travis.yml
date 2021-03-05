@@ -1,5 +1,10 @@
 sudo: required
-dist: trusty
+
+matrix:
+    include:
+        - dist: xenial
+        - dist: bionic
+        - dist: focal
 
 language: python
 python:
