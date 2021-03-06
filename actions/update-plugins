@@ -1,0 +1,25 @@
+#!/usr/local/sbin/charm-env python3
+
+from charmhelpers.core.hookenv import (
+    function_fail,
+    function_set,
+)
+
+from charms.layer.jenkins.api import Api
+
+
+def update_plugins():
+    api = Api()
+    result = api.try_update_plugins()
+    if result:
+        function_set({'output': "Updated plugins: {}".format(result),
+                      'outcome': 'Success'})
+    else:
+        function_set({'output': "None of the installed plugins need updating.",
+                      'outcome': 'Success'})
+
+
+try:
+    update_plugins()
+except Exception as e:
+    function_fail("Failure: {}".format(str(e)))

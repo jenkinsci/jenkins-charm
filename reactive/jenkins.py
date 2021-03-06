@@ -187,25 +187,22 @@ def configure_plugins():
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
-# Called on every update-status but Plugins.update() will only check for
-# updates once every 30 minutes(default config).
+# Called on every update-status but only runs after the 
+# the configured interval has passed.
 @hook("update-status")
 def update_plugins():
     last_update = unitdata.kv().get("jenkins.plugins.last_update")
+    # Only runs if auto-update is configured
+    if not config("plugins-auto-update"):
+        return
     if last_update is None:
         unitdata.kv().set("jenkins.plugins.last_update", 0)
         last_update = 0
-    # Only try to update plugins when the interval configured has passed
+    # Only try to update plugins when the configured interval has passed
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
     if (last_update < update_interval):
-        status_set("maintenance", "Updating plugins")
-        plugins = plugins_layer()
-        plugins.backup()
-        try:
-            installed_plugins, incompatible_plugins = plugins.update(config("plugins"))
-            check_incompatible_plugins(incompatible_plugins)
-        except Exception:
-            recover_jenkins(plugins)
+        api = Api()
+        api.try_update_plugins()
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 

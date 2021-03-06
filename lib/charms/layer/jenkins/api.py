@@ -42,6 +42,8 @@ user.addProperty(property)
 SET_UPDATE_CENTER_SCRIPT = """
 Jenkins.instance.pluginManager.doSiteConfigure('{url}')
 """
+
+
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
 
@@ -179,6 +181,67 @@ class Api(object):
         client.run_script(SET_UPDATE_CENTER_SCRIPT.format(
             url=url))
 
+    def check_update_center(self):
+        """Updated Jenkins' info from update-center and download plugins"""
+        cmd = (
+            "Jenkins.instance.getUpdateCenter().getSites().each { site ->"
+            "  site.updateDirectlyNow(hudson.model.DownloadService.signatureCheck)"
+            "};"
+            "hudson.model.DownloadService.Downloadable.all().each { downloadable ->"
+            "  downloadable.updateNow();"
+            "}")
+        self._run_cmd(cmd)
+
+    def get_updatable_plugins(self):
+        """ Get plugins available to be updated
+
+        :returns: Plugins updated
+        :rtype: list
+        """
+        cmd = (
+            "println(Jenkins.instance.pluginManager.activePlugins.findAll {"
+            "  it -> it.hasUpdate()"
+            "}.collect {"
+            "  it -> it.getShortName()"
+            "})")
+        return list(filter(None, self._run_cmd(cmd).strip("[]").split(" ")))
+
+
+    def update_plugins(self):
+        """Update plugins
+
+        :returns: Number of plugins updated
+        :rtype: int
+        """
+        hookenv.log("Updating plugins", level="INFO")
+        cmd = (
+            "def plugins = Jenkins.instance.pluginManager.activePlugins.findAll {"
+            "  it -> it.hasUpdate()"
+            "}.collect {"
+            "  it -> it.getShortName()"
+            "};"
+            "long count;"
+            "Jenkins.instance.pluginManager.install(plugins, false).each { plugin ->"
+            "  ++count"
+            "};"
+            "println(count)")
+        return int(self._run_cmd(cmd))
+
+    def try_update_plugins(self):
+        """Try to update plugins
+
+        :returns: Plugins that were updated or False.
+        :rtype: list or boolean
+        """
+        self.check_update_center()
+        plugins = self.get_updatable_plugins()
+        if len(plugins) > 0:
+            self.update_plugins()
+            self.restart()
+            return plugins
+        else:
+            return False
+
     # Wait up to 140 seconds for Jenkins to be fully up.
     @retry_on_exception(7, base_delay=5, exc_type=RETRIABLE)
     def _make_client(self):
@@ -231,3 +294,7 @@ class Api(object):
             self._check_response(error)
         else:
             raise RuntimeError(fail_message)
+
+    def _run_cmd(self, cmd):
+        client = self._make_client()
+        return client.run_script(cmd).strip()

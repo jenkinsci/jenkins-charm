@@ -6,3 +6,5 @@ quiet-down:
   description: Put Jenkins in a Quiet mode. In that mode Jenkins doesn’t start any build.
 cancel-quiet-down:
   description: Cancel quiet mode.
+update-plugins:
+  description: Install available updates for plugins and safe-restart jenkins. No-op if there aren't updates available.

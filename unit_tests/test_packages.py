@@ -222,19 +222,31 @@ class PackagesTest(CharmTest):
             hookenv.config()["bundle-site"] = "https://pkg.jenkins.io"
             bundle_path = os.path.join(hookenv.charm_dir(), "files")
             self.packages.install_jenkins()
-            self.assertTrue(glob('%s/jenkins_*.deb' % bundle_path))
+            self.assertTrue(len(os.listdir(bundle_path)) > 0)
             self.assertEqual(
                 ["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
             hookenv.config()["bundle-site"] = orig_bundle_site
+
+    @mock.patch("charms.layer.jenkins.packages.glob")
     @mock.patch("charms.layer.jenkins.packages.os.system")
-    def test_clean_old_plugins(self, mock_os_system):
+    def test_clean_old_plugins(self, mock_os_system, mock_os_glob):
         """Make sure old plugin directories are excluded."""
         plugins = ["test1_plugin", "test2_plugin", "test3_plugin"]
         kept_plugins = []
         detached_plugins_dir = "/var/cache/jenkins/war/WEB-INF/detached-plugins"
         os_expected_calls = [mock.call("sudo rm -r %s" % detached_plugins_dir)]
+
+        def side_effect(value):
+            if value == "%s/*/" % paths.PLUGINS:
+                return ["/var/lib/jenkins/plugins/"]
+            if value == "%s/*.jpi" % paths.PLUGINS:
+                return ["/var/lib/jenkins/plugins/test1_plugin.jpi",
+                        "/var/lib/jenkins/plugins/test2_plugin.jpi",
+                        "/var/lib/jenkins/plugins/test3_plugin.jpi"]
+        mock_os_glob.side_effect = side_effect
+        os_expected_calls.append(mock.call("sudo rm -r %s/" % paths.PLUGINS))
 
         os.mkdir(detached_plugins_dir)
         for plugin in plugins:
@@ -245,7 +257,6 @@ class PackagesTest(CharmTest):
             with open(plugin_file, "w") as fd:
                 fd.write("")
             # And expect them to be removed
-            os_expected_calls.append(mock.call("sudo rm -r %s/" % plugin_dir))
             os_expected_calls.append(mock.call("sudo rm %s" % plugin_file))
 
             # Create plugins with version that should not be removed
