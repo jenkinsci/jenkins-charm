@@ -65,10 +65,17 @@ class UsersTest(JenkinsTest):
         def pwgen(length):
             return "z"
 
-        self.apt._set_jenkins_version('2.120.1')
-        script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="z")
-        self.fakes.jenkins.scripts[script] = ""
+        config = hookenv.config()
+        orig_password = config["password"]
+        try:
+            config["password"] = ""
 
-        self.useFixture(MonkeyPatch("charmhelpers.core.host.pwgen", pwgen))
-        self.users.configure_admin()
-        self.assertTrue(hookenv.config()["_generated-password"])
+            self.apt._set_jenkins_version('2.120.1')
+            script = UPDATE_PASSWORD_SCRIPT.format(username="admin", password="z")
+            self.fakes.jenkins.scripts[script] = ""
+
+            self.useFixture(MonkeyPatch("charmhelpers.core.host.pwgen", pwgen))
+            self.users.configure_admin()
+            self.assertTrue(hookenv.config()["_generated-password"])
+        finally:
+            config["password"] = orig_password

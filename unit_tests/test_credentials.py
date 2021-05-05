@@ -70,8 +70,13 @@ class CredentialsTest(CharmTest):
         """
         If not set, the password is retrieved from the local state.
         """
-        self.useFixture(JenkinsConfiguredAdmin(self.fakes))
-        self.assertEqual(GENERATED_PASSWORD, self.credentials.password())
+        orig_password = hookenv.config()["password"]
+        try:
+            hookenv.config()["password"] = ""
+            self.useFixture(JenkinsConfiguredAdmin(self.fakes))
+            self.assertEqual(GENERATED_PASSWORD, self.credentials.password())
+        finally:
+            hookenv.config()["password"] = orig_password
 
     def test_token(self):
         """
