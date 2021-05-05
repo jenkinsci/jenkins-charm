@@ -1,6 +1,7 @@
 name: jenkins
 summary: Jenkins Continuous Integration Server
-maintainer: Free Ekanayaka <free.ekanayaka@canonical.com>
+maintainers:
+  - launchpad.net/~canonical-is-sre
 description: >
   Jenkins is an extendable open source continuous integration server that
   monitors executions of repeated jobs. The focus of Jenkins is the
