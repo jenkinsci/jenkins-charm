@@ -26,7 +26,7 @@ Or if you want to disable the feature entirely, set it to 0:
     juju config jenkins jnlp-port=0
 
 The default password for the 'admin' account will be auto-generated, or can be
-set via `juju config`. You can retrieve the auto-generated password using:
+set via `juju config`. You can retrieve the admin credentials using:
 
     juju run-action jenkins/0 get-admin-credentials
 
