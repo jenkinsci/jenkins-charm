@@ -38,7 +38,7 @@ class Users(object):
                 paths.LAST_EXEC, "{}\n".format(api.version()).encode("utf-8"),
                 owner="jenkins", group="nogroup", perms=0o0600)
 
-    def _admin_data(self, autogen_password_if_empty=True):
+    def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
         config = hookenv.config()
         username = config["username"]

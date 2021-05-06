@@ -28,7 +28,7 @@ Or if you want to disable the feature entirely, set it to 0:
 The default password for the 'admin' account will be auto-generated, or can be
 set via `juju config`. You can retrieve the auto-generated password using:
 
-    juju run-action jenkins/0 get-admin-password
+    juju run-action jenkins/0 get-admin-credentials
 
 You should avoid changing the admin password within the Jenkins UI - this account is used by the charm to manage slave configuration.
 
