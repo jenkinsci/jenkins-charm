@@ -1,4 +1,5 @@
 name: jenkins
+display-name: Jenkins
 summary: Jenkins Continuous Integration Server
 maintainers:
   - launchpad.net/~canonical-is-sre

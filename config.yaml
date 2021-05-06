@@ -29,9 +29,11 @@ options:
       slave nodes so please don't change in Jenkins.
   password:
     type: string
-    default: admin
-    description: Admin user password - used to manage
-      slave nodes so please don't change in Jenkins.
+    default: ""
+    description: >
+      Admin user password, will be auto-generated if not set. Can be retrieved
+      via the get-admin-password action. This is used to manage slave nodes so
+      please don't change in Jenkins.
   plugins:
     type: string
     default: ""
