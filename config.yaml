@@ -32,7 +32,7 @@ options:
     default: ""
     description: >
       Admin user password, will be auto-generated if not set. Can be retrieved
-      via the get-admin-password action. This is used to manage slave nodes so
+      via the get-admin-credentials action. This is used to manage slave nodes so
       please don't change in Jenkins.
   plugins:
     type: string
