@@ -12,7 +12,6 @@ from charmhelpers.core import hookenv
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.packages import Packages
 from charms.layer.jenkins.users import Users
-)
 from charms.layer.jenkins.api import (
     GET_LEGACY_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,

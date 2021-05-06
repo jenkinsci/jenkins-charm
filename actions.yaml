@@ -9,4 +9,4 @@ cancel-quiet-down:
 update-plugins:
   description: Install available updates for plugins and safe-restart jenkins. No-op if there aren't updates available.
 get-admin-credentials:
-  description: Retrieve the admin password, which may have been auto-generated.
+  description: Retrieve the admin credentials, including the password which may have been auto-generated.
