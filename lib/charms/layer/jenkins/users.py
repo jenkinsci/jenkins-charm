@@ -46,9 +46,6 @@ class Users(object):
 
         if not password:
             password = host.pwgen(length=15)
-            # Save the password to the local state, so it can be accessed
-            # by the Credentials class.
-            config["_generated-password"] = password
 
         return _User(username, password)
 

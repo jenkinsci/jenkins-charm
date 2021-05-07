@@ -49,6 +49,5 @@ class JenkinsConfiguredAdmin(State):
         password = hookenv.config()["password"]
         if not password:
             password = GENERATED_PASSWORD
-            hookenv.config()["_generated-password"] = password
         with open(paths.ADMIN_PASSWORD, "w") as fd:
             fd.write(password)

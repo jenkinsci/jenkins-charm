@@ -76,6 +76,6 @@ class UsersTest(JenkinsTest):
 
             self.useFixture(MonkeyPatch("charmhelpers.core.host.pwgen", pwgen))
             self.users.configure_admin()
-            self.assertTrue(hookenv.config()["_generated-password"])
+            self.assertThat(paths.ADMIN_PASSWORD, FileContains("z"))
         finally:
             config["password"] = orig_password
