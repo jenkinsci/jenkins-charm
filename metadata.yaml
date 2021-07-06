@@ -1,5 +1,6 @@
 name: jenkins
 display-name: Jenkins
+docs: https://discourse.charmhub.io/t/jenkins-docs-index/4831
 summary: Jenkins Continuous Integration Server
 maintainers:
   - launchpad.net/~canonical-is-sre
