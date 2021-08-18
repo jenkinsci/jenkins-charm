@@ -101,9 +101,16 @@ class Plugins(object):
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
-            plugin_url = (
-                "%s/%s.hpi" % (plugins_site, plugin))
-            return self._download_plugin(plugin, plugin_url)
+            # Plugins might be either .hpi or .jpi files.
+            try:
+                plugin_url = ("%s/%s.hpi" % (plugins_site, plugin))
+                return self._download_plugin(plugin, plugin_url)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    plugin_url = ("%s/%s.jpi" % (plugins_site, plugin))
+                    return self._download_plugin(plugin, plugin_url)
+                else:
+                    raise
         hookenv.log("Plugin %s-%s already installed" % (
             plugin, plugin_version))
 
