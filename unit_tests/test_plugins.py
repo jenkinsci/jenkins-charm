@@ -72,7 +72,7 @@ class PluginsTest(CharmTest):
         mock_restart_jenkins.assert_called_with()
 
     @mock.patch("charms.layer.jenkins.plugins.Plugins._download_plugin")
-    def test_install_hpi_or_jpi(self, _download_plugin, mock_restart_jenkins):
+    def test_download_hpi_or_jpi(self, _download_plugin, mock_restart_jenkins):
         """
         A .hpi plugin doesn't exist, but a .jpi version does.
         """
@@ -88,7 +88,7 @@ class PluginsTest(CharmTest):
             True,
             urllib.error.HTTPError(code=403, msg="", url="", hdrs="", fp=io.StringIO("test")),
         ]
-        self.assertTrue(self.plugins._install_hpi_or_jpi('myplugin', 'http://x/myplugin'))
+        self.assertTrue(self.plugins._download_hpi_or_jpi('myplugin', 'http://x/myplugin'))
         _download_plugin.call_count = 2
         expected_calls = [
             mock.call('myplugin', 'http://x/myplugin.hpi'),
@@ -97,7 +97,7 @@ class PluginsTest(CharmTest):
         _download_plugin.assert_has_calls(expected_calls)
         with self.assertRaises(
                 urllib.error.HTTPError,
-                self.plugins._install_hpi_or_jpi,
+                self.plugins._download_hpi_or_jpi,
                 'myplugin',
                 'http://x/myplugin') as err:
             self.assertEqual(err.code, 403)
