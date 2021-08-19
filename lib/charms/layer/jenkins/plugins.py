@@ -92,15 +92,13 @@ class Plugins(object):
         host.chownr(paths.PLUGINS, owner="jenkins", group="jenkins", chowntopdir=True)
         return plugin_paths
 
-    def _install_hpi_or_jpi(self, plugin, plugin_path_no_suffix):
-        """
-        Plugins might be either .hpi or .jpi.
-        """
+    def _install_hpi_or_jpi(self, plugin, plugin_url_no_suffix):
+        """Plugins might be either `.hpi` or `.jpi`."""
         try:
-            return self._download_plugin(plugin, "%s.hpi" % plugin_path_no_suffix)
+            return self._download_plugin(plugin, "%s.hpi" % plugin_url_no_suffix)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                return self._download_plugin(plugin, "%s.jpi" % plugin_path_no_suffix)
+                return self._download_plugin(plugin, "%s.jpi" % plugin_url_no_suffix)
             else:
                 raise
 
