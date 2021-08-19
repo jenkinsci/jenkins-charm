@@ -1,3 +1,4 @@
+import io
 import os
 import urllib
 from unittest import mock
@@ -69,6 +70,37 @@ class PluginsTest(CharmTest):
             msg="Plugin not installed in the proper directory")
 
         mock_restart_jenkins.assert_called_with()
+
+    @mock.patch("charms.layer.jenkins.plugins.Plugins._download_plugin")
+    def test_install_hpi_or_jpi(self, _download_plugin, mock_restart_jenkins):
+        """
+        A .hpi plugin doesn't exist, but a .jpi version does.
+        """
+
+        # Our first download attempt will raise a 404, simulating a .hpi
+        # file not being found.
+        # Our second attempt returns True, simulating a successful download
+        # of a .jpi file.
+        # Our third attempt raises a 403, and we're confirming we re-raise
+        # that error, as it's not something we're expecting.
+        _download_plugin.side_effect = [
+            urllib.error.HTTPError(code=404, msg="", url="", hdrs="", fp=io.StringIO("test")),
+            True,
+            urllib.error.HTTPError(code=403, msg="", url="", hdrs="", fp=io.StringIO("test")),
+        ]
+        self.assertTrue(self.plugins._install_hpi_or_jpi('myplugin', 'http://x/myplugin'))
+        _download_plugin.call_count = 2
+        expected_calls = [
+            mock.call('myplugin', 'http://x/myplugin.hpi'),
+            mock.call('myplugin', 'http://x/myplugin.jpi'),
+        ]
+        _download_plugin.assert_has_calls(expected_calls)
+        with self.assertRaises(
+                urllib.error.HTTPError,
+                self.plugins._install_hpi_or_jpi,
+                'myplugin',
+                'http://x/myplugin') as err:
+            self.assertEqual(err.code, 403)
 
     @mock.patch("charms.layer.jenkins.api.Api.get_plugin_version")
     @mock.patch("test_plugins.Plugins._get_plugins_to_install")
