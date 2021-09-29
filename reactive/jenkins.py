@@ -47,6 +47,8 @@ from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
 from charms.layer.jenkins.storage import Storage
 
+from jenkins_plugin_manager.exceptions import InvalidPluginError
+
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in
                        APT_DEPENDENCIES[lsb_release()['DISTRIB_CODENAME']]]
 
@@ -181,6 +183,10 @@ def configure_plugins():
     try:
         installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
         check_incompatible_plugins(incompatible_plugins)
+    except InvalidPluginError as err:
+        recover_jenkins(plugins)
+        status_set("blocked", str(err))
+        return
     except Exception:
         recover_jenkins(plugins)
     set_state("jenkins.configured.plugins")
