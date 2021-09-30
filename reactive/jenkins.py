@@ -47,6 +47,8 @@ from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.service import Service
 from charms.layer.jenkins.storage import Storage
 
+from jenkins_plugin_manager.exceptions import InvalidPluginError
+
 DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in
                        APT_DEPENDENCIES[lsb_release()['DISTRIB_CODENAME']]]
 
@@ -181,8 +183,20 @@ def configure_plugins():
     try:
         installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
         check_incompatible_plugins(incompatible_plugins)
-    except Exception:
+    except InvalidPluginError as err:
+        log("Found one or more invalid plugins, check if they exist at %s. "
+            "Error was: %s" % (config("plugins-site"), str(err)), "ERROR")
         recover_jenkins(plugins)
+        status_set("blocked", str(err))
+        return
+    except Exception as err:
+        log("Unknown error encountered while installing plugins, restoring jenkins "
+            "to previous state. Error was: %s" % str(err), "ERROR")
+        recover_jenkins(plugins)
+        # We should potentially set the charm to blocked status here and
+        # `return` to avoid the charm being set to active/idle with no
+        # indication to the operator of a problem. Leaving as is currently
+        # so we can see what errors occur.
     set_state("jenkins.configured.plugins")
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
