@@ -184,6 +184,8 @@ def configure_plugins():
         installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
         check_incompatible_plugins(incompatible_plugins)
     except InvalidPluginError as err:
+        log("Found one or more invalid plugins, check if they exist at %s. "
+            "Error was: %s" % (config("plugins-site"), str(err)), "ERROR")
         recover_jenkins(plugins)
         status_set("blocked", str(err))
         return
