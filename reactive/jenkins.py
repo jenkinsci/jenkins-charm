@@ -189,8 +189,14 @@ def configure_plugins():
         recover_jenkins(plugins)
         status_set("blocked", str(err))
         return
-    except Exception:
+    except Exception as err:
+        log("Unknown error encountered while installing plugins, restoring jenkins "
+            "to previous state. Error was: %s" % str(err), "ERROR")
         recover_jenkins(plugins)
+        # We should potentially set the charm to blocked status here and
+        # `return` to avoid the charm being set to active/idle with no
+        # indication to the operator of a problem. Leaving as is currently
+        # so we can see what errors occur.
     set_state("jenkins.configured.plugins")
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
