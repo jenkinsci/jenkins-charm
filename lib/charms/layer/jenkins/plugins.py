@@ -77,11 +77,9 @@ class Plugins(object):
         hookenv.log("Installing plugins (%s)" % " ".join(plugins))
         config = hookenv.config()
         update = config["plugins-auto-update"]
-        plugins_site = config["plugins-site"]
         plugin_paths = set()
         for plugin in plugins:
-            plugin_path = self._install_plugin(
-                plugin, plugins_site, update)
+            plugin_path = self._install_plugin(plugin, update)
             if plugin_path is None:
                 pass
             elif plugin_path:
@@ -92,7 +90,7 @@ class Plugins(object):
         host.chownr(paths.PLUGINS, owner="jenkins", group="jenkins", chowntopdir=True)
         return plugin_paths
 
-    def _install_plugin(self, plugin, plugins_site, update):
+    def _install_plugin(self, plugin, update):
         """
         Verify if the plugin is not installed before installing it
         or if it needs an update .
@@ -101,7 +99,7 @@ class Plugins(object):
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
-            return self._download_hpi_or_jpi(plugin, "%s/%s" % (plugins_site, plugin))
+            return self._download_plugin(plugin)
         hookenv.log("Plugin %s-%s already installed" % (
             plugin, plugin_version))
 
@@ -126,22 +124,10 @@ class Plugins(object):
         else:
             return self._get_plugins_to_install(plugins_and_dependencies, uc)
 
-    def _download_hpi_or_jpi(self, plugin, plugin_url_no_suffix):
-        """Plugins might be either `.hpi` or `.jpi`."""
-        try:
-            return self._download_plugin(plugin, "%s.hpi" % plugin_url_no_suffix)
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return self._download_plugin(plugin, "%s.jpi" % plugin_url_no_suffix)
-            else:
-                raise
-
-    def _download_plugin(self, plugin, plugin_site):
+    def _download_plugin(self, plugin):
         """Get dependencies of the given plugin(s)"""
         uc = self.update_center
-        return uc.download_plugin(
-                plugin, paths.PLUGINS, plugin_url=plugin_site,
-                with_version=False)
+        return uc.download_plugin(plugin, paths.PLUGINS, with_version=False)
 
     def _get_plugin_info(self, plugin):
         """Get info of the given plugin from the UpdateCenter"""
