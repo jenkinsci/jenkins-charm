@@ -99,7 +99,8 @@ class Plugins(object):
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
-            return self._download_plugin(plugin)
+            return self.update_center.download_plugin(
+                    plugin, paths.PLUGINS, with_version=False)
         hookenv.log("Plugin %s-%s already installed" % (
             plugin, plugin_version))
 
@@ -123,11 +124,6 @@ class Plugins(object):
             return self._exclude_incompatible_plugins(plugins)
         else:
             return self._get_plugins_to_install(plugins_and_dependencies, uc)
-
-    def _download_plugin(self, plugin):
-        """Get dependencies of the given plugin(s)"""
-        uc = self.update_center
-        return uc.download_plugin(plugin, paths.PLUGINS, with_version=False)
 
     def _get_plugin_info(self, plugin):
         """Get info of the given plugin from the UpdateCenter"""
