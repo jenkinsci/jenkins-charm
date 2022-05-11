@@ -50,10 +50,7 @@ class Configuration(object):
             os.unlink(paths.LEGACY_BOOTSTRAP_FLAG)
 
     def set_url(self):
-        """Update Jenkins public_url and prefix
-            return True when a restart is required, false and a
-            reload via the API is sufficient.
-        """
+        """Update Jenkins public_url and prefix."""
         config = hookenv.config()
         url = config["public-url"]
         context = {"public_url": url}
@@ -61,45 +58,19 @@ class Configuration(object):
             "location-config.xml", paths.LOCATION_CONFIG_FILE, context,
             owner="jenkins", group="nogroup")
 
-        return self._set_prefix(urlparse(url).path)
+        self._set_prefix(urlparse(url).path)
 
     def _set_prefix(self, prefix):
         """ Set Jenkins to use the given prefix.
         :param prefix: The prefix Jenkins will be configured to use. If empty
                        the prefix config is unset.
-        :return: True when an update was made, false otherwise.
         """
-        if not os.path.exists(paths.DEFAULTS_CONFIG_FILE):
-            hookenv.log("Defaults file {} not found, Jenkins prefix not set.".
-                        format(paths.DEFAULTS_CONFIG_FILE))
-            return False
+        # Since version 2.332.1 Jenkins is not loading env vars from the default config file
+        overrides_content = '# This file is managed by Juju. Do not edit manually.\n[Service]\nEnvironment="JENKINS_PREFIX={}"\n'.format(prefix)
 
-        prefix_line_base = 'JENKINS_ARGS="$JENKINS_ARGS --prefix='
-        prefix_line = prefix_line_base + prefix + '"'
-        defaults_content = ""
-
-        update = False
-        found = False
-        with open(paths.DEFAULTS_CONFIG_FILE, 'r') as defaults:
-            for line in defaults:
-                if line.startswith(prefix_line_base):
-                    found = True
-                    if not line.startswith(prefix_line):
-                        update = True
-                    continue
-                defaults_content += line
-
-        if prefix:
-            defaults_content += "\n" + prefix_line
-            if not found:
-                update = True
-
-        if update:
-            with open(paths.DEFAULTS_CONFIG_FILE, 'w') as defaults_file:
-                defaults_file.write(defaults_content + "\n")
-            return True
-
-        return False
+        host.mkdir(os.path.dirname(paths.SERVICE_CONFIG_FILE_OVERRIDE), perms=0o751)
+        with open(os.open(paths.SERVICE_CONFIG_FILE_OVERRIDE, os.O_CREAT | os.O_WRONLY, 0o644), 'w') as overrides_file:
+            overrides_file.write(overrides_content)
 
     def set_update_center_ca(self):
         """Configure Jenkins Update Center CA cert"""

@@ -8,6 +8,7 @@ PLUGINS = os.path.join(HOME, "plugins")
 PLUGINS_BACKUP = os.path.join(HOME, "plugins_charm_backup")
 SECRETS = os.path.join(HOME, "secrets")
 CONFIG_FILE = os.path.join(HOME, "config.xml")
+SERVICE_CONFIG_FILE_OVERRIDE="/etc/systemd/system/jenkins.service.d/override.conf"
 LOCATION_CONFIG_FILE =\
     os.path.join(HOME, "jenkins.model.JenkinsLocationConfiguration.xml")
 DEFAULTS_CONFIG_FILE = "/etc/default/jenkins"

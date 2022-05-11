@@ -1,3 +1,4 @@
+import subprocess
 import time
 
 from urllib.parse import urlparse
@@ -148,11 +149,11 @@ def configure_admin():
 
     status_set("maintenance", "Configuring Jenkins public url")
     configuration = Configuration()
-    needs_restart = configuration.set_url()
-    if needs_restart:
-        status_set("maintenance", "Restarting Jenkins")
-        service_restart('jenkins')
-        api.wait()
+    configuration.set_url()
+    status_set("maintenance", "Restarting Jenkins")
+    subprocess.call(['systemctl', 'daemon-reload'])
+    service_restart('jenkins')
+    api.wait()
 
     status_set("maintenance", "Configuring admin user")
     users = Users()
@@ -166,7 +167,6 @@ def configure_admin():
         extension_relation.joined()
 
     set_state("jenkins.configured.admin")
-
 
 # Called once we're bootstrapped, every time the configured plugins change
 @when("jenkins.configured.admin", "config.changed.plugins")
@@ -202,7 +202,7 @@ def configure_plugins():
 
 
 # Called on every update-status but only runs after the 
-# the configured interval has passed.
+# configured interval has passed.
 @hook("update-status")
 def update_plugins():
     last_update = unitdata.kv().get("jenkins.plugins.last_update")

@@ -46,38 +46,30 @@ class ConfigurationTest(CharmTest):
         self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
 
     def test_set_prefix1(self):
-        # Case #1 - no previous config, no prefix, no change
-        updated = self.configuration._set_prefix("")
-        self.assertFalse(updated)
+        # No previous config, a prefix, expected change
+        self.configuration._set_prefix("/jenkins")
+        self.assertThat(
+            paths.SERVICE_CONFIG_FILE_OVERRIDE,
+            FileContains(
+                matcher=Contains("/jenkins")))
 
     def test_set_prefix2(self):
-        # Case #2 - no previous config, a prefix, expected change
-        updated = self.configuration._set_prefix("/jenkins")
-        self.assertTrue(updated)
+        # Previous config, different prefix, expected change
+        self.configuration._set_prefix("/jenkins")
+        self.configuration._set_prefix("/jenkins-alt")
+        self.assertThat(
+            paths.SERVICE_CONFIG_FILE_OVERRIDE,
+            FileContains(
+                matcher=Contains("/jenkins-alt")))
 
     def test_set_prefix3(self):
-        # Case #3 - previous config, same prefix, no expected change
+        # Previous config, no prefix, expected change
         self.configuration._set_prefix("/jenkins")
-        updated = self.configuration._set_prefix("/jenkins")
-        self.assertFalse(updated)
-
-    def test_set_prefix4(self):
-        # Case #4 - previous config, different prefix, expected change
-        self.configuration._set_prefix("/jenkins")
-        updated = self.configuration._set_prefix("/jenkins-alt")
-        self.assertTrue(updated)
-
-    def test_set_prefix5(self):
-        # Case #5 - previous config, no prefix, expected change
-        self.configuration._set_prefix("/jenkins")
-        updated = self.configuration._set_prefix("")
-        self.assertTrue(updated)
-
-    def test_set_prefix6(self):
-        # Case #6 - no config file, no expected change
-        os.remove(paths.DEFAULTS_CONFIG_FILE)
-        updated = self.configuration._set_prefix("/nothing")
-        self.assertFalse(updated)
+        self.configuration._set_prefix("")
+        self.assertThat(
+            paths.SERVICE_CONFIG_FILE_OVERRIDE,
+            Not(FileContains(
+                matcher=Contains("/jenkins"))))
 
     def test_bad_jnlp_port(self):
         # Bootstrap should fail and return False if we set an invalid port
@@ -92,8 +84,7 @@ class ConfigurationTest(CharmTest):
             hookenv.config()["jnlp-port"] = orig_port
 
     def test_set_url(self):
-        needs_restart = self.configuration.set_url()
-        self.assertFalse(needs_restart)
+        self.configuration.set_url()
         self.assertThat(paths.LOCATION_CONFIG_FILE, HasOwnership(123, 456))
         self.assertThat(
             paths.LOCATION_CONFIG_FILE,
