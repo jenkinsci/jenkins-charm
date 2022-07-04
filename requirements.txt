@@ -1,4 +1,5 @@
-charmhelpers
+# Needed to support xenial per https://discourse.charmhub.io/t/removing-py27-p35-from-charm-helpers-library/5335
+charmhelpers<1.2.0
 flake8
 python-jenkins
 git+https://git.launchpad.net/jenkins-plugin-manager
