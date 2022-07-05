@@ -1,3 +1,11 @@
+# Needed to support xenial per https://discourse.charmhub.io/t/removing-py27-p35-from-charm-helpers-library/5335
+charmhelpers<1.2.0
+# Needed for xenial support - MarkupSafe 2.x only support python3.6 and greater
+MarkupSafe<2.0.0
+# https://github.com/juju/charm-helpers/issues/721
+certifi<=2021.10.8
+# Requests 2.26.0 no longer supports python 3.5
+requests<2.26.0
 # We require a version of python-jenkins that uses requests.
 python-jenkins>=0.4.16
 git+https://git.launchpad.net/jenkins-plugin-manager#egg=jenkins-plugin-manager

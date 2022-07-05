@@ -4,6 +4,7 @@
 .coverage
 .unit-state.db
 *__pycache__
+*.charm
 *.pyc
 *.swp
 lib/charms/__init__.py
