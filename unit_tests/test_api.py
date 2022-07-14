@@ -14,6 +14,9 @@ from charms.layer.jenkins.api import (
     GET_NEW_TOKEN_SCRIPT,
     UPDATE_PASSWORD_SCRIPT,
     SET_UPDATE_CENTER_SCRIPT,
+    CONFIGURE_PROXY_WITH_AUTH_SCRIPT,
+    CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT,
+    DISABLE_PROXY_SCRIPT,
     Api,
 )
 from charms.layer.jenkins.packages import Packages
@@ -210,6 +213,27 @@ class ApiTest(JenkinsTest):
         self.assertEqual(self.api.get_plugin_version("installed-plugin"), "1")
         self.assertFalse(self.api.get_plugin_version("not-installed-plugin"))
 
+    def test_configure_proxy(self):
+        """Test proxy configuration."""
+        # Firstly without authentication
+        hostname = "proxy.example.tld"
+        port = 3128
+        script = CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
+                hostname=hostname, port=port)
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.configure_proxy(hostname, port))
+        # Then with authentication
+        username = "admin"
+        password = "x"
+        script = CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
+            hostname=hostname, port=port, username=username, password=password)
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.configure_proxy(hostname, port, username, password))
+        # And finally removal
+        script = DISABLE_PROXY_SCRIPT
+        self.fakes.jenkins.scripts[script] = ""
+        self.assertIsNone(self.api.configure_proxy())
+        
     def test_quiet_down(self):
         """If quiet_down is called it will log to juju logs"""
         self.apt._set_jenkins_version('2.120.1')

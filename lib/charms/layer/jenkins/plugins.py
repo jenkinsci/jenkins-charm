@@ -21,6 +21,31 @@ class Plugins(object):
     """Manage Jenkins plugins."""
 
     def __init__(self):
+        proxy_hostname = hookenv.config()["proxy-hostname"]
+        proxy_port = hookenv.config()["proxy-port"]
+        proxy_username = hookenv.config()["proxy-username"]
+        proxy_password = hookenv.config()["proxy-password"]
+
+        if proxy_hostname:
+            if proxy_username and proxy_password:
+                proxy_address = "http://{}:{}@{}:{}".format(
+                    proxy_username,
+                    proxy_password,
+                    proxy_hostname,
+                    proxy_port
+                )
+            else:
+                proxy_address = "http://{}:{}".format(
+                    proxy_hostname,
+                    proxy_port
+                )
+        else:
+            proxy_address = None
+
+        # urllib supports the http_proxy env variable
+        if proxy_address:
+            os.environ["http_proxy"] = proxy_address
+            
         if hookenv.config()["plugins-site"] == "https://updates.jenkins-ci.org/latest/":
             self.update_center = UpdateCenter()
         else:

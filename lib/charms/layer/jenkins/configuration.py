@@ -6,6 +6,7 @@ from charmhelpers.core import host
 from charmhelpers.core import templating
 
 from charms.layer.jenkins import paths
+from charms.layer.jenkins.api import Api
 
 PORT = 8080
 
@@ -42,6 +43,20 @@ class Configuration(object):
             hookenv.open_port(config["jnlp-port"])
 
         return True
+
+    def configure_proxy(self):
+        """Check whether the charm is configured to use an http(s) proxy and
+        if it does - propagate the configuired proxy settings to Jenkins."""
+
+        config = hookenv.config()
+
+        api = Api()
+        api.configure_proxy(
+            config["proxy-hostname"],
+            config["proxy-port"],
+            config["proxy-username"],
+            config["proxy-password"]
+        )
 
     def migrate(self):
         """Drop the legacy boostrap flag file."""

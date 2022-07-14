@@ -1,4 +1,5 @@
 import os
+from lib.charms.layer.jenkins.api import DISABLE_PROXY_SCRIPT
 
 from testtools.matchers import (
     FileContains,
@@ -17,9 +18,11 @@ from charms.layer.jenkins.configuration import Configuration
 from states import AptInstalledJenkins
 
 from charmhelpers.core import hookenv
+from testing import JenkinsTest
+from unittest import mock
 
 
-class ConfigurationTest(CharmTest):
+class ConfigurationTest(JenkinsTest):
 
     def setUp(self):
         super(ConfigurationTest, self).setUp()
@@ -27,6 +30,7 @@ class ConfigurationTest(CharmTest):
         self.fakes.groups.add("jenkins", 123)
         self.useFixture(AptInstalledJenkins(self.fakes))
         self.configuration = Configuration()
+        self.fakes.jenkins.scripts[DISABLE_PROXY_SCRIPT] = "xyz"
 
     def test_bootstrap(self):
         """
@@ -44,6 +48,19 @@ class ConfigurationTest(CharmTest):
                 matcher=Contains("<slaveAgentPort>48484</slaveAgentPort>"))
             )
         self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
+
+    #@mock.patch("charms.layer.jenkins.packages.Packages.jenkins_version")
+    @mock.patch("charms.layer.jenkins.api.Api._make_client")
+    #@mock.patch("charms.layer.jenkins.api.DISABLE_PROXY_SCRIPT", """""")
+    def test_configure_proxy(self, mock_make_client):
+        """The proxy configuration file should be created/removed here."""
+        # TODO: mock an actual working proxy - meanwhile, test removal
+        mock_make_client.return_value = self.fakes.jenkins
+        hookenv.config()["proxy-hostname"] = None
+        self.configuration.configure_proxy()
+        self.assertThat(
+            paths.PROXY_CONFIG_FILE,
+            Not(FileExists()))
 
     def test_set_prefix1(self):
         # No previous config, a prefix, expected change
