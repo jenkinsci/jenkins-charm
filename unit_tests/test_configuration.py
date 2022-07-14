@@ -49,9 +49,7 @@ class ConfigurationTest(JenkinsTest):
             )
         self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
 
-    #@mock.patch("charms.layer.jenkins.packages.Packages.jenkins_version")
     @mock.patch("charms.layer.jenkins.api.Api._make_client")
-    #@mock.patch("charms.layer.jenkins.api.DISABLE_PROXY_SCRIPT", """""")
     def test_configure_proxy(self, mock_make_client):
         """The proxy configuration file should be created/removed here."""
         # TODO: mock an actual working proxy - meanwhile, test removal
