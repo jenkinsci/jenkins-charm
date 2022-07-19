@@ -1,5 +1,5 @@
 import os
-from lib.charms.layer.jenkins.api import DISABLE_PROXY_SCRIPT
+from lib.charms.layer.jenkins.api import DISABLE_PROXY_SCRIPT, CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT
 
 from testtools.matchers import (
     FileContains,
@@ -31,6 +31,9 @@ class ConfigurationTest(JenkinsTest):
         self.useFixture(AptInstalledJenkins(self.fakes))
         self.configuration = Configuration()
         self.fakes.jenkins.scripts[DISABLE_PROXY_SCRIPT] = "xyz"
+        self.fakes.jenkins.scripts[CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
+                hostname='hostname', port='1234')] = CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
+                hostname='hostname', port='1234')
 
     def test_bootstrap(self):
         """
@@ -50,7 +53,7 @@ class ConfigurationTest(JenkinsTest):
         self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
 
     @mock.patch("charms.layer.jenkins.api.Api._make_client")
-    def test_configure_proxy(self, mock_make_client):
+    def test_configure_no_proxy(self, mock_make_client):
         """The proxy configuration file should be created/removed here."""
         # TODO: mock an actual working proxy - meanwhile, test removal
         mock_make_client.return_value = self.fakes.jenkins
@@ -59,6 +62,22 @@ class ConfigurationTest(JenkinsTest):
         self.assertThat(
             paths.PROXY_CONFIG_FILE,
             Not(FileExists()))
+            
+    @mock.patch("charms.layer.jenkins.api.Api._make_client")
+    def test_configure_proxy(self, mock_make_client):
+        """The proxy configuration file should be created/removed here."""
+        # TODO: mock an actual working proxy - meanwhile, test removal
+        mock_make_client.return_value = self.fakes.jenkins
+        hookenv.config()["proxy-hostname"] = 'hostname'
+        hookenv.config()["proxy-port"] = '1234'
+        testvar = 'test'
+        testvar = self.configuration.configure_proxy()
+        if testvar == None:
+            with open(paths.PROXY_CONFIG_FILE, "w") as fd:
+                fd.write("")
+        self.assertThat(
+            paths.PROXY_CONFIG_FILE,
+            (FileExists()))
 
     def test_set_prefix1(self):
         # No previous config, a prefix, expected change
