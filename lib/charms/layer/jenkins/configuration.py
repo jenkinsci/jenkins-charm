@@ -45,8 +45,7 @@ class Configuration(object):
         return True
 
     def configure_proxy(self):
-        """Check whether the charm is configured to use an http(s) proxy and
-        if it does - propagate the configuired proxy settings to Jenkins."""
+        """Configure http(s) proxy settings if appropriate."""
 
         config = hookenv.config()
 

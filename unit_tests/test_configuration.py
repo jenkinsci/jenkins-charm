@@ -32,8 +32,7 @@ class ConfigurationTest(JenkinsTest):
         self.configuration = Configuration()
         self.fakes.jenkins.scripts[DISABLE_PROXY_SCRIPT] = "xyz"
         self.fakes.jenkins.scripts[CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
-                hostname='hostname', port='1234')] = CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
-                hostname='hostname', port='1234')
+                hostname='hostname', port='1234')] = "abc"
 
     def test_bootstrap(self):
         """
@@ -55,7 +54,6 @@ class ConfigurationTest(JenkinsTest):
     @mock.patch("charms.layer.jenkins.api.Api._make_client")
     def test_configure_no_proxy(self, mock_make_client):
         """The proxy configuration file should be created/removed here."""
-        # TODO: mock an actual working proxy - meanwhile, test removal
         mock_make_client.return_value = self.fakes.jenkins
         hookenv.config()["proxy-hostname"] = None
         self.configuration.configure_proxy()
@@ -66,7 +64,6 @@ class ConfigurationTest(JenkinsTest):
     @mock.patch("charms.layer.jenkins.api.Api._make_client")
     def test_configure_proxy(self, mock_make_client):
         """The proxy configuration file should be created/removed here."""
-        # TODO: mock an actual working proxy - meanwhile, test removal
         mock_make_client.return_value = self.fakes.jenkins
         hookenv.config()["proxy-hostname"] = 'hostname'
         hookenv.config()["proxy-port"] = '1234'

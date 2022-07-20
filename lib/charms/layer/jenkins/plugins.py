@@ -26,7 +26,7 @@ class Plugins(object):
         proxy_username = hookenv.config()["proxy-username"]
         proxy_password = hookenv.config()["proxy-password"]
 
-        if proxy_hostname:
+        if proxy_hostname and proxy_port:
             if proxy_username and proxy_password:
                 proxy_address = "http://{}:{}@{}:{}".format(
                     proxy_username,

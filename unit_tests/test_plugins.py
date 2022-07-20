@@ -34,6 +34,17 @@ class PluginsTest(CharmTest):
         super(PluginsTest, self).tearDown()
         hookenv.config()["plugins-site"] = self.orig_plugins_site
 
+    def test_proxy_config_format(self, mock_restart_jenkins):
+        hookenv.config()["proxy-hostname"] = "hostname"
+        hookenv.config()["proxy-port"] = "80"
+        hookenv.config()["proxy-username"] = "username"
+        hookenv.config()["proxy-password"] = "123"
+        hookenv.config()["plugins-site"] = "https://updates.jenkins-ci.org/latest/"
+        self.plugins.__init__()
+        hookenv.config()["proxy-hostname"] = None
+        hookenv.config()["proxy-port"] = None
+        self.plugins.__init__()
+
     def test_remove_plugin(self, mock_restart_jenkins):
         """
         The given plugin file is removed from disk.

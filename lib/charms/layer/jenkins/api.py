@@ -105,11 +105,11 @@ class Api(object):
     def configure_proxy(self, hostname=None, port=None, username=None, password=None):
         """Configure (or disable) a system proxy."""
         client = self._make_client()
-        if username and password:
+        if username and password and hostname and port:
             client.run_script(CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
                 hostname=hostname, port=port, username=username,
                 password=password))
-        elif hostname:
+        elif hostname and port:
            client.run_script(CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
                 hostname=hostname, port=port))
         else:
@@ -276,6 +276,7 @@ class Api(object):
         creds = Credentials()
         user = creds.username()
         token = creds.token()
+        
         if token is None:
             creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
 
