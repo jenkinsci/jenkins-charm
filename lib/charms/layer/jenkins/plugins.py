@@ -50,7 +50,7 @@ class Plugins(object):
             # Unset the environment variable in case it was previously set.
             hookenv.log("Unsetting http_proxy env variable if it was set")
             os.environ.pop("http_proxy", None)
-            
+
         if hookenv.config()["plugins-site"] == "https://updates.jenkins-ci.org/latest/":
             self.update_center = UpdateCenter()
         else:

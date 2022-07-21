@@ -45,7 +45,7 @@ class PluginsTest(CharmTest):
         self.assertEqual(
             "INFO: Setting http_proxy env variable to http://username:123@hostname:80",
             self.fakes.juju.log[-1])
-            
+
         # And now remove authentication creds and test again.
         hookenv.config()["proxy-username"] = None
         hookenv.config()["proxy-password"] = None
@@ -54,8 +54,8 @@ class PluginsTest(CharmTest):
         self.assertEqual(
             "INFO: Setting http_proxy env variable to http://hostname:80",
             self.fakes.juju.log[-1])
+        
         # And now confirm we unset it if we have no proxy.
-
         hookenv.config()["proxy-hostname"] = None
         hookenv.config()["proxy-port"] = None
         self.plugins.__init__()
