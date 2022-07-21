@@ -44,7 +44,12 @@ class Plugins(object):
 
         # urllib supports the http_proxy env variable
         if proxy_address:
+            hookenv.log("Setting http_proxy env variable to %s" % proxy_address)
             os.environ["http_proxy"] = proxy_address
+        else:
+            # Unset the environment variable in case it was previously set.
+            hookenv.log("Unsetting http_proxy env variable if it was set")
+            os.environ.pop("http_proxy", None)
             
         if hookenv.config()["plugins-site"] == "https://updates.jenkins-ci.org/latest/":
             self.update_center = UpdateCenter()
