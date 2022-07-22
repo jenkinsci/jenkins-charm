@@ -58,6 +58,32 @@ options:
       default: 1440
       description: >
         Interval which the auto-update will try to run (in minutes).
+  proxy-hostname:
+    type: string
+    default: ""
+    description: |
+      If a proxy is required for Jenkins to download plugins and updates, set its
+      hostname or IP address here, e.g. "proxy.example.tld" or "10.0.0.1".
+  proxy-port:
+    type: int
+    default: 3128
+    description: |
+      If a proxy is required for Jenkins to download plugins and updates, set its
+      port number here. Ignored if proxy-hostname is not also set.
+  proxy-username:
+    type: string
+    default: ""
+    description: |
+      If a proxy is required for Jenkins to download plugins and updates and
+      authentication is also required, set the username here. Ignored if
+      proxy-hostname is not also set.
+  proxy-password:
+    type: string
+    default: ""
+    description: |
+      If a proxy is required for Jenkins to download plugins and updates and
+      authentication is also required, set the password here. Ignored if
+      proxy-hostname and proxy-password are not both also set.
   remove-unlisted-plugins:
     type: string
     default: "no"

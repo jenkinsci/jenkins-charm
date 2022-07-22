@@ -1,4 +1,5 @@
 import os
+from lib.charms.layer.jenkins.api import DISABLE_PROXY_SCRIPT, CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT
 
 from testtools.matchers import (
     FileContains,
@@ -17,9 +18,11 @@ from charms.layer.jenkins.configuration import Configuration
 from states import AptInstalledJenkins
 
 from charmhelpers.core import hookenv
+from testing import JenkinsTest
+from unittest import mock
 
 
-class ConfigurationTest(CharmTest):
+class ConfigurationTest(JenkinsTest):
 
     def setUp(self):
         super(ConfigurationTest, self).setUp()
@@ -27,6 +30,7 @@ class ConfigurationTest(CharmTest):
         self.fakes.groups.add("jenkins", 123)
         self.useFixture(AptInstalledJenkins(self.fakes))
         self.configuration = Configuration()
+        self.fakes.jenkins.scripts[DISABLE_PROXY_SCRIPT] = "xyz"
 
     def test_bootstrap(self):
         """
@@ -44,6 +48,16 @@ class ConfigurationTest(CharmTest):
                 matcher=Contains("<slaveAgentPort>48484</slaveAgentPort>"))
             )
         self.assertEqual({8080, 48484}, self.fakes.juju.ports["TCP"])
+
+    @mock.patch("charms.layer.jenkins.api.Api._make_client")
+    def test_configure_proxy(self, mock_make_client):
+        """Test the calling of the configure_proxy method."""
+        mock_make_client.return_value = self.fakes.jenkins
+        hookenv.config()["proxy-hostname"] = None
+        # All we're testing here is calling the configure_proxy api method.
+        # The different options (disabling proxy, with and without auth) are
+        # being tested in `test_api.py`).
+        self.configuration.configure_proxy()
 
     def test_set_prefix1(self):
         # No previous config, a prefix, expected change

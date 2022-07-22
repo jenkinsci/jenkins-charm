@@ -34,6 +34,35 @@ class PluginsTest(CharmTest):
         super(PluginsTest, self).tearDown()
         hookenv.config()["plugins-site"] = self.orig_plugins_site
 
+    def test_proxy_config_format(self, mock_restart_jenkins):
+        hookenv.config()["proxy-hostname"] = "hostname"
+        hookenv.config()["proxy-port"] = "80"
+        hookenv.config()["proxy-username"] = "username"
+        hookenv.config()["proxy-password"] = "123"
+        hookenv.config()["plugins-site"] = "https://updates.jenkins-ci.org/latest/"
+        self.plugins.__init__()
+        # Confirm our http_proxy env variable matches expectations.
+        self.assertEqual(
+            "INFO: Setting http_proxy env variable to http://username:123@hostname:80",
+            self.fakes.juju.log[-1])
+
+        # And now remove authentication creds and test again.
+        hookenv.config()["proxy-username"] = None
+        hookenv.config()["proxy-password"] = None
+        self.plugins.__init__()
+        # Confirm http_proxy now excludes auth credentials.
+        self.assertEqual(
+            "INFO: Setting http_proxy env variable to http://hostname:80",
+            self.fakes.juju.log[-1])
+        
+        # And now confirm we unset it if we have no proxy.
+        hookenv.config()["proxy-hostname"] = None
+        hookenv.config()["proxy-port"] = None
+        self.plugins.__init__()
+        self.assertEqual(
+            "INFO: Unsetting http_proxy env variable if it was set",
+            self.fakes.juju.log[-1])
+
     def test_remove_plugin(self, mock_restart_jenkins):
         """
         The given plugin file is removed from disk.

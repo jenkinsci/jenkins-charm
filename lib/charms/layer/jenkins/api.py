@@ -43,6 +43,20 @@ SET_UPDATE_CENTER_SCRIPT = """
 Jenkins.instance.pluginManager.doSiteConfigure('{url}')
 """
 
+CONFIGURE_PROXY_WITH_AUTH_SCRIPT= """
+proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}')
+proxy.save()
+"""
+
+CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT= """
+proxy = new ProxyConfiguration('{hostname}', {port})
+proxy.save()
+"""
+
+DISABLE_PROXY_SCRIPT= """
+ProxyConfiguration.getXmlFile().delete();
+"""
+
 
 class Api(object):
     """Encapsulate operations on the Jenkins master."""
@@ -87,6 +101,19 @@ class Api(object):
         if version == "null":
             return False
         return version
+
+    def configure_proxy(self, hostname=None, port=None, username=None, password=None):
+        """Configure (or disable) a system proxy."""
+        client = self._make_client()
+        if username and password and hostname and port:
+            client.run_script(CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
+                hostname=hostname, port=port, username=username,
+                password=password))
+        elif hostname and port:
+           client.run_script(CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
+                hostname=hostname, port=port))
+        else:
+            client.run_script(DISABLE_PROXY_SCRIPT)
 
     def add_node(self, host, executors, labels=()):
         """Add a slave node with the given host name."""
@@ -249,7 +276,7 @@ class Api(object):
         creds = Credentials()
         user = creds.username()
         token = creds.token()
-
+        
         if token is None:
             creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
 

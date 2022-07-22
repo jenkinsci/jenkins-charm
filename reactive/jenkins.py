@@ -166,6 +166,11 @@ def configure_admin():
         extension_relation = (RelationBase.from_state("extension.connected"))
         extension_relation.joined()
 
+    status_set("maintenance", "Configuring proxy settings")
+    configuration.configure_proxy()
+    service_restart('jenkins')
+    api.wait()
+    
     set_state("jenkins.configured.admin")
 
 # Called once we're bootstrapped, every time the configured plugins change
