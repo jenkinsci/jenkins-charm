@@ -21,7 +21,7 @@ apt = try_import("charms.apt")
 APT_DEPENDENCIES = {
     "xenial": ["daemon", "default-jre-headless"],
     "bionic": ["daemon", "openjdk-8-jre-headless"],
-    "focal": ["daemon", "openjdk-8-jre-headless"],
+    "focal": ["daemon", "openjdk-11-jre-headless"],
 }
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
 
@@ -46,7 +46,7 @@ class Packages(object):
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
-        return self._host.lsb_release()['DISTRIB_CODENAME']
+        return self._host.lsb_release()["DISTRIB_CODENAME"]
 
     def install_dependencies(self):
         """Install the deb dependencies of the Jenkins package."""
@@ -65,14 +65,14 @@ class Packages(object):
         release = config["release"]
         if release == "bundle":
             self._install_from_bundle()
-        elif release.startswith('http'):
+        elif release.startswith("http"):
             self._install_from_remote_deb(release)
         else:
             self._setup_source(release)
         self._apt.queue_install(["jenkins"])
 
     def jenkins_version(self):
-        return self._apt.get_package_version('jenkins', full_version=True)
+        return self._apt.get_package_version("jenkins", full_version=True)
 
     def _install_from_bundle(self):
         """Install Jenkins from bundled package."""
@@ -88,9 +88,10 @@ class Packages(object):
             self._jc.jenkins_repo = hookenv.config()["bundle-site"]
             download_path = os.path.join(hookenv.charm_dir(), "files")
             self._bundle_download(download_path)
-            bundle_path = os.path.join(download_path, "jenkins_%s_all.deb" % self._jc.core_version)
-        hookenv.log(
-            "Installing from bundled Jenkins package: %s:" % bundle_path)
+            bundle_path = os.path.join(
+                download_path, "jenkins_%s_all.deb" % self._jc.core_version
+            )
+        hookenv.log("Installing from bundled Jenkins package: %s:" % bundle_path)
         self._install_local_deb(bundle_path)
 
     def _install_local_deb(self, filename):
@@ -102,7 +103,7 @@ class Packages(object):
         """Install Jenkins from http(s) deb file."""
         hookenv.log("Getting remote jenkins package: %s" % url)
         tempdir = tempfile.mkdtemp()
-        target = os.path.join(tempdir, 'jenkins.deb')
+        target = os.path.join(tempdir, "jenkins.deb")
         subprocess.check_call(("wget", "-q", "-O", target, url))
         self._install_local_deb(target)
         shutil.rmtree(tempdir)
@@ -130,20 +131,18 @@ class Packages(object):
         self._apt.add_source(source, key=key)
 
     def _bundle_download(self, path=None):
-        hookenv.log(
-            "Downloading bundle from %s" % self._jc.jenkins_repo)
+        hookenv.log("Downloading bundle from %s" % self._jc.jenkins_repo)
         self._jc.get_binary_package(path)
 
     def jenkins_upgradable(self):
         """
-            Verify if there's a new version of jenkins available.
-            Note: When bundle-site is not set the return will always
-            be True.
+        Verify if there's a new version of jenkins available.
+        Note: When bundle-site is not set the return will always
+        be True.
         """
         if hookenv.config()["bundle-site"] == "":
             return True
-        if (parse_version(self._jc.core_version) >
-                parse_version(self.jenkins_version())):
+        if parse_version(self._jc.core_version) > parse_version(self.jenkins_version()):
             return True
         return False
 

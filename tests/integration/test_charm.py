@@ -6,6 +6,10 @@ import pathlib
 import pytest
 from ops.model import ActiveStatus, Application
 
+import jenkins
+
+from .types import JenkinsCredentials
+
 PLUGINS_DIR = pathlib.Path("/var/lib/jenkins/plugins")
 
 
@@ -75,18 +79,27 @@ async def test_jenkins_service_running(app: Application):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_groovy_plugin_installed(app: Application):
+async def test_groovy_installed(app_with_groovy: Application):
     """
-    arrange: given charm has been deployed and is idle
-    act: when the plguins directory is checked for the groovy plugin
-    assert: then it exists and its directory is not empty
+    arrange: given charm has been deployed with the groovy and greenballs plugins added
+    act: when the plguins directory is checked for all files
+    assert: then the .hpi files for the plugins are found.
     """
-    stat_output = await app.units[0].ssh(f"stat {PLUGINS_DIR / 'groovy'}")
+    find_output = await app_with_groovy.units[0].ssh(f"find {PLUGINS_DIR}")
 
-    assert "No such file or directory" not in stat_output, "Failed to locate plugin"
-    # Get the size of the directory
-    size_regex = r"Size: (\d+)"
-    match = re.search(size_regex, stat_output)
-    assert match is not None, "stat did not return Size"
-    size = int(match.group(1))
-    assert size > 0, "Failed to locate plugin"
+    assert "groovy.jpi" in find_output, "Failed to locate groovy"
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_jenkins_cli_whoami(
+    jenkins_cli: jenkins.Jenkins, jenkins_credentials: JenkinsCredentials
+):
+    """
+    arrange: given jenkins CLI that is connected to the running Jenkins server
+    act: when get_whoami is run
+    assert: then admin user is returned.
+    """
+    user = jenkins_cli.get_whoami()
+
+    assert user["id"] == jenkins_credentials.username
