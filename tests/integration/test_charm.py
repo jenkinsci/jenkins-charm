@@ -102,7 +102,7 @@ async def test_groovy_installed(
     """
     arrange: given charm has been deployed
     act: when the groovy plugin is added to the configuration
-    assert: then the .hpi files for the plugin is found in the plugins directory.
+    assert: then the .jpi files for the plugin is found in the plugins directory.
     """
     config = await app_restore_configuration.get_config()
     config["plugins"] = "groovy"
