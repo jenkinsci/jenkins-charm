@@ -3,13 +3,12 @@
 
 from pathlib import Path
 
-
+import jenkins
+from ops.model import Application, ActiveStatus
 import pytest_asyncio
-import yaml
 from pytest import fixture
 from pytest_operator.plugin import OpsTest
-from ops.model import Application, ActiveStatus
-import jenkins
+import yaml
 
 from .types import JenkinsCredentials
 

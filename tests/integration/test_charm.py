@@ -1,10 +1,11 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import secrets
 import pathlib
-import pytest
+import secrets
+
 from ops.model import ActiveStatus, Application
+import pytest
 
 from pytest_operator.plugin import OpsTest
 import jenkins
