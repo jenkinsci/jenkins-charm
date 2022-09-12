@@ -2,12 +2,10 @@
 # See LICENSE file for licensing details.
 
 import secrets
-import copy
 import pathlib
 import pytest
 from ops.model import ActiveStatus, Application
 
-import pytest_asyncio
 from pytest_operator.plugin import OpsTest
 import jenkins
 
@@ -188,3 +186,53 @@ async def test_tool_change(ops_test: OpsTest, app_restore_configuration: Applica
 
     dpkg_output = await app_restore_configuration.units[0].ssh("dpkg -l python3-lxml")
     assert "ii" in dpkg_output, "No tool installation found"
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_upgrade(ops_test: OpsTest, app_restore_configuration: Application):
+    """
+    arrange: given jenkins that is running
+    act: when the configuration is changed to bundle, a previous jre and version of jenkins is
+        installed and the upgrade action is run
+    assert: then the the jre version is moved back to the default version and jenkins is upgraded.
+    """
+    # Set release to bundle to be able to trigger the upgrade action
+    config = await app_restore_configuration.get_config()
+    config["release"] = "bundle"
+    config["bundle-site"] = "https://pkg.jenkins.io"
+    await app_restore_configuration.set_config(config)
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+    # Remove current Java and Jenkins version
+    await app_restore_configuration.units[0].ssh(
+        "sudo apt remove -y default-jre-headless jenkins"
+    )
+    # Install previous Java and Jenkins version
+    jenkins_version = "2.346.1"
+    await app_restore_configuration.units[0].ssh(
+        f"sudo apt-get install -y openjdk-8-jre-headless jenkins={jenkins_version}"
+    )
+    # Restart and check that jenkins is running
+    await app_restore_configuration.units[0].ssh("sudo systemctl restart jenkins")
+    systemctl_output = await app_restore_configuration.units[0].ssh(
+        "sudo systemctl status jenkins"
+    )
+    assert (
+        "active (running)" in systemctl_output
+    ), "Jenkins did not start after downgrade"
+    # Execute upgrade action
+    action = await app_restore_configuration.units[0].run_action("upgrade")
+    await action.wait()
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    # Check that jenkins is running
+    systemctl_output = await app_restore_configuration.units[0].ssh(
+        "sudo systemctl status jenkins"
+    )
+    assert "active (running)" in systemctl_output, "Jenkins did not start after upgrade"
+    # Check version of jenkins that is installed
+    jenkins_output = await app_restore_configuration.units[0].ssh("jenkins --version")
+    assert jenkins_version not in jenkins_output
+    # Check java version
+    java_output = await app_restore_configuration.units[0].ssh("java --version")
+    assert "openjdk 8." not in java_output

@@ -50,8 +50,7 @@ from charms.layer.jenkins.storage import Storage
 
 from jenkins_plugin_manager.exceptions import InvalidPluginError
 
-DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in
-                       APT_DEPENDENCIES[lsb_release()['DISTRIB_CODENAME']]]
+DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
 
 
 # XXX This is for backward compatibility, since the pre-layered
@@ -141,8 +140,9 @@ def configure_tools():
 # Called once we're bootstrapped and every time the configured user
 # changes.
 @when("jenkins.bootstrapped")
-@when_any("config.changed.username", "config.changed.password",
-          "config.changed.public-url")
+@when_any(
+    "config.changed.username", "config.changed.password", "config.changed.public-url"
+)
 def configure_admin():
     remove_state("jenkins.configured.admin")
     api = Api()
@@ -151,8 +151,8 @@ def configure_admin():
     configuration = Configuration()
     configuration.set_url()
     status_set("maintenance", "Restarting Jenkins")
-    subprocess.call(['systemctl', 'daemon-reload'])
-    service_restart('jenkins')
+    subprocess.call(["systemctl", "daemon-reload"])
+    service_restart("jenkins")
     api.wait()
 
     status_set("maintenance", "Configuring admin user")
@@ -163,15 +163,16 @@ def configure_admin():
     api.wait()  # Wait for the service to be fully up
     # Inform any extension that the username/password changed
     if get_state("extension.connected"):
-        extension_relation = (RelationBase.from_state("extension.connected"))
+        extension_relation = RelationBase.from_state("extension.connected")
         extension_relation.joined()
 
     status_set("maintenance", "Configuring proxy settings")
     configuration.configure_proxy()
-    service_restart('jenkins')
+    service_restart("jenkins")
     api.wait()
-    
+
     set_state("jenkins.configured.admin")
+
 
 # Called once we're bootstrapped, every time the configured plugins change
 @when("jenkins.configured.admin", "config.changed.plugins")
@@ -189,14 +190,20 @@ def configure_plugins():
         installed_plugins, incompatible_plugins = plugins.install(config("plugins"))
         check_incompatible_plugins(incompatible_plugins)
     except InvalidPluginError as err:
-        log("Found one or more invalid plugins, check if they exist at %s. "
-            "Error was: %s" % (config("plugins-site"), str(err)), "ERROR")
+        log(
+            "Found one or more invalid plugins, check if they exist at %s. "
+            "Error was: %s" % (config("plugins-site"), str(err)),
+            "ERROR",
+        )
         recover_jenkins(plugins)
         status_set("blocked", str(err))
         return
     except Exception as err:
-        log("Unknown error encountered while installing plugins, restoring jenkins "
-            "to previous state. Error was: %s" % str(err), "ERROR")
+        log(
+            "Unknown error encountered while installing plugins, restoring jenkins "
+            "to previous state. Error was: %s" % str(err),
+            "ERROR",
+        )
         recover_jenkins(plugins)
         # We should potentially set the charm to blocked status here and
         # `return` to avoid the charm being set to active/idle with no
@@ -206,7 +213,7 @@ def configure_plugins():
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
-# Called on every update-status but only runs after the 
+# Called on every update-status but only runs after the
 # configured interval has passed.
 @hook("update-status")
 def update_plugins():
@@ -219,15 +226,15 @@ def update_plugins():
         last_update = 0
     # Only try to update plugins when the configured interval has passed
     update_interval = time.time() - (config("plugins-auto-update-interval") * 60)
-    if (last_update < update_interval):
+    if last_update < update_interval:
         api = Api()
         api.try_update_plugins()
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
-@when("jenkins.configured.tools",
-      "jenkins.configured.admin",
-      "jenkins.configured.plugins")
+@when(
+    "jenkins.configured.tools", "jenkins.configured.admin", "jenkins.configured.plugins"
+)
 def ready():
     status_set("active", "Jenkins is running")
 
@@ -246,19 +253,19 @@ def add_slaves(master):
     api = Api()
     for slave in slaves:
         api.add_node(
-            slave["slavehost"], slave["executors"],
-            labels=slave["labels"] or ())
+            slave["slavehost"], slave["executors"], labels=slave["labels"] or ()
+        )
         secret = api.get_node_secret(slave["slavehost"])
         relation_set(secret=secret)
 
 
-@hook('jenkins-storage-attached')
+@hook("jenkins-storage-attached")
 def attach():
-    homedir = storage_get()['location']
+    homedir = storage_get()["location"]
     set_jenkins_dir(homedir)
 
 
-@hook('jenkins-storage-detaching')
+@hook("jenkins-storage-detaching")
 def detaching():
     # This hook triggers before the stop hook when removing the application
     set_jenkins_dir()
@@ -270,28 +277,26 @@ def migrate_charm_data():
     configuration.migrate()
 
 
-@when('nrpe-external-master.available')
+@when("nrpe-external-master.available")
 def update_nrpe_config(nagios):
     unit_data = unitdata.kv()
-    nagios_hostname = unit_data.get('nagios.hostname', None)
-    nagios_host_context = unit_data.get('nagios.host_context', None)
+    nagios_hostname = unit_data.get("nagios.hostname", None)
+    nagios_host_context = unit_data.get("nagios.host_context", None)
 
     # require the nrpe-external-master relation to provide the host context
-    if in_relation_hook() and relation_id().\
-            startswith('nrpe-external-master:'):
+    if in_relation_hook() and relation_id().startswith("nrpe-external-master:"):
         rel = relation_get()
-        if 'nagios_host_context' in rel:
-            nagios_host_context = rel['nagios_host_context']
-            unit_data.set('nagios.host_context', nagios_host_context)
+        if "nagios_host_context" in rel:
+            nagios_host_context = rel["nagios_host_context"]
+            unit_data.set("nagios.host_context", nagios_host_context)
 
             # We have to strip the nagios host context from the nagios hostname
             # since the nagios.add_check will put it back again...
-            nagios_hostname = rel['nagios_hostname']
-            if nagios_hostname.startswith(nagios_host_context + '-'):
-                nagios_hostname = nagios_hostname[len(nagios_host_context +
-                                                      '-'):]
+            nagios_hostname = rel["nagios_hostname"]
+            if nagios_hostname.startswith(nagios_host_context + "-"):
+                nagios_hostname = nagios_hostname[len(nagios_host_context + "-") :]
 
-            unit_data.set('nagios.hostname', nagios_hostname)
+            unit_data.set("nagios.hostname", nagios_hostname)
 
     if not nagios_hostname or not nagios_host_context:
         return
@@ -299,21 +304,29 @@ def update_nrpe_config(nagios):
     #
     # https://github.com/cmars/nrpe-external-master-interface/issues/6
 
-    status_set('maintenance', 'Updating Nagios configs')
+    status_set("maintenance", "Updating Nagios configs")
 
     creds = Credentials()
     check = [
-        '/usr/lib/nagios/plugins/check_http', '-H', 'localhost', '-p',
-        '8080', '-u', urlparse(Api().url).path, '-a',
+        "/usr/lib/nagios/plugins/check_http",
+        "-H",
+        "localhost",
+        "-p",
+        "8080",
+        "-u",
+        urlparse(Api().url).path,
+        "-a",
         "{}:{}".format(creds.username(), creds.token()),
     ]
-    nagios.add_check(check,
-                     name="check_jenkins_http",
-                     description="Verify Jenkins HTTP is up.",
-                     context=nagios_host_context,
-                     unit=nagios_hostname)
+    nagios.add_check(
+        check,
+        name="check_jenkins_http",
+        description="Verify Jenkins HTTP is up.",
+        context=nagios_host_context,
+        unit=nagios_hostname,
+    )
 
-    status_set('active', 'Ready')
+    status_set("active", "Ready")
 
 
 @when("stop")
@@ -326,7 +339,7 @@ def set_jenkins_dir(storage_dir=paths.HOME):
     status_set("maintenance", "Configuring Jenkins storage")
     jenkins_installed = get_state("apt.installed.jenkins")
     if jenkins_installed:
-        service_stop('jenkins')
+        service_stop("jenkins")
 
     if storage_dir is paths.HOME:
         log("Setting Jenkins to use local storage")
@@ -337,29 +350,33 @@ def set_jenkins_dir(storage_dir=paths.HOME):
 
     if jenkins_installed:
         status_set("maintenance", "Restarting Jenkins")
-        service_start('jenkins')
+        service_start("jenkins")
         Service().check_ready()
 
-    if get_state('jenkins.bootstrapped'):
+    if get_state("jenkins.bootstrapped"):
         # JENKINS_HOME just changed trigger bootstrap again
         remove_state("jenkins.bootstrapped")
         bootstrap_jenkins()
     else:
-        status_set('active', 'Ready')
+        status_set("active", "Ready")
 
 
 def check_incompatible_plugins(incompatible_plugins):
     if len(incompatible_plugins) != 0:
-        log("The following plugins require a higher jenkins version"
-            " and were not installed: (%s)" % " ".join(
-                incompatible_plugins))
-        status_set("blocked", "There were plugins not compatible with this"
-                   " jenkins version. Consider upgrading jenkins or removing"
-                   " the plugins.")
+        log(
+            "The following plugins require a higher jenkins version"
+            " and were not installed: (%s)" % " ".join(incompatible_plugins)
+        )
+        status_set(
+            "blocked",
+            "There were plugins not compatible with this"
+            " jenkins version. Consider upgrading jenkins or removing"
+            " the plugins.",
+        )
 
 
 def recover_jenkins(plugins):
-    """ Try to recover jenkins in case of failure.
+    """Try to recover jenkins in case of failure.
     Restore previous plugins and restart.
 
     @params plugins: An instace of Plugins().
@@ -368,7 +385,7 @@ def recover_jenkins(plugins):
     api = Api()
     plugins.restore()
     status_set("maintenance", "Restarting Jenkins")
-    service_restart('jenkins')
+    service_restart("jenkins")
     api.wait()  # Wait for the service to be fully up
     plugins.clean_backup()
 
@@ -376,15 +393,16 @@ def recover_jenkins(plugins):
 # Called when jenkins is fully bootstrapped and update-center changes
 @when("jenkins.configured.admin", "config.changed.update-center")
 def configure_update_center():
-    """ Change Update Center configuration when config has changed. """
+    """Change Update Center configuration when config has changed."""
     log("Modifying Update Center url")
     api = Api()
     api.set_update_center(config("update-center"))
 
+
 # Called when jenkins is fully bootstrapped and update-center-ca changes
 @when("jenkins.configured.admin", "config.changed.update-center-ca")
 def configure_update_center_ca():
-    """ Configure Update Center CA when config has changed. """
+    """Configure Update Center CA when config has changed."""
     log("Saving Update Center CA")
     configuration = Configuration()
     configuration.set_update_center_ca()

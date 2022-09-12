@@ -8,8 +8,7 @@ import pytest_asyncio
 import yaml
 from pytest import fixture
 from pytest_operator.plugin import OpsTest
-from ops.model import Application
-from ops.model import Application
+from ops.model import Application, ActiveStatus
 import jenkins
 
 from .types import JenkinsCredentials
@@ -37,7 +36,7 @@ async def app(ops_test: OpsTest, app_name: str):
         charm, application_name=app_name, series="focal"
     )
     # Jenkins takes a while to install, setting timeout to 30 minutes
-    await ops_test.model.wait_for_idle(timeout=30 * 60)
+    await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 
     yield application
 
@@ -63,7 +62,7 @@ async def jenkins_url(app: Application):
     return f"http://{host}:8080"
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def jenkins_cli(
     app: Application, jenkins_credentials: JenkinsCredentials, jenkins_url: str
 ):
@@ -79,8 +78,8 @@ async def jenkins_cli(
 async def app_restore_configuration(
     ops_test: OpsTest,
     app: Application,
-    jenkins_cli: jenkins.Jenkins,
     jenkins_credentials: JenkinsCredentials,
+    jenkins_url: str,
 ):
     """Restore the original configuration after the test runs."""
     original_config = {
@@ -92,8 +91,12 @@ async def app_restore_configuration(
     yield app
 
     # Revert to previous password and config
-    print(original_config)
     await app.set_config(original_config)
-    await ops_test.model.wait_for_idle()
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     # Check that connection to jenkins is working
+    jenkins_cli = jenkins.Jenkins(
+        url=jenkins_url,
+        username=jenkins_credentials.username,
+        password=jenkins_credentials.password,
+    )
     assert jenkins_cli.get_whoami()["id"] == jenkins_credentials.username

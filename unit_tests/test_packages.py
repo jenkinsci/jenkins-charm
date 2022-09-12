@@ -25,7 +25,6 @@ from charms.layer.jenkins.packages import (
 
 
 class PackagesTest(CharmTest):
-
     def setUp(self):
         super(PackagesTest, self).setUp()
         self.apt = AptStub()
@@ -34,8 +33,10 @@ class PackagesTest(CharmTest):
         # XXX Not all charm files are populated in charm_dir() by default.
         # XXX See: https://github.com/freeekanayaka/charm-test/issues/2
         keyfile = "jenkins.io.key"
-        os.symlink(os.path.join(os.getcwd(), keyfile),
-                   os.path.join(hookenv.charm_dir(), keyfile))
+        os.symlink(
+            os.path.join(os.getcwd(), keyfile),
+            os.path.join(hookenv.charm_dir(), keyfile),
+        )
 
         jenkins_cache_dir = "/var/cache/jenkins/war/WEB-INF"
         self.fakes.fs.add(paths.PLUGINS)
@@ -55,15 +56,15 @@ class PackagesTest(CharmTest):
         method.
         """
         # Our default distro version (xenial).
-        self.assertEqual(self.packages.distro_codename(), 'xenial')
+        self.assertEqual(self.packages.distro_codename(), "xenial")
         self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES['xenial'], self.apt.installs)
+        self.assertEqual(APT_DEPENDENCIES, self.apt.installs)
         # Now check with a distro of bionic.
         self.apt.installs = []
-        self.ch_host._set_distro_version('bionic')
-        self.assertEqual(self.packages.distro_codename(), 'bionic')
+        self.ch_host._set_distro_version("bionic")
+        self.assertEqual(self.packages.distro_codename(), "bionic")
         self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES['bionic'], self.apt.installs)
+        self.assertEqual(APT_DEPENDENCIES, self.apt.installs)
 
     def test_install_tools(self):
         """
@@ -91,8 +92,7 @@ class PackagesTest(CharmTest):
             with open(bundle_path, "w") as fd:
                 fd.write("")
             self.packages.install_jenkins()
-            self.assertEqual(
-                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+            self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
 
@@ -108,8 +108,8 @@ class PackagesTest(CharmTest):
             self.assertThat(path, Not(PathExists()))
             error = self.assertRaises(Exception, self.packages._install_from_bundle)
             self.assertEqual(
-                "'{}' doesn't exist. No package bundled.".format(path),
-                str(error))
+                "'{}' doesn't exist. No package bundled.".format(path), str(error)
+            )
         finally:
             hookenv.config()["release"] = orig_release
 
@@ -118,14 +118,12 @@ class PackagesTest(CharmTest):
         If the 'release' config is set to a remote URL, then Jenkins will be
         installed from the deb files pointed by that url.
         """
-        self.fakes.processes.wget.locations[
-            "http://jenkins-1.2.3.deb"] = b"data"
+        self.fakes.processes.wget.locations["http://jenkins-1.2.3.deb"] = b"data"
         orig_release = hookenv.config()["release"]
         try:
             hookenv.config()["release"] = "http://jenkins-1.2.3.deb"
             self.packages.install_jenkins()
-            self.assertEqual(
-                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+            self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
 
@@ -166,16 +164,15 @@ class PackagesTest(CharmTest):
         try:
             hookenv.config()["release"] = "foo"
             error = self.assertRaises(Exception, self.packages.install_jenkins)
-            self.assertEqual(
-                "Release 'foo' configuration not recognised", str(error))
+            self.assertEqual("Release 'foo' configuration not recognised", str(error))
         finally:
             hookenv.config()["release"] = orig_release
 
     def test_jenkins_version(self):
-        self.assertEqual(self.packages.jenkins_version(), '2.150.1')
+        self.assertEqual(self.packages.jenkins_version(), "2.150.1")
         # And now test older version.
-        self.apt._set_jenkins_version('2.128.1')
-        self.assertEqual(self.packages.jenkins_version(), '2.128.1')
+        self.apt._set_jenkins_version("2.128.1")
+        self.assertEqual(self.packages.jenkins_version(), "2.128.1")
 
     def test_jenkins_upgradable_without_bundle_site(self):
         """
@@ -183,8 +180,8 @@ class PackagesTest(CharmTest):
         isn't set.
         """
         self.assertTrue(self.packages.jenkins_upgradable())
-        self.apt._set_jenkins_version('2.128.1')
-        self.packages._jc.core_version = '2.128.1'
+        self.apt._set_jenkins_version("2.128.1")
+        self.packages._jc.core_version = "2.128.1"
         self.assertTrue(self.packages.jenkins_upgradable())
 
     @mock.patch("charms.layer.jenkins.packages.JenkinsCore")
@@ -197,10 +194,10 @@ class PackagesTest(CharmTest):
         try:
             hookenv.config()["bundle-site"] = "http://test"
             self.packages = Packages(apt=self.apt, ch_host=self.ch_host)
-            self.apt._set_jenkins_version('2.128.1')
-            self.packages._jc.core_version = '2.128.2'
+            self.apt._set_jenkins_version("2.128.1")
+            self.packages._jc.core_version = "2.128.2"
             self.assertTrue(self.packages.jenkins_upgradable())
-            self.packages._jc.core_version = '2.128.1'
+            self.packages._jc.core_version = "2.128.1"
             self.assertFalse(self.packages.jenkins_upgradable())
         finally:
             hookenv.config()["bundle-site"] = orig_bundle_site
@@ -223,8 +220,7 @@ class PackagesTest(CharmTest):
             bundle_path = os.path.join(hookenv.charm_dir(), "files")
             self.packages.install_jenkins()
             self.assertTrue(len(os.listdir(bundle_path)) > 0)
-            self.assertEqual(
-                ["install"], self.fakes.processes.dpkg.actions["jenkins"])
+            self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
         finally:
             hookenv.config()["release"] = orig_release
             hookenv.config()["bundle-site"] = orig_bundle_site
@@ -242,9 +238,12 @@ class PackagesTest(CharmTest):
             if value == "%s/*/" % paths.PLUGINS:
                 return ["/var/lib/jenkins/plugins/"]
             if value == "%s/*.jpi" % paths.PLUGINS:
-                return ["/var/lib/jenkins/plugins/test1_plugin.jpi",
-                        "/var/lib/jenkins/plugins/test2_plugin.jpi",
-                        "/var/lib/jenkins/plugins/test3_plugin.jpi"]
+                return [
+                    "/var/lib/jenkins/plugins/test1_plugin.jpi",
+                    "/var/lib/jenkins/plugins/test2_plugin.jpi",
+                    "/var/lib/jenkins/plugins/test3_plugin.jpi",
+                ]
+
         mock_os_glob.side_effect = side_effect
         os_expected_calls.append(mock.call("sudo rm -r %s/" % paths.PLUGINS))
 

@@ -18,11 +18,7 @@ from jenkins_plugin_manager.core import JenkinsCore
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
 
-APT_DEPENDENCIES = {
-    "xenial": ["daemon", "default-jre-headless"],
-    "bionic": ["daemon", "openjdk-8-jre-headless"],
-    "focal": ["daemon", "openjdk-11-jre-headless"],
-}
+APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
 
 
@@ -51,7 +47,7 @@ class Packages(object):
     def install_dependencies(self):
         """Install the deb dependencies of the Jenkins package."""
         hookenv.log("Installing jenkins dependencies and desired tools")
-        self._apt.queue_install(APT_DEPENDENCIES[self.distro_codename()])
+        self._apt.queue_install(APT_DEPENDENCIES)
 
     def install_tools(self):
         """Install the configured tools."""
