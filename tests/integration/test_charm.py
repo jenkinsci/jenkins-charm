@@ -109,7 +109,9 @@ async def test_groovy_installed(
     await app_restore_configuration.set_config(config)
     await ops_test.model.wait_for_idle()
 
-    find_output = await app_restore_configuration.units[0].ssh(f"find {PLUGINS_DIR}")
+    find_output = await app_restore_configuration.units[0].ssh(
+        "find {}".format(PLUGINS_DIR)
+    )
 
     assert "groovy.jpi" in find_output, "Failed to locate groovy"
 
@@ -157,7 +159,7 @@ async def test_jenkins_cli_whoami_url_change(
     assert: then admin user is returned.
     """
     config = await app_restore_configuration.get_config()
-    new_url = f"{jenkins_url}/jenkins-alt"
+    new_url = "{}/jenkins-alt".format(jenkins_url)
     config["public-url"] = new_url
     await app_restore_configuration.set_config(config)
     await ops_test.model.wait_for_idle()
@@ -211,7 +213,9 @@ async def test_upgrade(ops_test: OpsTest, app_restore_configuration: Application
     # Install previous Java and Jenkins version
     jenkins_version = "2.346.1"
     await app_restore_configuration.units[0].ssh(
-        f"sudo apt-get install -y openjdk-8-jre-headless jenkins={jenkins_version}"
+        "sudo apt-get install -y openjdk-8-jre-headless jenkins={}".format(
+            jenkins_version
+        )
     )
     # Restart and check that jenkins is running
     await app_restore_configuration.units[0].ssh("sudo systemctl restart jenkins")
@@ -221,6 +225,13 @@ async def test_upgrade(ops_test: OpsTest, app_restore_configuration: Application
     assert (
         "active (running)" in systemctl_output
     ), "Jenkins did not start after downgrade"
+    # Check version of jenkins that is installed
+    jenkins_output = await app_restore_configuration.units[0].ssh("jenkins --version")
+    assert jenkins_version in jenkins_output
+    # Check java version
+    java_output = await app_restore_configuration.units[0].ssh("java --version")
+    assert "openjdk 8." in java_output
+
     # Execute upgrade action
     action = await app_restore_configuration.units[0].run_action("upgrade")
     await action.wait()

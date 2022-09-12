@@ -57,8 +57,10 @@ async def jenkins_url(app: Application):
     """Get the jenkins url."""
     public_address = app.units[0].public_address
     # Calculate host ensuring IPv6 support
-    host = public_address if ":" not in public_address else f"[{public_address}]"
-    return f"http://{host}:8080"
+    host = (
+        public_address if ":" not in public_address else "[{}]".format(public_address)
+    )
+    return "http://{}:8080".format(host)
 
 
 @pytest_asyncio.fixture(scope="function")
