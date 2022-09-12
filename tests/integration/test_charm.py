@@ -1,11 +1,14 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import re
+import secrets
+import copy
 import pathlib
 import pytest
 from ops.model import ActiveStatus, Application
 
+import pytest_asyncio
+from pytest_operator.plugin import OpsTest
 import jenkins
 
 from .types import JenkinsCredentials
@@ -79,19 +82,6 @@ async def test_jenkins_service_running(app: Application):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_groovy_installed(app_with_groovy: Application):
-    """
-    arrange: given charm has been deployed with the groovy and greenballs plugins added
-    act: when the plguins directory is checked for all files
-    assert: then the .hpi files for the plugins are found.
-    """
-    find_output = await app_with_groovy.units[0].ssh(f"find {PLUGINS_DIR}")
-
-    assert "groovy.jpi" in find_output, "Failed to locate groovy"
-
-
-@pytest.mark.asyncio
-@pytest.mark.abort_on_fail
 async def test_jenkins_cli_whoami(
     jenkins_cli: jenkins.Jenkins, jenkins_credentials: JenkinsCredentials
 ):
@@ -103,3 +93,98 @@ async def test_jenkins_cli_whoami(
     user = jenkins_cli.get_whoami()
 
     assert user["id"] == jenkins_credentials.username
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_groovy_installed(
+    ops_test: OpsTest, app_restore_configuration: Application
+):
+    """
+    arrange: given charm has been deployed
+    act: when the groovy plugin is added to the configuration
+    assert: then the .hpi files for the plugin is found in the plugins directory.
+    """
+    config = await app_restore_configuration.get_config()
+    config["plugins"] = "groovy"
+    await app_restore_configuration.set_config(config)
+    await ops_test.model.wait_for_idle()
+
+    find_output = await app_restore_configuration.units[0].ssh(f"find {PLUGINS_DIR}")
+
+    assert "groovy.jpi" in find_output, "Failed to locate groovy"
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_jenkins_cli_whoami_password_change(
+    ops_test: OpsTest,
+    app_restore_configuration: Application,
+    jenkins_credentials: JenkinsCredentials,
+    jenkins_url: str,
+):
+    """
+    arrange: given jenkins that is running
+    act: when the password is changed via configuration and get_whoami is run with the new password
+    assert: then admin user is returned.
+    """
+    config = await app_restore_configuration.get_config()
+    new_password = secrets.token_urlsafe()
+    config["password"] = new_password
+    await app_restore_configuration.set_config(config)
+    await ops_test.model.wait_for_idle()
+    jenkins_cli = jenkins.Jenkins(
+        url=jenkins_url,
+        username=jenkins_credentials.username,
+        password=new_password,
+    )
+
+    user = jenkins_cli.get_whoami()
+
+    assert user["id"] == jenkins_credentials.username
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_jenkins_cli_whoami_url_change(
+    ops_test: OpsTest,
+    app_restore_configuration: Application,
+    jenkins_credentials: JenkinsCredentials,
+    jenkins_url: str,
+):
+    """
+    arrange: given jenkins that is running
+    act: when the url is changed via configuration and get_whoami is run with the new url
+    assert: then admin user is returned.
+    """
+    config = await app_restore_configuration.get_config()
+    new_url = f"{jenkins_url}/jenkins-alt"
+    config["public-url"] = new_url
+    await app_restore_configuration.set_config(config)
+    await ops_test.model.wait_for_idle()
+    jenkins_cli = jenkins.Jenkins(
+        url=new_url,
+        username=jenkins_credentials.username,
+        password=jenkins_credentials.password,
+    )
+
+    user = jenkins_cli.get_whoami()
+
+    assert user["id"] == jenkins_credentials.username
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_tool_change(ops_test: OpsTest, app_restore_configuration: Application):
+    """
+    arrange: given jenkins that is running
+    act: when a new tool is added to the configuration
+    assert: then the tool is installed.
+    """
+    config = await app_restore_configuration.get_config()
+    config["tools"] = "python3-lxml"
+    await app_restore_configuration.set_config(config)
+    await ops_test.model.wait_for_idle()
+
+    dpkg_output = await app_restore_configuration.units[0].ssh("dpkg -l python3-lxml")
+    assert "ii" in dpkg_output, "No tool installation found"

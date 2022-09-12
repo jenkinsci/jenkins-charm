@@ -1,11 +1,9 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import copy
 from pathlib import Path
 
 
-import pytest
 import pytest_asyncio
 import yaml
 from pytest import fixture
@@ -45,22 +43,6 @@ async def app(ops_test: OpsTest, app_name: str):
 
 
 @pytest_asyncio.fixture(scope="module")
-async def app_with_groovy(ops_test: OpsTest, app: Application):
-    """Add a groovy plugins to jenkins."""
-    original_config = await app.get_config()
-    new_config = copy.deepcopy(original_config)
-    new_config["plugins"] = "groovy"
-    await app.set_config(new_config)
-    await ops_test.model.wait_for_idle()
-
-    yield app
-
-    # Revert to previous config
-    await app.set_config(original_config)
-    await ops_test.model.wait_for_idle()
-
-
-@pytest_asyncio.fixture(scope="module")
 async def jenkins_credentials(app: Application):
     """Get the jenkins credentials."""
     admin_credentials_action = await app.units[0].run_action("get-admin-credentials")
@@ -73,11 +55,45 @@ async def jenkins_credentials(app: Application):
 
 
 @pytest_asyncio.fixture(scope="module")
-async def jenkins_cli(app: Application, jenkins_credentials: JenkinsCredentials):
+async def jenkins_url(app: Application):
+    """Get the jenkins url."""
+    public_address = app.units[0].public_address
+    # Calculate host ensuring IPv6 support
+    host = public_address if ":" not in public_address else f"[{public_address}]"
+    return f"http://{host}:8080"
+
+
+@pytest_asyncio.fixture(scope="module")
+async def jenkins_cli(
+    app: Application, jenkins_credentials: JenkinsCredentials, jenkins_url: str
+):
     """Create a CLI to jenkins."""
-    url = f"http://{app.units[0].public_address}:8080"
     return jenkins.Jenkins(
-        url=url,
+        url=jenkins_url,
         username=jenkins_credentials.username,
         password=jenkins_credentials.password,
     )
+
+
+@pytest_asyncio.fixture(scope="function")
+async def app_restore_configuration(
+    ops_test: OpsTest,
+    app: Application,
+    jenkins_cli: jenkins.Jenkins,
+    jenkins_credentials: JenkinsCredentials,
+):
+    """Restore the original configuration after the test runs."""
+    original_config = {
+        key: str(value["default"]) for key, value in (await app.get_config()).items()
+    }
+    original_config["username"] = jenkins_credentials.username
+    original_config["password"] = jenkins_credentials.password
+
+    yield app
+
+    # Revert to previous password and config
+    print(original_config)
+    await app.set_config(original_config)
+    await ops_test.model.wait_for_idle()
+    # Check that connection to jenkins is working
+    assert jenkins_cli.get_whoami()["id"] == jenkins_credentials.username
