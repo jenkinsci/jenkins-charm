@@ -84,9 +84,7 @@ class Packages(object):
             self._jc.jenkins_repo = hookenv.config()["bundle-site"]
             download_path = os.path.join(hookenv.charm_dir(), "files")
             self._bundle_download(download_path)
-            bundle_path = os.path.join(
-                download_path, "jenkins_%s_all.deb" % self._jc.core_version
-            )
+            bundle_path = os.path.join(download_path, "jenkins_%s_all.deb" % self._jc.core_version)
         hookenv.log("Installing from bundled Jenkins package: %s:" % bundle_path)
         self._install_local_deb(bundle_path)
 

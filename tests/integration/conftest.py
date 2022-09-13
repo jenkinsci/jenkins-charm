@@ -31,9 +31,7 @@ async def app(ops_test: OpsTest, app_name: str):
     Builds the charm and deploys the charm.
     """
     charm = await ops_test.build_charm(".")
-    application = await ops_test.model.deploy(
-        charm, application_name=app_name, series="focal"
-    )
+    application = await ops_test.model.deploy(charm, application_name=app_name, series="focal")
     # Jenkins takes a while to install, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 
@@ -57,16 +55,12 @@ async def jenkins_url(app: Application):
     """Get the jenkins url."""
     public_address = app.units[0].public_address
     # Calculate host ensuring IPv6 support
-    host = (
-        public_address if ":" not in public_address else "[{}]".format(public_address)
-    )
+    host = public_address if ":" not in public_address else "[{}]".format(public_address)
     return "http://{}:8080".format(host)
 
 
 @pytest_asyncio.fixture(scope="function")
-async def jenkins_cli(
-    app: Application, jenkins_credentials: JenkinsCredentials, jenkins_url: str
-):
+async def jenkins_cli(app: Application, jenkins_credentials: JenkinsCredentials, jenkins_url: str):
     """Create a CLI to jenkins."""
     return jenkins.Jenkins(
         url=jenkins_url,
