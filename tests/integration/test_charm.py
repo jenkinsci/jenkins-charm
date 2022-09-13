@@ -1,9 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
 import pathlib
-import re
 import secrets
 
 from ops.model import ActiveStatus, Application
