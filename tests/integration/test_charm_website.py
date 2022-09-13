@@ -10,17 +10,16 @@ from pytest_operator.plugin import OpsTest
 from ops.model import Application, ActiveStatus, Relation
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="module")
 async def haproxy(app_name: str, ops_test: OpsTest, app: Application):
     """Add relationship with haproxy to app."""
-    haproxy_app: Application = await ops_test.model.deploy("haproxy")
+    haproxy_app: Application = await ops_test.model.deploy("haproxy", series="focal")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     relation: Relation = await ops_test.model.add_relation(
         "{}:website".format(app_name), "haproxy:reverseproxy"
     )
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     await haproxy_app.expose()
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield haproxy_app
 
@@ -37,10 +36,8 @@ async def test_jenkins_website_behind_proxy(app: Application, haproxy: Applicati
     act: when the proxy endpoint is queried
     assert: then it returns 403.
     """
-    public_address = app.units[0].public_address
-    host = (
-        public_address if ":" not in public_address else "[{}]".format(public_address)
-    )
+    public_address = haproxy.units[0].public_address
+    host = public_address if ":" not in public_address else "[{}]".format(public_address)
     url = "http://{}/".format(host)
     response = requests.get(url)
 

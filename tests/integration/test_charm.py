@@ -1,7 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import pathlib
 import secrets
 
 from ops.model import ActiveStatus, Application
@@ -11,8 +10,7 @@ from pytest_operator.plugin import OpsTest
 import jenkins
 
 from .types import JenkinsCredentials
-
-PLUGINS_DIR = pathlib.Path("/var/lib/jenkins/plugins")
+from .config import PLUGINS_DIR
 
 
 @pytest.mark.asyncio
@@ -103,14 +101,43 @@ async def test_groovy_installed(ops_test: OpsTest, app_restore_configuration: Ap
     act: when the groovy plugin is added to the configuration
     assert: then the .jpi files for the plugin is found in the plugins directory.
     """
-    config = await app_restore_configuration.get_config()
-    config["plugins"] = "groovy"
-    await app_restore_configuration.set_config(config)
-    await ops_test.model.wait_for_idle()
+    await app_restore_configuration.set_config({"plugins": "groovy"})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     find_output = await app_restore_configuration.units[0].ssh("find {}".format(PLUGINS_DIR))
 
     assert "groovy.jpi" in find_output, "Failed to locate groovy"
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_plugins_cleaned(ops_test: OpsTest, app_restore_configuration: Application):
+    """
+    arrange: given charm has been deployed
+    act: when the groovy plugin is added to the configuration and then removed
+        remove-unlisted-plugins set
+    assert: then the .jpi files for the plugin is found on adding it initially and then not found
+        after it has been removed in the plugins directory.
+    """
+    # Add groovy initially
+    await app_restore_configuration.set_config({"plugins": "groovy"})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    find_command = "find {}".format(PLUGINS_DIR)
+    find_output = await app_restore_configuration.units[0].ssh(find_command)
+
+    groovy_plugin_file = "groovy.jpi"
+    assert groovy_plugin_file in find_output, "Failed to locate groovy after install"
+
+    # Remove groovy and set remove-unlisted-plugins
+    await app_restore_configuration.set_config({"plugins": "", "remove-unlisted-plugins": "yes"})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    find_output = await app_restore_configuration.units[0].ssh(find_command)
+
+    assert (
+        groovy_plugin_file not in find_output
+    ), "groovy still present after removed from configuration and remove-unlisted-plugins set"
 
 
 @pytest.mark.asyncio
@@ -126,11 +153,9 @@ async def test_jenkins_cli_whoami_password_change(
     act: when the password is changed via configuration and get_whoami is run with the new password
     assert: then admin user is returned.
     """
-    config = await app_restore_configuration.get_config()
     new_password = secrets.token_urlsafe()
-    config["password"] = new_password
-    await app_restore_configuration.set_config(config)
-    await ops_test.model.wait_for_idle()
+    await app_restore_configuration.set_config({"password": new_password})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     jenkins_cli = jenkins.Jenkins(
         url=jenkins_url,
         username=jenkins_credentials.username,
@@ -155,11 +180,9 @@ async def test_jenkins_cli_whoami_url_change(
     act: when the url is changed via configuration and get_whoami is run with the new url
     assert: then admin user is returned.
     """
-    config = await app_restore_configuration.get_config()
     new_url = "{}/jenkins-alt".format(jenkins_url)
-    config["public-url"] = new_url
-    await app_restore_configuration.set_config(config)
-    await ops_test.model.wait_for_idle()
+    await app_restore_configuration.set_config({"public-url": new_url})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     jenkins_cli = jenkins.Jenkins(
         url=new_url,
         username=jenkins_credentials.username,
@@ -179,10 +202,8 @@ async def test_tool_change(ops_test: OpsTest, app_restore_configuration: Applica
     act: when a new tool is added to the configuration
     assert: then the tool is installed.
     """
-    config = await app_restore_configuration.get_config()
-    config["tools"] = "python3-lxml"
-    await app_restore_configuration.set_config(config)
-    await ops_test.model.wait_for_idle()
+    await app_restore_configuration.set_config({"tools": "python3-lxml"})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     dpkg_output = await app_restore_configuration.units[0].ssh("dpkg -l python3-lxml")
     # Check for ii in the output which indicates that the queried package is installed
