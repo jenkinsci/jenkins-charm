@@ -140,9 +140,7 @@ def configure_tools():
 # Called once we're bootstrapped and every time the configured user
 # changes.
 @when("jenkins.bootstrapped")
-@when_any(
-    "config.changed.username", "config.changed.password", "config.changed.public-url"
-)
+@when_any("config.changed.username", "config.changed.password", "config.changed.public-url")
 def configure_admin():
     remove_state("jenkins.configured.admin")
     api = Api()
@@ -232,9 +230,7 @@ def update_plugins():
     unitdata.kv().set("jenkins.plugins.last_update", time.time())
 
 
-@when(
-    "jenkins.configured.tools", "jenkins.configured.admin", "jenkins.configured.plugins"
-)
+@when("jenkins.configured.tools", "jenkins.configured.admin", "jenkins.configured.plugins")
 def ready():
     status_set("active", "Jenkins is running")
 
@@ -252,9 +248,7 @@ def add_slaves(master):
         return
     api = Api()
     for slave in slaves:
-        api.add_node(
-            slave["slavehost"], slave["executors"], labels=slave["labels"] or ()
-        )
+        api.add_node(slave["slavehost"], slave["executors"], labels=slave["labels"] or ())
         secret = api.get_node_secret(slave["slavehost"])
         relation_set(secret=secret)
 

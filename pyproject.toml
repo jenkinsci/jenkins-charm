@@ -1,0 +1,4 @@
+# Formatting tools configuration
+[tool.black]
+line-length = 99
+target-version = ["py38"]
