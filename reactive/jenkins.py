@@ -105,9 +105,8 @@ def upgrade_jenkins():
             packages.install_jenkins()
             api = Api()
             api.wait()  # Wait for the upgrade to finish
-            packages.clean_old_plugins()
             unitdata.kv().set("jenkins.plugins.last_update", 0)
-            update_plugins()
+            api.try_update_plugins()
         else:
             log("No newer jenkins package is available")
 
