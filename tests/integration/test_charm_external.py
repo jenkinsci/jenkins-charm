@@ -11,7 +11,7 @@ from ops.model import Application, ActiveStatus
 from .config import PLUGINS_DIR
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def ci_configuration(
     app_name: str, ops_test: OpsTest, app_restore_configuration: Application
 ):

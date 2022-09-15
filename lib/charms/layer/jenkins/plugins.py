@@ -1,3 +1,4 @@
+import itertools
 import glob
 import os
 import shutil
@@ -11,10 +12,16 @@ from charms.layer.jenkins.api import Api
 from jenkins_plugin_manager.plugin import UpdateCenter
 
 
+# The plugins that are required for Jenkins to work
+REQUIRED_PLUGINS = ["instance-identity"]
+
+
 class PluginSiteError(Exception):
     def __init__(self):
-        self.message = ("The configured plugin-site doesn't provide an "
-                        "update-center.json file or is not acessible.")
+        self.message = (
+            "The configured plugin-site doesn't provide an "
+            "update-center.json file or is not acessible."
+        )
 
 
 class Plugins(object):
@@ -29,16 +36,10 @@ class Plugins(object):
         if proxy_hostname and proxy_port:
             if proxy_username and proxy_password:
                 proxy_address = "http://{}:{}@{}:{}".format(
-                    proxy_username,
-                    proxy_password,
-                    proxy_hostname,
-                    proxy_port
+                    proxy_username, proxy_password, proxy_hostname, proxy_port
                 )
             else:
-                proxy_address = "http://{}:{}".format(
-                    proxy_hostname,
-                    proxy_port
-                )
+                proxy_address = "http://{}:{}".format(proxy_hostname, proxy_port)
         else:
             proxy_address = None
 
@@ -68,17 +69,15 @@ class Plugins(object):
         @params plugins: A whitespace-separated list of plugins to install.
         """
         hookenv.log("Starting plugins installation process")
-        plugins = plugins or ""
-        plugins = plugins.split()
+        plugins = itertools.chain(REQUIRED_PLUGINS, (plugins or "").split())
         plugins, incompatible_plugins = self._get_plugins_to_install(plugins)
         if len(incompatible_plugins) != 0:
-            hookenv.log("The following plugins require a higher jenkins version"
-                        " and were not installed: (%s)" % " ".join(
-                            incompatible_plugins))
-        configured_plugins = self._get_plugins_to_install(
-            hookenv.config()["plugins"].split())
-        host.mkdir(
-            paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
+            hookenv.log(
+                "The following plugins require a higher jenkins version"
+                " and were not installed: (%s)" % " ".join(incompatible_plugins)
+            )
+        configured_plugins = self._get_plugins_to_install(hookenv.config()["plugins"].split())
+        host.mkdir(paths.PLUGINS, owner="jenkins", group="jenkins", perms=0o0755)
         existing_plugins = set(glob.glob("%s/*.[h|j]pi" % paths.PLUGINS))
         try:
             self._install_plugins(plugins)
@@ -96,7 +95,8 @@ class Plugins(object):
                 hookenv.log(
                     "Unlisted plugins: (%s) Not removed. Set "
                     "remove-unlisted-plugins to 'yes' to clear them "
-                    "away." % ", ".join(unlisted_plugins))
+                    "away." % ", ".join(unlisted_plugins)
+                )
 
         # Restarting jenkins to pickup configuration changes
         Api().restart()
@@ -129,10 +129,8 @@ class Plugins(object):
         latest_version = self._get_latest_version(plugin)
         if not plugin_version or (update and plugin_version != latest_version):
             hookenv.log("Installing plugin %s-%s" % (plugin, latest_version))
-            return self.update_center.download_plugin(
-                    plugin, paths.PLUGINS, with_version=False)
-        hookenv.log("Plugin %s-%s already installed" % (
-            plugin, plugin_version))
+            return self.update_center.download_plugin(plugin, paths.PLUGINS, with_version=False)
+        hookenv.log("Plugin %s-%s already installed" % (plugin, plugin_version))
 
     def _remove_plugins(self, paths):
         """Remove the plugins at the given paths."""
@@ -174,17 +172,14 @@ class Plugins(object):
         jenkins_version = Api().version()
         for plugin in plugins:
             required_version = self._get_required_jenkins(plugin)
-            if not self.update_center._check_min_core_version(
-                                    jenkins_version, required_version):
+            if not self.update_center._check_min_core_version(jenkins_version, required_version):
                 excluded_plugins.append(plugin)
-        plugins = [
-            plugin for plugin in plugins if plugin not in excluded_plugins]
+        plugins = [plugin for plugin in plugins if plugin not in excluded_plugins]
 
         return plugins, excluded_plugins
 
     def backup(self):
-        """Backup plugins.
-        """
+        """Backup plugins."""
         hookenv.log("Backing up plugins.")
         copy_tree(paths.PLUGINS, paths.PLUGINS_BACKUP)
 
