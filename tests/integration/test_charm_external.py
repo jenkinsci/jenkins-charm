@@ -6,7 +6,7 @@
 import pytest
 import pytest_asyncio
 from pytest_operator.plugin import OpsTest
-from ops.model import Application, ActiveStatus, Relation
+from ops.model import Application, ActiveStatus
 
 from .config import PLUGINS_DIR
 
@@ -31,16 +31,12 @@ async def ci_configuration(
         config={"config-repo": "lp:~free.ekanayaka/junk/ci-configurator-test-repo"},
     )
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
-    relation: Relation = await ops_test.model.add_relation(
+    await ops_test.model.add_relation(
         "{}:extension".format(app_name), "ci-configurator:jenkins-configurator"
     )
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield ci_configurator_app
-
-    await relation.destroy()
-    await ci_configurator_app.remove()
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
 
 @pytest.mark.asyncio

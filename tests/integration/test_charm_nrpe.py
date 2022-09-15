@@ -6,8 +6,7 @@
 import pytest
 import pytest_asyncio
 from pytest_operator.plugin import OpsTest
-from ops.model import Application, ActiveStatus, Relation
-import jenkins
+from ops.model import Application, ActiveStatus
 
 
 NRPE_CHECK_HTTP_FILE = "/usr/lib/nagios/plugins/check_http"
@@ -22,16 +21,12 @@ async def nrpe(app_name: str, ops_test: OpsTest, app: Application):
     """Add relationship with nrpe to app."""
     nrpe_app: Application = await ops_test.model.deploy("nrpe", series="focal")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
-    relation: Relation = await ops_test.model.add_relation(
+    await ops_test.model.add_relation(
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield nrpe_app
-
-    await relation.destroy()
-    await nrpe_app.remove()
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
 
 @pytest.mark.asyncio

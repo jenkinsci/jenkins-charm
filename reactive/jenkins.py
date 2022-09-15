@@ -101,6 +101,7 @@ def upgrade_jenkins():
         packages = Packages()
         if packages.jenkins_upgradable():
             status_set("maintenance", "Upgrading Jenkins")
+            packages.install_dependencies()
             packages.install_jenkins()
             api = Api()
             api.wait()  # Wait for the upgrade to finish
