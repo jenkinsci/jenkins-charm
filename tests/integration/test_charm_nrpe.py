@@ -10,20 +10,22 @@ from ops.model import Application, ActiveStatus
 
 
 NRPE_CHECK_HTTP_FILE = "/usr/lib/nagios/plugins/check_http"
-NRPE_CONFIG_FILE = "/etc/nagios/nrpe.d/check_jenkins_http.cfg"
-NAGIOS_CMD = "sudo -u nagios $(grep -e '{}' {} | cut -d'=' -f2-)".format(
+NRPE_CONFIG_FILE = "/etc/nagios/nrpe.d/check_check_jenkins_http.cfg"
+NAGIOS_CMD = "sudo $(grep -e '{}' {} | cut -d'=' -f2-)".format(
     NRPE_CHECK_HTTP_FILE, NRPE_CONFIG_FILE
 )
+NAGIOS_CMD_SUCCESS = "HTTP OK"
 
 
 @pytest_asyncio.fixture(scope="module")
 async def nrpe(app_name: str, ops_test: OpsTest, app: Application):
     """Add relationship with nrpe to app."""
     nrpe_app: Application = await ops_test.model.deploy("nrpe", series="focal")
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     await ops_test.model.add_relation(
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
+    nrpe_app: Application = await ops_test.model.deploy("nagios", series="bionic")
+    await ops_test.model.add_relation("nrpe:monitors", "nagios:monitors")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield nrpe_app
@@ -39,7 +41,7 @@ async def test_nrpe_relation(app: Application, nrpe: Application):
     """
     nagios_output = await app.units[0].ssh(NAGIOS_CMD)
 
-    assert "PLACEHOLDER" in nagios_output, "ngre not installed"
+    assert NAGIOS_CMD_SUCCESS in nagios_output, "ngre not installed"
 
 
 @pytest.mark.asyncio
@@ -58,4 +60,4 @@ async def test_nrpe_relation_url_change(
 
     nagios_output = await app_restore_configuration.units[0].ssh(NAGIOS_CMD)
 
-    assert "PLACEHOLDER" in nagios_output, "ngre not working after Jenkins URL change"
+    assert NAGIOS_CMD_SUCCESS in nagios_output, "ngre not working after Jenkins URL change"
