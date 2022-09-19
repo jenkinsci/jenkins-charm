@@ -30,9 +30,12 @@ async def test_jenkins_website_behind_proxy(app: Application, haproxy: Applicati
     act: when the proxy endpoint is queried
     assert: then it returns 403.
     """
-    public_address = haproxy.units[0].public_address
-    host = public_address if ":" not in public_address else "[{}]".format(public_address)
-    url = "http://{}/".format(host)
+    # Can't use haproxy.units[0].public_address because haproxy only listens on the IPv4 address
+    # and Juju might prefer using the IPv6 address
+    hostname = await haproxy.units[0].ssh(
+        "python3 -c 'import socket; print(socket.gethostbyname(socket.gethostname()))'"
+    )
+    url = "http://{}/".format(hostname.strip())
     response = requests.get(url)
 
     assert response.status_code == 403
