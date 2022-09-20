@@ -106,7 +106,10 @@ options:
     default: 48484
     description: |
       TCP port on which to listen for incoming connections from slaves.
-      Set to -1 for a random port, or to 0 to disable JNLP entirely.
+      Set to 0 for a random port, or to -1 to disable JNLP entirely.
+
+      (In Jenkins 1 it was the other way around, -1 for random port and 0 to
+      disable)
   update-center:
     type: string
     default: ""

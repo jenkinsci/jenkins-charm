@@ -16,21 +16,37 @@ import jenkins
     scope="module",
     params=[
         pytest.param(None, id="latest LTS jenkins version"),
-        pytest.param("2.361", id="jenkins version 2.361"),
-        pytest.param("2.346", id="jenkins version 2.346"),
-        pytest.param("2.332", id="jenkins version 2.332"),
+        pytest.param("2.361.1", id="jenkins version 2.361"),
+        pytest.param("2.346.3", id="jenkins version 2.346"),
+        pytest.param("2.332.4", id="jenkins version 2.332"),
+        pytest.param("2.277.4", id="jenkins version 2.277"),
+        pytest.param("2.263.4", id="jenkins version 2.263"),
+        pytest.param("2.249.3", id="jenkins version 2.249"),
+        pytest.param("2.235.5", id="jenkins version 2.235"),
+        pytest.param("2.222.4", id="jenkins version 2.222"),
+        pytest.param("2.176.4", id="jenkins version 2.176"),
+        pytest.param("2.150.3", id="jenkins version 2.150"),
     ],
 )
-async def app_jenkins_version(app: Application, request: pytest.FixtureRequest):
+async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pytest.FixtureRequest):
     """Install a range of jenkins versions to run the tests against."""
     jenkins_version = request.param
     if jenkins_version:
-        await app.units[0].ssh(
-            "sudo apt-get install -y --allow-downgrades jenkins={}.*".format(jenkins_version)
+        # Install dependencies
+        action = await app.units[0].run_action(
+            "install-dependencies", jenkins_version=jenkins_version
         )
-        jenkins_output = await app.units[0].ssh("jenkins --version")
-        assert jenkins_version in jenkins_output
+        await action.wait()
+        await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
+        await app.units[0].ssh(
+            "sudo apt-get install -y --allow-downgrades jenkins={}".format(jenkins_version)
+        )
+
+        apt_cache_output = await app.units[0].ssh("apt-cache policy jenkins")
+        assert "Installed: {}".format(jenkins_version) in apt_cache_output
+
+        # Restart Jenkins
         await app.units[0].ssh("sudo systemctl restart jenkins")
 
     yield app

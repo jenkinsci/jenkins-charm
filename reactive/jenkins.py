@@ -14,7 +14,6 @@ from charmhelpers.core.hookenv import (
     storage_get,
 )
 from charmhelpers.core.host import (
-    lsb_release,
     service_restart,
     service_start,
     service_stop,
@@ -35,7 +34,11 @@ from charms.layer.execd import execd_preinstall
 from charms.apt import status_set
 
 from charms.layer.jenkins import paths
-from charms.layer.jenkins.packages import APT_DEPENDENCIES, Packages
+from charms.layer.jenkins.packages import (
+    CONSTANT_APT_DEPENDENCIES,
+    POSSIBLE_JRE_DEPENDENCIES,
+    Packages,
+)
 from charms.layer.jenkins.configuration import (
     PORT,
     Configuration,
@@ -50,7 +53,8 @@ from charms.layer.jenkins.storage import Storage
 
 from jenkins_plugin_manager.exceptions import InvalidPluginError
 
-DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in APT_DEPENDENCIES]
+DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in CONSTANT_APT_DEPENDENCIES]
+JRE_DEPENDENCIES_EVENTS = ["apt.installed.%s" % dep for dep in POSSIBLE_JRE_DEPENDENCIES]
 
 
 # XXX This is for backward compatibility, since the pre-layered
@@ -63,9 +67,9 @@ def exec_install_hooks():
     execd_preinstall("hooks/install.d")
 
 
-def install_dependencies():
+def install_dependencies(jenkins_version=None):
     packages = Packages()
-    packages.install_dependencies()
+    packages.install_dependencies(jenkins_version=jenkins_version)
 
 
 def plugins_layer():
@@ -81,12 +85,15 @@ def plugins_layer():
 # at install time).
 for event in DEPENDENCIES_EVENTS:
     install_dependencies = when_not(event)(install_dependencies)
+# Only run if none of the posssible JRE versions are installed
+install_dependencies = when_not(*JRE_DEPENDENCIES_EVENTS)(install_dependencies)
 
 
 # When all dependencies have been installed, we install the jenkins package
 # from the desired source.
 @when_not("apt.installed.jenkins")
 @when(*DEPENDENCIES_EVENTS)
+@when_any(*JRE_DEPENDENCIES_EVENTS)
 def install_jenkins():
     status_set("maintenance", "Installing Jenkins")
     packages = Packages()

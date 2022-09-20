@@ -2,6 +2,12 @@ restart:
   description: Wait for all jobs to be completed and restart jenkins.
 upgrade:
   description: Upgrade jenkins package when using bundle.
+install-dependencies:
+  description: Install Jenkins dependencies for the currently installed Jenkins version.
+  params:
+    jenkins_version:
+      type: string
+      description: The version of Jenkins to install dependencies for.
 quiet-down:
   description: Put Jenkins in a Quiet mode. In that mode Jenkins doesn’t start any build.
 cancel-quiet-down:

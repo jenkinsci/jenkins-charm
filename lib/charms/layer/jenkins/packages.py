@@ -1,3 +1,4 @@
+import itertools
 import os
 import os.path
 import re
@@ -18,7 +19,16 @@ from jenkins_plugin_manager.core import JenkinsCore
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
 
-APT_DEPENDENCIES = ["daemon", "default-jre-headless"]
+POSSIBLE_JRE_DEPENDENCIES = {
+    "default-jre-headless",
+    "openjdk-8-jre-headless",
+    "openjdk-11-jre-headless",
+}
+APT_DEPENDENCIES = {
+    "jenkins-2.164-and-later": ["daemon", "openjdk-11-jre-headless"],
+    "pre-jenkins-2.164": ["daemon", "openjdk-8-jre-headless"],
+}
+CONSTANT_APT_DEPENDENCIES = ["daemon"]
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
 
 
@@ -44,10 +54,53 @@ class Packages(object):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
         return self._host.lsb_release()["DISTRIB_CODENAME"]
 
-    def install_dependencies(self):
-        """Install the deb dependencies of the Jenkins package."""
+    def apt_dependencies(self, jenkins_version=None):
+        """Get the apt dependencies based on Jenkins version.
+
+        Assumes that, if Jenkins is not installed, that the latest LTS version of Jenkins will be
+        installed and returns the dependencies for that version.
+
+        Args:
+            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on
+                installed Jenkins version if it is None.
+
+        Returns:
+            The dependencies of Jenkins to be installed based on the version of Jenkins installed.
+
+        """
+        if jenkins_version is None:
+            try:
+                jenkins_version = self.jenkins_version()
+            except subprocess.CalledProcessError:
+                # No Jenkins version installed
+                pass
+        if jenkins_version is not None and parse_version(jenkins_version) < parse_version(
+            "2.164.1"
+        ):
+            return APT_DEPENDENCIES["pre-jenkins-2.164"]
+        return APT_DEPENDENCIES["jenkins-2.164-and-later"]
+
+    def install_dependencies(self, jenkins_version=None):
+        """Install the deb dependencies of the Jenkins package.
+
+        Removes any dependencies that are no longer needed based on the version of Jenkins to be
+        installed and then installs dependencies based on Jenkins version installed/ to be
+        installed (assumed to be the latest LTS version if Jenkins is not installed yet).
+
+        Args:
+            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on
+                installed Jenkins version if it is None.
+
+        """
         hookenv.log("Installing jenkins dependencies and desired tools")
-        self._apt.queue_install(APT_DEPENDENCIES)
+
+        # Remove any previous dependencies that are no longer needed
+        required_apt_dependencies = set(self.apt_dependencies(jenkins_version=jenkins_version))
+        self._apt.purge(POSSIBLE_JRE_DEPENDENCIES - required_apt_dependencies)
+
+        # Conditionally install depedencies based on Jenkins version
+        self._apt.queue_install(required_apt_dependencies)
+        self._apt.install_queued()
 
     def install_tools(self):
         """Install the configured tools."""
