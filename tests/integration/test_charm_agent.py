@@ -5,11 +5,11 @@
 
 import asyncio
 
+import jenkins
+from ops.model import Application, ActiveStatus
 import pytest
 import pytest_asyncio
 from pytest_operator.plugin import OpsTest
-from ops.model import Application, ActiveStatus
-import jenkins
 
 
 async def install_jenkins_version(
@@ -43,6 +43,8 @@ async def install_jenkins_version(
     scope="module",
     params=[
         pytest.param(None, id="latest LTS jenkins version"),
+        # The following are the versions of Jenkins running in production in Canonical as of
+        # 2022-09-21
         pytest.param("2.361.1", id="jenkins version 2.361"),
         pytest.param("2.346.3", id="jenkins version 2.346"),
         pytest.param("2.332.4", id="jenkins version 2.332"),
@@ -64,11 +66,14 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
     yield app
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def agent(ops_test: OpsTest):
     """Deploy machine agent and destroy it after tests complete."""
     agent: Application = await ops_test.model.deploy(
-        "/home/jdkandersson/src/jenkins-agent-charm/jenkins-slave_ubuntu-16.04-amd64_ubuntu-18.04-amd64_ubuntu-20.04-amd64.charm",
+        # Currently hardcoded due to the charm on charmhub not currently working, needs to be
+        # updated once a working version of the agent machine charm is deployed
+        "/home/jdkandersson/src/jenkins-agent-charm/"
+        "jenkins-slave_ubuntu-16.04-amd64_ubuntu-18.04-amd64_ubuntu-20.04-amd64.charm",
         series="focal",
     )
     # Don't wait for active because the agent will start blocked
