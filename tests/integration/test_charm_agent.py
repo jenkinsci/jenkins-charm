@@ -12,6 +12,33 @@ from ops.model import Application, ActiveStatus
 import jenkins
 
 
+async def install_jenkins_version(
+    ops_test: OpsTest, app: Application, jenkins_version: str
+) -> None:
+    """Install a specific version of Jenkins into the charm.
+
+    Args:
+        ops_test: pytest operator reference to the test environment.
+        app: The charm running Jenkins.
+        jenkins_version: The version of Jenkins to install in the charm.
+
+    """
+    # Install dependencies
+    action = await app.units[0].run_action("install-dependencies", jenkins_version=jenkins_version)
+    await action.wait()
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    # Install specified Jenkins version
+    await app.units[0].ssh(
+        "sudo apt-get install -y --allow-downgrades jenkins={}".format(jenkins_version)
+    )
+    apt_cache_output = await app.units[0].ssh("apt-cache policy jenkins")
+    assert "Installed: {}".format(jenkins_version) in apt_cache_output
+
+    # Restart Jenkins
+    await app.units[0].ssh("sudo systemctl restart jenkins")
+
+
 @pytest_asyncio.fixture(
     scope="module",
     params=[
@@ -32,41 +59,24 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
     """Install a range of jenkins versions to run the tests against."""
     jenkins_version = request.param
     if jenkins_version:
-        # Install dependencies
-        action = await app.units[0].run_action(
-            "install-dependencies", jenkins_version=jenkins_version
-        )
-        await action.wait()
-        await ops_test.model.wait_for_idle(status=ActiveStatus.name)
-
-        await app.units[0].ssh(
-            "sudo apt-get install -y --allow-downgrades jenkins={}".format(jenkins_version)
-        )
-
-        apt_cache_output = await app.units[0].ssh("apt-cache policy jenkins")
-        assert "Installed: {}".format(jenkins_version) in apt_cache_output
-
-        # Restart Jenkins
-        await app.units[0].ssh("sudo systemctl restart jenkins")
+        install_jenkins_version(ops_test=ops_test, app=app, jenkins_version=jenkins_version)
 
     yield app
 
 
 @pytest_asyncio.fixture(scope="module")
-async def agent(app_name: str, ops_test: OpsTest, app_jenkins_version: Application):
-    """Add relationship with agent to app."""
-    agent_app: Application = await ops_test.model.deploy(
+async def agent(ops_test: OpsTest):
+    """Deploy machine agent and destroy it after tests complete."""
+    agent: Application = await ops_test.model.deploy(
         "/home/jdkandersson/src/jenkins-agent-charm/jenkins-slave_ubuntu-16.04-amd64_ubuntu-18.04-amd64_ubuntu-20.04-amd64.charm",
         series="focal",
     )
     # Don't wait for active because the agent will start blocked
     await ops_test.model.wait_for_idle()
-    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
-    yield agent_app
+    yield agent
 
-    await agent_app.remove()
+    await agent.remove()
     # Wait for machine to be de-provisioned, wait_for_idle doesn't work here because the machine
     # goes missing and wait_for_idle never stops waiting
 
@@ -81,18 +91,78 @@ async def agent(app_name: str, ops_test: OpsTest, app_jenkins_version: Applicati
     assert await application_count() == 1, "jenkins agent failed to be removed"
 
 
+@pytest_asyncio.fixture(scope="module")
+async def agent_related_to_jenkins(
+    app_name: str, ops_test: OpsTest, agent: Application, app_jenkins_version: Application
+):
+    """Relate agent to Jenkins."""
+    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    yield agent
+
+
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 async def test_agent_relation(
-    app_jenkins_version: Application, agent: Application, jenkins_cli: jenkins.Jenkins
+    app_jenkins_version: Application,
+    agent_related_to_jenkins: Application,
+    jenkins_cli: jenkins.Jenkins,
 ):
     """
     arrange: given jenkins that is running which is related to a running agent
     act: when the jenkins agents are queried
-    assert: then the jenkins agent is included in the list.
+    assert: then the jenkins agent is included in the list and is online.
     """
     nodes_offline_status = {node["name"]: node["offline"] for node in jenkins_cli.get_nodes()}
 
-    entity_id = agent.units[0].entity_id.replace("/", "-")
+    entity_id = agent_related_to_jenkins.units[0].entity_id.replace("/", "-")
+    assert entity_id in nodes_offline_status
+    assert not nodes_offline_status[entity_id], "agent did not connect to jenkins"
+
+
+@pytest_asyncio.fixture(scope="module")
+async def app_jenkins_version_2_150(ops_test: OpsTest, app: Application):
+    """Install Jenkins version 2.150."""
+    install_jenkins_version(ops_test=ops_test, app=app, jenkins_version="2.150.3")
+    yield app
+
+
+@pytest_asyncio.fixture(scope="module")
+async def agent_downloading_jnlp_file_related_to_jenkins(
+    ops_test: OpsTest,
+    app_name: str,
+    agent: Application,
+    app_jenkins_version_2_150: Application,
+):
+    """Configure agent to download the JNLP file and relate it to Jenkins."""
+    # Configure the agent to download the JNLP file, Juju seems to want a string value even though
+    # the configuration type is a boolean
+    await agent.set_config({"download_jnlp_file": str(True)})
+
+    # Relate to Jenkins
+    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+
+    yield agent
+
+
+@pytest.mark.xfail
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_agent_relation_download_jnlp(
+    app_jenkins_version_2_150: Application,
+    agent_downloading_jnlp_file_related_to_jenkins: Application,
+    jenkins_cli: jenkins.Jenkins,
+):
+    """
+    arrange: given jenkins that is running which is related to a running agent which downloads the
+        JNLP file
+    act: when the jenkins agents are queried
+    assert: then the jenkins agent is included in the list and is online.
+    """
+    nodes_offline_status = {node["name"]: node["offline"] for node in jenkins_cli.get_nodes()}
+
+    entity_id = agent_downloading_jnlp_file_related_to_jenkins.units[0].entity_id.replace("/", "-")
     assert entity_id in nodes_offline_status
     assert not nodes_offline_status[entity_id], "agent did not connect to jenkins"
