@@ -37,5 +37,5 @@ jobs:
         uses: canonical/charm-logdump-action@main
         if: failure()
         with:
-          app: jenkins-agent
+          app: jenkins
           model: testing
