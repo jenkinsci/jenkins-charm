@@ -1,6 +1,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""Tests for basic Jenkins functionality."""
+
 import secrets
 
 from ops.model import ActiveStatus, Application
@@ -114,8 +116,8 @@ async def test_groovy_installed(ops_test: OpsTest, app_restore_configuration: Ap
 async def test_plugins_cleaned(ops_test: OpsTest, app_restore_configuration: Application):
     """
     arrange: given charm has been deployed
-    act: when the groovy plugin is added to the configuration and then removed
-        remove-unlisted-plugins set
+    act: when the groovy plugin is added to the configuration and then removed and
+        remove-unlisted-plugins is set
     assert: then the .jpi files for the plugin is found on adding it initially and then not found
         after it has been removed in the plugins directory.
     """
@@ -137,7 +139,7 @@ async def test_plugins_cleaned(ops_test: OpsTest, app_restore_configuration: App
 
     assert (
         groovy_plugin_file not in find_output
-    ), "groovy still present after removed from configuration and remove-unlisted-plugins set"
+    ), "groovy still present after removed from configuration and remove-unlisted-plugins is set"
 
 
 @pytest.mark.asyncio

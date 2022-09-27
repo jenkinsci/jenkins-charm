@@ -1,7 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Tests for jenkins agents."""
+"""Tests for jenkins relation with nrpe."""
 
 import pytest
 import pytest_asyncio
@@ -19,12 +19,13 @@ NAGIOS_CMD_SUCCESS = "HTTP OK"
 
 @pytest_asyncio.fixture(scope="module")
 async def nrpe(app_name: str, ops_test: OpsTest, app: Application):
-    """Add relationship with nrpe to app."""
+    """Add relationship with nrpe and nagios to app."""
     nrpe_app: Application = await ops_test.model.deploy("nrpe", series="focal")
     await ops_test.model.add_relation(
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
-    nrpe_app: Application = await ops_test.model.deploy("nagios", series="bionic")
+    # Nagios does not support focal
+    await ops_test.model.deploy("nagios", series="bionic")
     await ops_test.model.add_relation("nrpe:monitors", "nagios:monitors")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
@@ -41,7 +42,7 @@ async def test_nrpe_relation(app: Application, nrpe: Application):
     """
     nagios_output = await app.units[0].ssh(NAGIOS_CMD)
 
-    assert NAGIOS_CMD_SUCCESS in nagios_output, "ngre not installed"
+    assert NAGIOS_CMD_SUCCESS in nagios_output, "nrpe not installed"
 
 
 @pytest.mark.asyncio
@@ -60,4 +61,4 @@ async def test_nrpe_relation_url_change(
 
     nagios_output = await app_restore_configuration.units[0].ssh(NAGIOS_CMD)
 
-    assert NAGIOS_CMD_SUCCESS in nagios_output, "ngre not working after Jenkins URL change"
+    assert NAGIOS_CMD_SUCCESS in nagios_output, "nrpe not working after Jenkins URL change"

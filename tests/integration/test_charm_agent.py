@@ -96,7 +96,7 @@ async def agent(ops_test: OpsTest):
     assert await application_count() == 1, "jenkins agent failed to be removed"
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def agent_related_to_jenkins(
     app_name: str, ops_test: OpsTest, agent: Application, app_jenkins_version: Application
 ):
@@ -126,14 +126,14 @@ async def test_agent_relation(
     assert not nodes_offline_status[entity_id], "agent did not connect to jenkins"
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def app_jenkins_version_2_150(ops_test: OpsTest, app: Application):
     """Install Jenkins version 2.150."""
     install_jenkins_version(ops_test=ops_test, app=app, jenkins_version="2.150.3")
     yield app
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def agent_downloading_jnlp_file_related_to_jenkins(
     ops_test: OpsTest,
     app_name: str,
@@ -152,6 +152,8 @@ async def agent_downloading_jnlp_file_related_to_jenkins(
     yield agent
 
 
+# Even Jenkins version 2.150 does not allow the downloading of the JNLP file so expecting failure
+# This test should be removed when the JNLP download configuration is removed from the machine agent charm
 @pytest.mark.xfail
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
