@@ -9,11 +9,17 @@ class AptStub(object):
         self.installs = []
         self.sources = []
         self._package_versions = {
-            'jenkins': '2.150.1',
-            }
+            "jenkins": "2.150.1",
+        }
 
     def queue_install(self, packages):
         self.installs.extend(packages)
+
+    def purge(self, packages):
+        self.installs.remove(packages)
+
+    def install_queued(self):
+        pass
 
     def add_source(self, source, key=None):
         self.sources.append((source, key))
@@ -22,4 +28,4 @@ class AptStub(object):
         return self._package_versions[package]
 
     def _set_jenkins_version(self, jenkins_version):
-        self._package_versions['jenkins'] = jenkins_version
+        self._package_versions["jenkins"] = jenkins_version
