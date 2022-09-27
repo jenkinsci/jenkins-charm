@@ -3,7 +3,7 @@ import time
 from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
-import jenkins
+import jenkins as jenkins_cli
 from charmhelpers.core import hookenv, unitdata
 
 from charmhelpers.core.decorators import retry_on_exception
@@ -14,8 +14,8 @@ from charms.layer.jenkins.packages import Packages
 
 RETRIABLE = (
     requests.exceptions.RequestException,
-    jenkins.JenkinsException,
-    )
+    jenkins_cli.JenkinsException,
+)
 
 GET_LEGACY_TOKEN_SCRIPT = """
 user = hudson.model.User.get('{}')
@@ -43,17 +43,17 @@ SET_UPDATE_CENTER_SCRIPT = """
 Jenkins.instance.pluginManager.doSiteConfigure('{url}')
 """
 
-CONFIGURE_PROXY_WITH_AUTH_SCRIPT= """
+CONFIGURE_PROXY_WITH_AUTH_SCRIPT = """
 proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}')
 proxy.save()
 """
 
-CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT= """
+CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT = """
 proxy = new ProxyConfiguration('{hostname}', {port})
 proxy.save()
 """
 
-DISABLE_PROXY_SCRIPT= """
+DISABLE_PROXY_SCRIPT = """
 ProxyConfiguration.getXmlFile().delete();
 """
 
@@ -68,8 +68,8 @@ class Api(object):
     def url(self):
         config = hookenv.config()
         prefix = urlparse(config["public-url"]).path
-        if len(prefix) > 0 and prefix[-1] != '/':
-            prefix += '/'
+        if len(prefix) > 0 and prefix[-1] != "/":
+            prefix += "/"
         return urljoin("http://localhost:8080/", prefix)
 
     def wait(self):
@@ -87,8 +87,7 @@ class Api(object):
         If the user doesn't exist, it will be created.
         """
         client = self._make_client()
-        client.run_script(UPDATE_PASSWORD_SCRIPT.format(
-            username=username, password=password))
+        client.run_script(UPDATE_PASSWORD_SCRIPT.format(username=username, password=password))
 
     def get_plugin_version(self, plugin):
         """Get the installed version of a given plugin
@@ -96,7 +95,9 @@ class Api(object):
         If the plugin is not installed returns False
         """
         client = self._make_client()
-        script = "println(Jenkins.instance.pluginManager.plugins.find{{it.shortName == '{}'}}?.version)".format(plugin)
+        script = "println(Jenkins.instance.pluginManager.plugins.find{{it.shortName == '{}'}}?.version)".format(
+            plugin
+        )
         version = client.run_script(script)
         if version == "null":
             return False
@@ -106,12 +107,15 @@ class Api(object):
         """Configure (or disable) a system proxy."""
         client = self._make_client()
         if username and password and hostname and port:
-            client.run_script(CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
-                hostname=hostname, port=port, username=username,
-                password=password))
+            client.run_script(
+                CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
+                    hostname=hostname, port=port, username=username, password=password
+                )
+            )
         elif hostname and port:
-           client.run_script(CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(
-                hostname=hostname, port=port))
+            client.run_script(
+                CONFIGURE_PROXY_WITHOUT_AUTH_SCRIPT.format(hostname=hostname, port=port)
+            )
         else:
             client.run_script(DISABLE_PROXY_SCRIPT)
 
@@ -133,14 +137,12 @@ class Api(object):
             # wiki page about distributed builds:
             #
             # https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds
-            launcher = jenkins.LAUNCHER_JNLP
+            launcher = jenkins_cli.LAUNCHER_JNLP
 
-            client.create_node(
-                host, int(executors), host, labels=labels, launcher=launcher)
+            client.create_node(host, int(executors), host, labels=labels, launcher=launcher)
 
             if not client.node_exists(host):
-                hookenv.log(
-                    "Failed to create node '%s'" % host, level=ERROR)
+                hookenv.log("Failed to create node '%s'" % host, level=ERROR)
 
         return _add_node()
 
@@ -193,11 +195,13 @@ class Api(object):
     def get_node_secret(self, node_name):
         """Get node secret from jenkins."""
         client = self._make_client()
-        cmd = "println(jenkins.model.Jenkins.getInstance().getComputer(\"{}\").getJnlpMac())".format(node_name)
+        cmd = 'println(jenkins.model.Jenkins.getInstance().getComputer("{}").getJnlpMac())'.format(
+            node_name
+        )
         try:
             secret = client.run_script(cmd).strip()
             return secret
-        except jenkins.JenkinsException:
+        except jenkins_cli.JenkinsException:
             return False
 
     def set_update_center(self, url=None):
@@ -205,8 +209,7 @@ class Api(object):
         url = url or "https://updates.jenkins.io/stable/update-center.json"
         hookenv.log("Configuring {} as new update center".format(url), level="DEBUG")
         client = self._make_client()
-        client.run_script(SET_UPDATE_CENTER_SCRIPT.format(
-            url=url))
+        client.run_script(SET_UPDATE_CENTER_SCRIPT.format(url=url))
 
     def check_update_center(self):
         """Updated Jenkins' info from update-center and download plugins"""
@@ -216,11 +219,12 @@ class Api(object):
             "};"
             "hudson.model.DownloadService.Downloadable.all().each { downloadable ->"
             "  downloadable.updateNow();"
-            "}")
+            "}"
+        )
         self._run_cmd(cmd)
 
     def get_updatable_plugins(self):
-        """ Get plugins available to be updated
+        """Get plugins available to be updated
 
         :returns: Plugins updated
         :rtype: list
@@ -230,9 +234,9 @@ class Api(object):
             "  it -> it.hasUpdate()"
             "}.collect {"
             "  it -> it.getShortName()"
-            "})")
+            "})"
+        )
         return list(filter(None, self._run_cmd(cmd).strip("[]").split(" ")))
-
 
     def update_plugins(self):
         """Update plugins
@@ -251,7 +255,8 @@ class Api(object):
             "Jenkins.instance.pluginManager.install(plugins, false).each { plugin ->"
             "  ++count"
             "};"
-            "println(count)")
+            "println(count)"
+        )
         return int(self._run_cmd(cmd))
 
     def try_update_plugins(self):
@@ -276,25 +281,27 @@ class Api(object):
         creds = Credentials()
         user = creds.username()
         token = creds.token()
-        
+
         if token is None:
             creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
 
-        client = jenkins.Jenkins(self.url, user, token)
+        client = jenkins_cli.Jenkins(self.url, user, token)
         try:
             client.get_whoami()
         # Handling token regeneration when the current token is invalid.
         # Then re-raise the exception as expected, so the retry kicks off.
-        except jenkins.JenkinsException as e:
+        except jenkins_cli.JenkinsException as e:
             if "401" in str(e):
-                creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
+                creds.token(
+                    self._get_token(user, creds.password(), self._packages.jenkins_version())
+                )
             raise
         return client
 
     def _get_token(self, user, password, jenkins_version):
-        client = jenkins.Jenkins(self.url, user, password)
+        client = jenkins_cli.Jenkins(self.url, user, password)
         # If we're using Jenkins >= 2.129 we need to request a new token.
-        if LooseVersion(jenkins_version) >= LooseVersion('2.129'):
+        if LooseVersion(jenkins_version) >= LooseVersion("2.129"):
             token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
         else:
             token = client.run_script(GET_LEGACY_TOKEN_SCRIPT.format(user)).strip()
@@ -315,7 +322,11 @@ class Api(object):
         request = requests.Request("POST", urljoin(self.url, action))
         try:
             # Jenkins doesn't return an error for some actions
-            if client.jenkins_open(request) and action in ("quietDown", "cancelQuietDown", "safeRestart"):
+            if client.jenkins_open(request) and action in (
+                "quietDown",
+                "cancelQuietDown",
+                "safeRestart",
+            ):
                 return
         except requests.exceptions.HTTPError as error:
             self._check_response(error)
