@@ -58,13 +58,13 @@ class PackagesTest(CharmTest):
         # Our default distro version (xenial).
         self.assertEqual(self.packages.distro_codename(), "xenial")
         self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES["pre-jenkins-2.164"], self.apt.installs)
+        self.assertItemsEqual(APT_DEPENDENCIES["pre-jenkins-2.164"], self.apt.installs)
         # Now check with a distro of bionic.
         self.apt.installs = []
         self.ch_host._set_distro_version("bionic")
         self.assertEqual(self.packages.distro_codename(), "bionic")
         self.packages.install_dependencies()
-        self.assertEqual(APT_DEPENDENCIES["pre-jenkins-2.164"], self.apt.installs)
+        self.assertItemsEqual(APT_DEPENDENCIES["pre-jenkins-2.164"], self.apt.installs)
 
     def test_install_tools(self):
         """
