@@ -52,8 +52,7 @@ class PackagesTest(CharmTest):
 
     def test_install_dependencies(self):
         """
-        The Jenkins dependencies get installed by the install_dependencies
-        method.
+        The Jenkins dependencies get installed by the install_dependencies method.
         """
         # Our default distro version (xenial).
         self.assertEqual(self.packages.distro_codename(), "xenial")
