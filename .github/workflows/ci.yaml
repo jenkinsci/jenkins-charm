@@ -19,7 +19,7 @@ jobs:
       matrix:
         series: [xenial, bionic, focal]
         module: [agent, basic, nrpe, website]
-    name: Integration tests (lxd and microk8s)
+    name: Integration tests (lxd)
     runs-on: ubuntu-20.04
     needs: [unit-test]
     steps:
@@ -32,7 +32,7 @@ jobs:
       - name: Run integration tests
         run: |
           juju add-model testing
-          tox -e integration -- -k {{ matrix.module }} --series {{ matrix.series }}
+          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
       - name: Dump logs
         uses: canonical/charm-logdump-action@main
         if: failure()
