@@ -37,7 +37,7 @@ class AptStub(object):
     def get_package_version(self, package, full_version=False):
         if package in self._package_versions:
             return self._package_versions[package]
-        raise subprocess.CalledProcessError
+        raise subprocess.CalledProcessError(1, "get package version for {}".format(package))
 
     def _set_jenkins_version(self, jenkins_version):
         self._package_versions["jenkins"] = jenkins_version
