@@ -3,7 +3,7 @@ import time
 from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
-import jenkins as jenkins_cli
+import jenkins
 from charmhelpers.core import hookenv, unitdata
 
 from charmhelpers.core.decorators import retry_on_exception
@@ -14,7 +14,7 @@ from charms.layer.jenkins.packages import Packages
 
 RETRIABLE = (
     requests.exceptions.RequestException,
-    jenkins_cli.JenkinsException,
+    jenkins.JenkinsException,  # type: ignore
 )
 
 GET_LEGACY_TOKEN_SCRIPT = """
@@ -137,7 +137,7 @@ class Api(object):
             # wiki page about distributed builds:
             #
             # https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds
-            launcher = jenkins_cli.LAUNCHER_JNLP
+            launcher = jenkins.LAUNCHER_JNLP
 
             client.create_node(host, int(executors), host, labels=labels, launcher=launcher)
 
@@ -201,7 +201,7 @@ class Api(object):
         try:
             secret = client.run_script(cmd).strip()
             return secret
-        except jenkins_cli.JenkinsException:
+        except jenkins.JenkinsException:
             return False
 
     def set_update_center(self, url=None):
@@ -285,12 +285,12 @@ class Api(object):
         if token is None:
             creds.token(self._get_token(user, creds.password(), self._packages.jenkins_version()))
 
-        client = jenkins_cli.Jenkins(self.url, user, token)
+        client = jenkins.Jenkins(self.url, user, token)
         try:
             client.get_whoami()
         # Handling token regeneration when the current token is invalid.
         # Then re-raise the exception as expected, so the retry kicks off.
-        except jenkins_cli.JenkinsException as e:
+        except jenkins.JenkinsException as e:
             if "401" in str(e):
                 creds.token(
                     self._get_token(user, creds.password(), self._packages.jenkins_version())
@@ -299,7 +299,7 @@ class Api(object):
         return client
 
     def _get_token(self, user, password, jenkins_version):
-        client = jenkins_cli.Jenkins(self.url, user, password)
+        client = jenkins.Jenkins(self.url, user, password)
         # If we're using Jenkins >= 2.129 we need to request a new token.
         if LooseVersion(jenkins_version) >= LooseVersion("2.129"):
             token = client.run_script(GET_NEW_TOKEN_SCRIPT.format(user)).strip()
