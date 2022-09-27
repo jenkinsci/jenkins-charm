@@ -16,7 +16,9 @@ class AptStub(object):
         self.installs.extend(packages)
 
     def purge(self, packages):
-        self.installs.remove(packages)
+        for package in packages:
+            if package in self.installs:
+                self.installs.remove(packages)
 
     def install_queued(self):
         pass
