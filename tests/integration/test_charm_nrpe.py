@@ -8,6 +8,8 @@ import pytest_asyncio
 from pytest_operator.plugin import OpsTest
 from ops.model import Application, ActiveStatus
 
+pytestmark = pytest.mark.nrpe
+
 
 NRPE_CHECK_HTTP_FILE = "/usr/lib/nagios/plugins/check_http"
 NRPE_CONFIG_FILE = "/etc/nagios/nrpe.d/check_check_jenkins_http.cfg"

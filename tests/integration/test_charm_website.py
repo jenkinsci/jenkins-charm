@@ -9,6 +9,8 @@ import pytest_asyncio
 from pytest_operator.plugin import OpsTest
 from ops.model import Application, ActiveStatus
 
+pytestmark = pytest.mark.website
+
 
 @pytest_asyncio.fixture(scope="module")
 async def haproxy(app_name: str, ops_test: OpsTest, app: Application, series: str):

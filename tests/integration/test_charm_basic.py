@@ -14,6 +14,8 @@ import jenkins
 from .types import JenkinsCredentials
 from .config import PLUGINS_DIR
 
+pytestmark = pytest.mark.basic
+
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail

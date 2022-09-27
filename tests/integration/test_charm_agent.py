@@ -11,6 +11,8 @@ import pytest
 import pytest_asyncio
 from pytest_operator.plugin import OpsTest
 
+pytestmark = pytest.mark.agent
+
 
 async def install_jenkins_version(
     ops_test: OpsTest, app: Application, jenkins_version: str
