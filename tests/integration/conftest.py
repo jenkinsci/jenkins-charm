@@ -6,11 +6,19 @@ from pathlib import Path
 import jenkins
 from ops.model import Application, ActiveStatus
 import pytest_asyncio
-from pytest import fixture
+from pytest import fixture, Config
 from pytest_operator.plugin import OpsTest
 import yaml
 
 from .types import JenkinsCredentials
+
+
+@fixture(scope="module")
+def series(pytestconfig: Config):
+    """Get the ubuntu series to run the tests on."""
+    value: None | str = pytestconfig.getoption("--series")
+    value = value if value is not None else "focal"
+    return value
 
 
 @fixture(scope="module")
@@ -26,12 +34,12 @@ def app_name(metadata):
 
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str):
+async def app(ops_test: OpsTest, app_name: str, series: str):
     """Jenkins charm used for integration testing.
     Builds the charm and deploys the charm.
     """
     charm = await ops_test.build_charm(".")
-    application = await ops_test.model.deploy(charm, application_name=app_name, series="focal")
+    application = await ops_test.model.deploy(charm, application_name=app_name, series=series)
     # Jenkins takes a while to install, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 

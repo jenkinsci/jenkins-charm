@@ -18,14 +18,14 @@ NAGIOS_CMD_SUCCESS = "HTTP OK"
 
 
 @pytest_asyncio.fixture(scope="module")
-async def nrpe(app_name: str, ops_test: OpsTest, app: Application):
+async def nrpe(app_name: str, ops_test: OpsTest, app: Application, series: str):
     """Add relationship with nrpe and nagios to app."""
-    nrpe_app: Application = await ops_test.model.deploy("nrpe", series="focal")
+    nrpe_app: Application = await ops_test.model.deploy("nrpe", series=series)
     await ops_test.model.add_relation(
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
     # Nagios does not support focal
-    await ops_test.model.deploy("nagios", series="bionic")
+    await ops_test.model.deploy("nagios", series=(series if series != "focal" else "bionic"))
     await ops_test.model.add_relation("nrpe:monitors", "nagios:monitors")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 

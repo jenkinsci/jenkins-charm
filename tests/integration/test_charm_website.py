@@ -11,9 +11,9 @@ from ops.model import Application, ActiveStatus
 
 
 @pytest_asyncio.fixture(scope="module")
-async def haproxy(app_name: str, ops_test: OpsTest, app: Application):
+async def haproxy(app_name: str, ops_test: OpsTest, app: Application, series: str):
     """Add relationship with haproxy to app."""
-    haproxy_app: Application = await ops_test.model.deploy("haproxy", series="focal")
+    haproxy_app: Application = await ops_test.model.deploy("haproxy", series=series)
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
     await ops_test.model.add_relation("{}:website".format(app_name), "haproxy:reverseproxy")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
