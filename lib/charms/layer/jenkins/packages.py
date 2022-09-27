@@ -95,7 +95,8 @@ class Packages(object):
 
         # Remove any previous dependencies that are no longer needed
         required_apt_dependencies = set(self.apt_dependencies(jenkins_version=jenkins_version))
-        self._apt.purge(POSSIBLE_JRE_DEPENDENCIES - required_apt_dependencies)
+        # mypy does not seem to know about .purge but it does exist
+        self._apt.purge(POSSIBLE_JRE_DEPENDENCIES - required_apt_dependencies)  # type: ignore
 
         # Conditionally install depedencies based on Jenkins version
         self._apt.queue_install(required_apt_dependencies)

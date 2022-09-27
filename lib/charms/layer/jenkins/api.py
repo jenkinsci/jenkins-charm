@@ -14,6 +14,8 @@ from charms.layer.jenkins.packages import Packages
 
 RETRIABLE = (
     requests.exceptions.RequestException,
+    # mypy seems to be confusing the jenkins module from the folder with the installed jenkins
+    # module
     jenkins.JenkinsException,  # type: ignore
 )
 
