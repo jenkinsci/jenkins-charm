@@ -6,11 +6,21 @@ from pathlib import Path
 import jenkins
 from ops.model import Application, ActiveStatus
 import pytest_asyncio
-from pytest import fixture
+from pytest import fixture, Config
 from pytest_operator.plugin import OpsTest
 import yaml
 
 from .types import JenkinsCredentials
+
+
+@fixture(scope="module")
+def agent_charm(pytestconfig: Config):
+    """Get the agent charm to deploy for tests requiring the agent charm."""
+    value: None | str = pytestconfig.getoption("--agent-charm")
+    assert (
+        value is not None
+    ), "please specify the --agent-charm option with charm to deploy for agent tests"
+    return value
 
 
 @fixture(scope="module")

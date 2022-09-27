@@ -67,15 +67,9 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
 
 
 @pytest_asyncio.fixture(scope="function")
-async def agent(ops_test: OpsTest):
+async def agent(ops_test: OpsTest, agent_charm: str):
     """Deploy machine agent and destroy it after tests complete."""
-    agent: Application = await ops_test.model.deploy(
-        # Currently hardcoded due to the charm on charmhub not currently working, needs to be
-        # updated once a working version of the agent machine charm is deployed
-        "/home/jdkandersson/src/jenkins-agent-charm/"
-        "jenkins-slave_ubuntu-16.04-amd64_ubuntu-18.04-amd64_ubuntu-20.04-amd64.charm",
-        series="focal",
-    )
+    agent: Application = await ops_test.model.deploy(agent_charm, series="focal")
     # Don't wait for active because the agent will start blocked
     await ops_test.model.wait_for_idle()
 
