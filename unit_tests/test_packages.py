@@ -54,6 +54,9 @@ class PackagesTest(CharmTest):
         """
         The Jenkins dependencies get installed by the install_dependencies method.
         """
+        # Start with old Jenkins version
+        self.apt._set_jenkins_version("2.150.3")
+        self.assertEqual(self.packages.jenkins_version(), "2.150.3")
         # Our default distro version (xenial).
         self.assertEqual(self.packages.distro_codename(), "xenial")
         self.packages.install_dependencies()
@@ -64,6 +67,19 @@ class PackagesTest(CharmTest):
         self.assertEqual(self.packages.distro_codename(), "bionic")
         self.packages.install_dependencies()
         self.assertItemsEqual(APT_DEPENDENCIES["pre-jenkins-2.164"], self.apt.installs)
+        # Now with new Jenkins version
+        self.apt._set_jenkins_version("2.361.1")
+        self.assertEqual(self.packages.jenkins_version(), "2.361.1")
+        self.apt.installs = []
+        self.packages.install_dependencies()
+        self.assertItemsEqual(APT_DEPENDENCIES["jenkins-2.164-and-later"], self.apt.installs)
+        # Now with no Jenkins version installed
+        del self.apt._package_versions["jenkins"]
+        self.apt.installs = []
+        self.packages.install_dependencies()
+        self.assertItemsEqual(APT_DEPENDENCIES["jenkins-2.164-and-later"], self.apt.installs)
+        # Set jenkins version again
+        self.apt._set_jenkins_version("2.150.3")
 
     def test_install_tools(self):
         """

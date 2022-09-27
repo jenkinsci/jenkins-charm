@@ -1,3 +1,11 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Stub for Apt interactions."""
+
+import subprocess
+
+
 class AptStub(object):
     """Testable stub for the charms.apt module from the apt layer.
 
@@ -27,7 +35,9 @@ class AptStub(object):
         self.sources.append((source, key))
 
     def get_package_version(self, package, full_version=False):
-        return self._package_versions[package]
+        if package in self._package_versions:
+            return self._package_versions[package]
+        raise subprocess.CalledProcessError
 
     def _set_jenkins_version(self, jenkins_version):
         self._package_versions["jenkins"] = jenkins_version
