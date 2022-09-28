@@ -26,9 +26,11 @@ POSSIBLE_JRE_DEPENDENCIES = {
 APT_DEPENDENCIES = {
     "jenkins-2.164-and-later": ["daemon", "openjdk-11-jre-headless"],
     "pre-jenkins-2.164": ["daemon", "openjdk-8-jre-headless"],
+    "xenial": ["daemon", "openjdk-8-jre-headless"],
 }
 CONSTANT_APT_DEPENDENCIES = ["daemon"]
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
+JENKINS_XENIAL_VERSION = "2.346.*"
 
 
 class Packages(object):
@@ -67,6 +69,8 @@ class Packages(object):
             The dependencies of Jenkins to be installed based on the version of Jenkins installed.
 
         """
+        if self.distro_codename() == "xenial":
+            return APT_DEPENDENCIES["xenial"]
         if jenkins_version is None:
             try:
                 jenkins_version = self.jenkins_version()
@@ -106,16 +110,38 @@ class Packages(object):
         tools = hookenv.config()["tools"].split()
         self._apt.queue_install(tools)
 
+    def limit_jenkins_version(version):
+        """
+        Limit the version of Jenkins that can be installed.
+
+        Writes an entry into the /etc/apt/preferences file based on the following specification:
+        https://manpages.ubuntu.com/manpages/xenial/man5/apt_preferences.5.html
+
+        Uses a priority of 1 so as not to interfere with any already installed version of Jenkins.
+
+        Args:
+            version: The Jenkins version to limit installation to.
+
+        """
+        with open(paths.APT_PREFERENCES, "a") as apt_preferences:
+            apt_preferences.write(
+                "\n\nPackage: jenkins\nPin: version {}\nPin-Priority: 1".format(version)
+            )
+
     def install_jenkins(self):
         """Install the Jenkins package."""
         hookenv.log("Installing jenkins")
         config = hookenv.config()
         release = config["release"]
         if release == "bundle":
+            if self.distro_codename() == "xenial":
+                self.limit_jenkins_version(JENKINS_XENIAL_VERSION)
             self._install_from_bundle()
         elif release.startswith("http"):
             self._install_from_remote_deb(release)
         else:
+            if self.distro_codename() == "xenial":
+                self.limit_jenkins_version(JENKINS_XENIAL_VERSION)
             self._setup_source(release)
         self._apt.queue_install(["jenkins"])
 

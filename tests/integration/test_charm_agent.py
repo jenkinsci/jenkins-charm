@@ -47,16 +47,16 @@ async def install_jenkins_version(
         pytest.param(None, id="latest LTS jenkins version"),
         # The following are the versions of Jenkins running in production in Canonical as of
         # 2022-09-21
-        # pytest.param("2.361.1", id="jenkins version 2.361"),
-        # pytest.param("2.346.3", id="jenkins version 2.346"),
-        # pytest.param("2.332.4", id="jenkins version 2.332"),
-        # pytest.param("2.277.4", id="jenkins version 2.277"),
-        # pytest.param("2.263.4", id="jenkins version 2.263"),
-        # pytest.param("2.249.3", id="jenkins version 2.249"),
-        # pytest.param("2.235.5", id="jenkins version 2.235"),
-        # pytest.param("2.222.4", id="jenkins version 2.222"),
-        # pytest.param("2.176.4", id="jenkins version 2.176"),
-        # pytest.param("2.150.3", id="jenkins version 2.150"),
+        pytest.param("2.361.1", id="jenkins version 2.361"),
+        pytest.param("2.346.3", id="jenkins version 2.346"),
+        pytest.param("2.332.4", id="jenkins version 2.332"),
+        pytest.param("2.277.4", id="jenkins version 2.277"),
+        pytest.param("2.263.4", id="jenkins version 2.263"),
+        pytest.param("2.249.3", id="jenkins version 2.249"),
+        pytest.param("2.235.5", id="jenkins version 2.235"),
+        pytest.param("2.222.4", id="jenkins version 2.222"),
+        pytest.param("2.176.4", id="jenkins version 2.176"),
+        pytest.param("2.150.3", id="jenkins version 2.150"),
     ],
 )
 async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pytest.FixtureRequest):
