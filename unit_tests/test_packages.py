@@ -20,6 +20,7 @@ from stubs.host import CharmHelpersCoreHostStub
 from charms.layer.jenkins.packages import (
     APT_DEPENDENCIES,
     APT_SOURCE,
+    JENKINS_XENIAL_VERSION,
     Packages,
 )
 
@@ -125,7 +126,7 @@ class PackagesTest(CharmTest):
             self.assertEqual(["install"], self.fakes.processes.dpkg.actions["jenkins"])
             self.assertTrue(os.path.exists(paths.APT_PREFERENCES))
             with open(paths.APT_PREFERENCES, "r") as apt_preferences:
-                self.assertIn(self.packages.JENKINS_XENIAL_VERSION, apt_preferences.read())
+                self.assertIn(JENKINS_XENIAL_VERSION, apt_preferences.read())
         finally:
             hookenv.config()["release"] = orig_release
 
@@ -192,7 +193,7 @@ class PackagesTest(CharmTest):
         self.assertEqual([(source, key)], self.apt.sources)
         self.assertTrue(os.path.exists(paths.APT_PREFERENCES))
         with open(paths.APT_PREFERENCES, "r") as apt_preferences:
-            self.assertIn(self.packages.JENKINS_XENIAL_VERSION, apt_preferences.read())
+            self.assertIn(JENKINS_XENIAL_VERSION, apt_preferences.read())
 
     def test_install_jenkins_lts_release(self):
         """
