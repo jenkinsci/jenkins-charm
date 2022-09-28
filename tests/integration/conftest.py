@@ -21,15 +21,6 @@ def series(pytestconfig: Config):
     return value
 
 
-def agent_charm(pytestconfig: Config):
-    """Get the agent charm to deploy for tests requiring the agent charm."""
-    value: None | str = pytestconfig.getoption("--agent-charm")
-    assert (
-        value is not None
-    ), "please specify the --agent-charm option with charm to deploy for agent tests"
-    return value
-
-
 @fixture(scope="module")
 def metadata():
     """Provides charm metadata."""

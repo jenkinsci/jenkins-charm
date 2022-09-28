@@ -34,11 +34,4 @@ jobs:
           python-version: '3.8'
       - name: Run integration tests
         run: |
-          juju add-model testing
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
-      - name: Dump logs
-        uses: canonical/charm-logdump-action@main
-        if: failure()
-        with:
-          app: jenkins
-          model: testing

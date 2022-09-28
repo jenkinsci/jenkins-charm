@@ -47,16 +47,16 @@ async def install_jenkins_version(
         pytest.param(None, id="latest LTS jenkins version"),
         # The following are the versions of Jenkins running in production in Canonical as of
         # 2022-09-21
-        pytest.param("2.361.1", id="jenkins version 2.361"),
-        pytest.param("2.346.3", id="jenkins version 2.346"),
-        pytest.param("2.332.4", id="jenkins version 2.332"),
-        pytest.param("2.277.4", id="jenkins version 2.277"),
-        pytest.param("2.263.4", id="jenkins version 2.263"),
-        pytest.param("2.249.3", id="jenkins version 2.249"),
-        pytest.param("2.235.5", id="jenkins version 2.235"),
-        pytest.param("2.222.4", id="jenkins version 2.222"),
-        pytest.param("2.176.4", id="jenkins version 2.176"),
-        pytest.param("2.150.3", id="jenkins version 2.150"),
+        # pytest.param("2.361.1", id="jenkins version 2.361"),
+        # pytest.param("2.346.3", id="jenkins version 2.346"),
+        # pytest.param("2.332.4", id="jenkins version 2.332"),
+        # pytest.param("2.277.4", id="jenkins version 2.277"),
+        # pytest.param("2.263.4", id="jenkins version 2.263"),
+        # pytest.param("2.249.3", id="jenkins version 2.249"),
+        # pytest.param("2.235.5", id="jenkins version 2.235"),
+        # pytest.param("2.222.4", id="jenkins version 2.222"),
+        # pytest.param("2.176.4", id="jenkins version 2.176"),
+        # pytest.param("2.150.3", id="jenkins version 2.150"),
     ],
 )
 async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pytest.FixtureRequest):
@@ -69,9 +69,11 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
 
 
 @pytest_asyncio.fixture(scope="function")
-async def agent(ops_test: OpsTest, agent_charm: str):
+async def agent(ops_test: OpsTest):
     """Deploy machine agent and destroy it after tests complete."""
-    agent: Application = await ops_test.model.deploy(agent_charm, series="focal")
+    agent: Application = await ops_test.model.deploy(
+        "jenkins-slave", series="focal", channel="edge"
+    )
     # Don't wait for active because the agent will start blocked
     await ops_test.model.wait_for_idle()
 

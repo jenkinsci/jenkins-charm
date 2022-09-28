@@ -9,4 +9,3 @@ from pytest import Parser
 def pytest_addoption(parser: Parser):
     """Store command line options."""
     parser.addoption("--series", action="store")
-    parser.addoption("--agent-charm", action="store")
