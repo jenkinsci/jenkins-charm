@@ -131,6 +131,7 @@ class Packages(object):
             version: The Jenkins version to limit installation to.
 
         """
+        hookenv.log("Limiting Jenkins version to %s", version)
         with open(paths.APT_PREFERENCES, "a") as apt_preferences:
             apt_preferences.write(
                 "\n\nPackage: jenkins\nPin: version {}\nPin-Priority: 1".format(version)
@@ -138,7 +139,7 @@ class Packages(object):
 
     def install_jenkins(self):
         """Install the Jenkins package."""
-        hookenv.log("Installing jenkins")
+        hookenv.log("Installing jenkins on %s", self.distro_codename())
         config = hookenv.config()
         release = config["release"]
         if release == "bundle":
