@@ -110,6 +110,7 @@ class Packages(object):
         tools = hookenv.config()["tools"].split()
         self._apt.queue_install(tools)
 
+    @staticmethod
     def limit_jenkins_version(version):
         """
         Limit the version of Jenkins that can be installed.
