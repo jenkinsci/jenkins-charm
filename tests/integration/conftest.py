@@ -41,6 +41,10 @@ async def app(ops_test: OpsTest, app_name: str, series: str):
     """
     charm = await ops_test.build_charm(".")
     application = await ops_test.model.deploy(charm, application_name=app_name, series=series)
+    for _ in range(30):
+        print(await ops_test.juju("status"))
+        print(await ops_test.juju("debug-log", "--no-tail", "--replay"))
+        await asyncio.sleep(5)
     # Jenkins takes a while to install, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 
