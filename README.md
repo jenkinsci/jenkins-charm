@@ -17,9 +17,9 @@ Slaves will attempt to connect via JNLP on port 48484 by default. This is config
 
     juju config jenkins jnlp-port=12345
 
-If you want the previously-default behaviour of a random TCP port, you can set this to -1:
+If you want the previously-default behaviour of a random TCP port, you can set this to 0:
 
-    juju config jenkins jnlp-port=-1
+    juju config jenkins jnlp-port=0
 
 Or if you want to disable the feature entirely, set it to 0:
 

@@ -9,7 +9,7 @@ description: >
   monitors executions of repeated jobs. The focus of Jenkins is the
   building/testing of software project continuously, and monitoring executions
   of externally-run jobs. More information at http://jenkins-ci.org/.
-  
+
   This charm provides the Jenkins master service, and when paired with the
   jenkins-slave charm provides an easy way to deploy Jenkins on Ubuntu server,
   and scale out Jenkins slaves.
