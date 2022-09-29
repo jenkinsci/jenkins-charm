@@ -154,7 +154,6 @@ async def agent_downloading_jnlp_file_related_to_jenkins(
 # This test should be removed when the JNLP download configuration is removed from the machine agent charm
 @pytest.mark.xfail
 @pytest.mark.asyncio
-@pytest.mark.abort_on_fail
 async def test_agent_relation_download_jnlp(
     app_jenkins_version_2_150: Application,
     agent_downloading_jnlp_file_related_to_jenkins: Application,

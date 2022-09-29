@@ -26,7 +26,7 @@ async def nrpe(app_name: str, ops_test: OpsTest, app: Application, series: str):
     await ops_test.model.add_relation(
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
-    # Nagios does not support focal
+    # [2022-09-29] Nagios does not support focal
     await ops_test.model.deploy("nagios", series=(series if series != "focal" else "bionic"))
     await ops_test.model.add_relation("nrpe:monitors", "nagios:monitors")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)

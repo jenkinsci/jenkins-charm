@@ -56,17 +56,17 @@ class Packages(object):
         return self._host.lsb_release()["DISTRIB_CODENAME"]
 
     def apt_dependencies(self, jenkins_version=None):
-        """Get the apt dependencies based on Jenkins version.
+        """Get the apt dependencies based on Ubuntu series and Jenkins version.
 
         Assumes that, if Jenkins is not installed, that the latest LTS version of Jenkins will be
         installed and returns the dependencies for that version.
 
         Args:
             jenkins_version: The version of Jenkins to get the apt dependencies for. Based on
-                installed Jenkins version if it is None.
+                installed Jenkins version and Ubuntu series if it is None.
 
         Returns:
-            The dependencies of Jenkins to be installed based on the version of Jenkins installed.
+            The dependencies of Jenkins to be installed.
 
         """
         if self.distro_codename() == "xenial":
@@ -84,15 +84,17 @@ class Packages(object):
         return APT_DEPENDENCIES["jenkins-2.164-and-later"]
 
     def install_dependencies(self, jenkins_version=None):
-        """Install the deb dependencies of the Jenkins package.
+        """Install the deb dependencies of the Ubuntu series and Jenkins package.
 
-        Removes any dependencies that are no longer needed based on the version of Jenkins to be
-        installed and then installs dependencies based on Jenkins version installed/ to be
-        installed (assumed to be the latest LTS version if Jenkins is not installed yet).
+        Removes any dependencies that are no longer needed based on the Ubuntu series and version
+        of Jenkins to be installed and then installs dependencies based on Jenkins version
+        installed/ to be installed (assumed to be the latest LTS version if Jenkins is not
+        installed yet).
 
         Args:
-            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on
-                installed Jenkins version if it is None.
+            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on the
+                Ubuntu series and installed/ anticipated to be installed Jenkins version if it is
+                None.
 
         """
         hookenv.log("Installing jenkins dependencies and desired tools")
@@ -108,7 +110,7 @@ class Packages(object):
             - required_apt_dependencies
         )
 
-        # Conditionally install depedencies based on Jenkins version
+        # Install depedencies based on Jenkins version
         self._apt.queue_install(required_apt_dependencies)
         self._apt.install_queued()
 
@@ -125,8 +127,6 @@ class Packages(object):
         Writes an entry into the /etc/apt/preferences file based on the following specification:
         https://manpages.ubuntu.com/manpages/xenial/man5/apt_preferences.5.html
 
-        Uses a priority of 1 so as not to interfere with any already installed version of Jenkins.
-
         Args:
             version: The Jenkins version to limit installation to.
 
@@ -139,7 +139,7 @@ class Packages(object):
 
     def install_jenkins(self):
         """Install the Jenkins package."""
-        hookenv.log("Installing jenkins on %s" % self.distro_codename())
+        hookenv.log("Installing jenkin")
         config = hookenv.config()
         release = config["release"]
         if release == "bundle":

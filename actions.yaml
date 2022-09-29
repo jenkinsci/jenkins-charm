@@ -3,7 +3,7 @@ restart:
 upgrade:
   description: Upgrade jenkins package when using bundle.
 install-dependencies:
-  description: Install Jenkins dependencies for the specified Jenkins version (or the currently installed version if the Jenkins version is not specified).
+  description: Install Jenkins dependencies for the specified Jenkins version (or the currently installed/ anticipated to be installed version if the Jenkins version is not specified).
   params:
     jenkins_version:
       type: string

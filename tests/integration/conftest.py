@@ -1,8 +1,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
 from pathlib import Path
+import typing
 
 import jenkins
 from ops.model import Application, ActiveStatus
@@ -17,7 +17,7 @@ from .types import JenkinsCredentials
 @fixture(scope="module")
 def series(pytestconfig: Config):
     """Get the ubuntu series to run the tests on."""
-    value: None | str = pytestconfig.getoption("--series")
+    value: typing.Union[None, str] = pytestconfig.getoption("--series")
     value = value if value is not None else "focal"
     return value
 
@@ -41,7 +41,7 @@ async def app(ops_test: OpsTest, app_name: str, series: str):
     """
     charm = await ops_test.build_charm(".")
     application = await ops_test.model.deploy(charm, application_name=app_name, series=series)
-    # Jenkins takes a while to install, setting timeout to 30 minutes
+    # Jenkins takes a while to deploy, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 
     yield application

@@ -90,7 +90,7 @@ async def test_jenkins_cli_whoami(
     """
     arrange: given jenkins CLI that is connected to the running Jenkins server
     act: when get_whoami is run
-    assert: then admin user is returned.
+    assert: then the admin user is returned.
     """
     user = jenkins_cli.get_whoami()
 
@@ -99,23 +99,7 @@ async def test_jenkins_cli_whoami(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_groovy_installed(ops_test: OpsTest, app_restore_configuration: Application):
-    """
-    arrange: given charm has been deployed
-    act: when the groovy plugin is added to the configuration
-    assert: then the .jpi files for the plugin is found in the plugins directory.
-    """
-    await app_restore_configuration.set_config({"plugins": "groovy"})
-    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
-
-    find_output = await app_restore_configuration.units[0].ssh("find {}".format(PLUGINS_DIR))
-
-    assert "groovy.jpi" in find_output, "Failed to locate groovy"
-
-
-@pytest.mark.asyncio
-@pytest.mark.abort_on_fail
-async def test_plugins_cleaned(ops_test: OpsTest, app_restore_configuration: Application):
+async def test_plugins_install_cleaned(ops_test: OpsTest, app_restore_configuration: Application):
     """
     arrange: given charm has been deployed
     act: when the groovy plugin is added to the configuration and then removed and
@@ -155,7 +139,7 @@ async def test_jenkins_cli_whoami_password_change(
     """
     arrange: given jenkins that is running
     act: when the password is changed via configuration and get_whoami is run with the new password
-    assert: then admin user is returned.
+    assert: then the admin user is returned.
     """
     new_password = secrets.token_urlsafe()
     await app_restore_configuration.set_config({"password": new_password})
@@ -182,7 +166,7 @@ async def test_jenkins_cli_whoami_url_change(
     """
     arrange: given jenkins that is running
     act: when the url is changed via configuration and get_whoami is run with the new url
-    assert: then admin user is returned.
+    assert: then the admin user is returned.
     """
     new_url = "{}/jenkins-alt".format(jenkins_url)
     await app_restore_configuration.set_config({"public-url": new_url})
