@@ -30,11 +30,16 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
-        # Need to install Python 3.8 because that is what the tests run on and 18.04 comes with
-        # Python 3.6
+        # [2022-09-29] Need to install Python 3.8 because that is what the tests run on and 18.04
+        # comes with Python 3.6
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+        # [2022-10-03] Use charm 2.x/stable as 3.x is not working
+      - name: Revert to charm 2.x
+        run: |
+          sudo snap remove charm
+          sudo snap install charm --channel=2.x/stable
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
