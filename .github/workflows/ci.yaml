@@ -19,6 +19,7 @@ jobs:
       matrix:
         series: [xenial, bionic, focal]
         module: [agent, basic, nrpe, website]
+      fail-fast: false
     name: Integration tests (lxd)
     # [2022-09-29] The integration tests have to run on Ubuntu 18.04 to be able to support Xenial
     runs-on: ubuntu-18.04
