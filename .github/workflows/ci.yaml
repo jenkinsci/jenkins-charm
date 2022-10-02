@@ -39,7 +39,7 @@ jobs:
       - name: Revert to charm 2.x
         run: |
           sudo snap remove charm
-          sudo snap install charm --channel=2.x/stable
+          sudo snap install charm --channel=2.x/stable --classic
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
