@@ -63,7 +63,7 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
     """Install a range of jenkins versions to run the tests against."""
     jenkins_version = request.param
     if jenkins_version:
-        install_jenkins_version(ops_test=ops_test, app=app, jenkins_version=jenkins_version)
+        await install_jenkins_version(ops_test=ops_test, app=app, jenkins_version=jenkins_version)
 
     yield app
 
@@ -127,7 +127,7 @@ async def test_agent_relation(
 @pytest_asyncio.fixture(scope="function")
 async def app_jenkins_version_2_150(ops_test: OpsTest, app: Application):
     """Install Jenkins version 2.150."""
-    install_jenkins_version(ops_test=ops_test, app=app, jenkins_version="2.150.3")
+    await install_jenkins_version(ops_test=ops_test, app=app, jenkins_version="2.150.3")
     yield app
 
 
