@@ -49,3 +49,4 @@ jobs:
         if: failure()
         with:
           limit-access-to-actor: true
+          timeout-minutes: 15

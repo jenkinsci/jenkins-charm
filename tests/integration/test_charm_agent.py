@@ -7,6 +7,7 @@ import asyncio
 
 import jenkins
 from ops.model import Application, ActiveStatus
+from packaging import version
 import pytest
 import pytest_asyncio
 from pytest_operator.plugin import OpsTest
@@ -59,10 +60,17 @@ async def install_jenkins_version(
         pytest.param("2.150.3", id="jenkins version 2.150"),
     ],
 )
-async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pytest.FixtureRequest):
+async def app_jenkins_version(
+    ops_test: OpsTest, app: Application, request: pytest.FixtureRequest, series: str
+):
     """Install a range of jenkins versions to run the tests against."""
     jenkins_version = request.param
     if jenkins_version:
+        # Skip anything higher than 2.346 if the series is xenial
+        parsed_jenkins_version = version.Version(jenkins_version)
+        if series == "xenial" and parsed_jenkins_version.minor > 346:
+            pytest.skip()
+
         await install_jenkins_version(ops_test=ops_test, app=app, jenkins_version=jenkins_version)
 
     yield app
