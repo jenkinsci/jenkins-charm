@@ -21,9 +21,9 @@ If you want the previously-default behaviour of a random TCP port, you can set t
 
     juju config jenkins jnlp-port=0
 
-Or if you want to disable the feature entirely, set it to 0:
+Or if you want to disable the feature entirely, set it to -1:
 
-    juju config jenkins jnlp-port=0
+    juju config jenkins jnlp-port=-1
 
 The default password for the 'admin' account will be auto-generated, or can be
 set via `juju config`. You can retrieve the admin credentials using:

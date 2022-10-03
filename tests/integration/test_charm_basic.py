@@ -47,7 +47,7 @@ async def test_debian_stable_in_sources(app: Application):
 async def test_tools_installed(app: Application):
     """
     arrange: given charm has been deployed and is idle
-    act: when checking for the python3-testtools package
+    act: when checking for the python3-testtools package (which is required by default)
     assert: then it is found
     """
     dpkg_output = await app.units[0].ssh("dpkg -l python3-testtools")

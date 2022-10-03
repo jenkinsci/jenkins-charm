@@ -139,7 +139,7 @@ class Packages(object):
 
     def install_jenkins(self):
         """Install the Jenkins package."""
-        hookenv.log("Installing jenkin")
+        hookenv.log("Installing jenkins")
         config = hookenv.config()
         release = config["release"]
         if release == "bundle":

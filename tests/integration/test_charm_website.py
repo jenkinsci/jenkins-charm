@@ -38,7 +38,7 @@ async def test_jenkins_website_behind_proxy(app: Application, haproxy: Applicati
         "python3 -c 'import socket; print(socket.gethostbyname(socket.gethostname()))'"
     )
     url = "http://{}/".format(hostname.strip())
-    response = requests.get(url)
+    response = requests.get(url, timeout=60)
 
     assert response.status_code == 403
     assert "Authentication required" in response.text

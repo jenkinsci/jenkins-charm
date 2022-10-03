@@ -43,10 +43,4 @@ jobs:
           sudo snap install charm --channel=2.x/stable --classic
       - name: Run integration tests
         run: |
-          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: failure()
-        with:
-          limit-access-to-actor: true
-          timeout-minutes: 15
+          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
