@@ -88,19 +88,10 @@ async def agent(ops_test: OpsTest):
         """Count the number of applications in the model."""
         return len((await ops_test.model.get_status()).applications)
 
-    async def wait_for_removal():
-        """Wait for agent to be removed."""
-        for _ in range(120):
-            if await application_count() == 1:
-                break
-            await asyncio.sleep(1)
-
-    await wait_for_removal()
-
-    # Force removal
-    if await application_count() != 1:
-        await ops_test.juju("remove-application", agent_app_name, "--force")
-        await wait_for_removal()
+    for _ in range(120):
+        if await application_count() == 1:
+            break
+        await asyncio.sleep(1)
 
     assert await application_count() == 1, "jenkins agent failed to be removed"
 
@@ -110,10 +101,14 @@ async def agent_related_to_jenkins(
     app_name: str, ops_test: OpsTest, agent: Application, app_jenkins_version: Application
 ):
     """Relate agent to Jenkins."""
-    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
+    server_provides = "{}:master".format(app_name)
+    agent_provides = "jenkins-slave:slave"
+    await ops_test.model.add_relation(server_provides, agent_provides)
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield agent
+
+    await ops_test.juju("remove-relation", server_provides, agent_provides)
 
 
 @pytest.mark.asyncio
