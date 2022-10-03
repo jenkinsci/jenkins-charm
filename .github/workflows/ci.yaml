@@ -41,6 +41,11 @@ jobs:
         run: |
           sudo snap remove charm
           sudo snap install charm --channel=2.x/stable --classic
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          limit-access-to-actor: true
+          limit-access-to-users: jdkandersson
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
