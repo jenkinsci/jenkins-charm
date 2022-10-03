@@ -60,9 +60,12 @@ async def jenkins_credentials(app: Application):
 
 
 @pytest_asyncio.fixture(scope="module")
-async def jenkins_url(app: Application):
+async def jenkins_url(app: Application, ops_test: OpsTest):
     """Get the jenkins url."""
     public_address = app.units[0].public_address
+    if public_address is None:
+        print(await (ops_test.juju("status")))
+        print(await (ops_test.juju("debug-log", "--replay", "--no-tail")))
     # Calculate host ensuring IPv6 support
     host = public_address if ":" not in public_address else "[{}]".format(public_address)
     return "http://{}:8080".format(host)
