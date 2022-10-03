@@ -71,8 +71,9 @@ async def app_jenkins_version(ops_test: OpsTest, app: Application, request: pyte
 @pytest_asyncio.fixture(scope="function")
 async def agent(ops_test: OpsTest):
     """Deploy machine agent and destroy it after tests complete."""
+    agent_app_name = "jenkins-slave"
     agent: Application = await ops_test.model.deploy(
-        "jenkins-slave", series="focal", channel="edge"
+        agent_app_name, series="focal", channel="edge"
     )
     # Don't wait for active because the agent will start blocked
     await ops_test.model.wait_for_idle()
@@ -87,10 +88,20 @@ async def agent(ops_test: OpsTest):
         """Count the number of applications in the model."""
         return len((await ops_test.model.get_status()).applications)
 
-    for _ in range(120):
-        if await application_count() == 1:
-            break
-        await asyncio.sleep(1)
+    async def wait_for_removal():
+        """Wait for agent to be removed."""
+        for _ in range(120):
+            if await application_count() == 1:
+                break
+            await asyncio.sleep(1)
+
+    await wait_for_removal()
+
+    # Force removal
+    if await application_count() != 1:
+        await ops_test.juju("remove-application", agent_app_name, "--force")
+        await wait_for_removal()
+
     assert await application_count() == 1, "jenkins agent failed to be removed"
 
 
