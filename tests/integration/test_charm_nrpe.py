@@ -27,7 +27,8 @@ async def nrpe(app_name: str, ops_test: OpsTest, app: Application, series: str):
         "{}:nrpe-external-master".format(app_name), "nrpe:nrpe-external-master"
     )
     # nrpe requires nagios
-    # [2022-09-29] Nagios does not support focal
+    # [2022-09-29] Nagios does not support focal:
+    # https://bugs.launchpad.net/charm-nagios/+bug/1900698
     await ops_test.model.deploy("nagios", series=(series if series != "focal" else "bionic"))
     await ops_test.model.add_relation("nrpe:monitors", "nagios:monitors")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
