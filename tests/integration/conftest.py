@@ -7,7 +7,7 @@ import typing
 import jenkins
 from ops.model import Application, ActiveStatus
 import pytest_asyncio
-from pytest import fixture, Config
+from pytest import fixture, Config, set_trace
 from pytest_operator.plugin import OpsTest
 import yaml
 
@@ -62,10 +62,10 @@ async def jenkins_credentials(app: Application):
 @pytest_asyncio.fixture(scope="module")
 async def jenkins_url(app: Application, ops_test: OpsTest):
     """Get the jenkins url."""
-    public_address = app.units[0].public_address
-    if public_address is None:
-        print(await (ops_test.juju("status")))
-        print(await (ops_test.juju("debug-log", "--replay", "--no-tail")))
+    # [2022-10-03] It seems that app.units[0].public_address randomly returns None instead of the
+    # address, using status instead
+    status = await ops_test.model.get_status()
+    public_address = status.machines["0"].dns_name
     # Calculate host ensuring IPv6 support
     host = public_address if ":" not in public_address else "[{}]".format(public_address)
     return "http://{}:8080".format(host)
