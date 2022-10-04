@@ -31,6 +31,7 @@ APT_DEPENDENCIES = {
 CONSTANT_APT_DEPENDENCIES = ["daemon"]
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
 JENKINS_XENIAL_VERSION = "2.346.*"
+PRE_JAVA_11_JENKINS_VERSION = "2.164.1"
 
 
 class Packages(object):
@@ -78,7 +79,7 @@ class Packages(object):
                 # No Jenkins version installed
                 pass
         if jenkins_version is not None and parse_version(jenkins_version) < parse_version(
-            "2.164.1"
+            PRE_JAVA_11_JENKINS_VERSION
         ):
             return APT_DEPENDENCIES["pre-jenkins-2.164"]
         return APT_DEPENDENCIES["jenkins-2.164-and-later"]
