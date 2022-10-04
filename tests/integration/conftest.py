@@ -7,7 +7,7 @@ import typing
 import jenkins
 from ops.model import Application, ActiveStatus
 import pytest_asyncio
-from pytest import fixture, Config, set_trace
+from pytest import fixture, Config
 from pytest_operator.plugin import OpsTest
 import yaml
 
