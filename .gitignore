@@ -9,3 +9,5 @@
 *.swp
 lib/charms/__init__.py
 lib/charms/layer/__init__.py
+venv
+.mypy_cache

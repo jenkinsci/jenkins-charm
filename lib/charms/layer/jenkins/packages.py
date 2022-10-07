@@ -18,12 +18,20 @@ from jenkins_plugin_manager.core import JenkinsCore
 #     can be safely ignored since we're stubbing out these objects).
 apt = try_import("charms.apt")
 
-APT_DEPENDENCIES = {
-    "xenial": ["daemon", "default-jre-headless"],
-    "bionic": ["daemon", "openjdk-8-jre-headless"],
-    "focal": ["daemon", "openjdk-8-jre-headless"],
+POSSIBLE_JRE_DEPENDENCIES_XENIAL = {"default-jre-headless", "openjdk-8-jre-headless"}
+POSSIBLE_JRE_DEPENDENCIES = {
+    *POSSIBLE_JRE_DEPENDENCIES_XENIAL,
+    "openjdk-11-jre-headless",
 }
+APT_DEPENDENCIES = {
+    "jenkins-2.164-and-later": ["daemon", "openjdk-11-jre-headless"],
+    "pre-jenkins-2.164": ["daemon", "openjdk-8-jre-headless"],
+    "xenial": ["daemon", "openjdk-8-jre-headless"],
+}
+CONSTANT_APT_DEPENDENCIES = ["daemon"]
 APT_SOURCE = "deb http://pkg.jenkins.io/%s binary/"
+JENKINS_XENIAL_VERSION = "2.346.*"
+FIRST_JAVA_11_JENKINS_VERSION = "2.164.1"
 
 
 class Packages(object):
@@ -46,17 +54,89 @@ class Packages(object):
 
     def distro_codename(self):
         """Return the distro release code name, e.g. 'precise' or 'trusty'."""
-        return self._host.lsb_release()['DISTRIB_CODENAME']
+        return self._host.lsb_release()["DISTRIB_CODENAME"]
 
-    def install_dependencies(self):
-        """Install the deb dependencies of the Jenkins package."""
+    def apt_dependencies(self, jenkins_version=None):
+        """Get the apt dependencies based on Ubuntu series and Jenkins version.
+
+        Assumes that, if Jenkins is not installed, that the latest LTS version of Jenkins will be
+        installed and returns the dependencies for that version.
+
+        Args:
+            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on
+                installed Jenkins version and Ubuntu series if it is None.
+
+        Returns:
+            The dependencies of Jenkins to be installed.
+
+        """
+        if self.distro_codename() == "xenial":
+            return APT_DEPENDENCIES["xenial"]
+        if jenkins_version is None:
+            try:
+                jenkins_version = self.jenkins_version()
+            except subprocess.CalledProcessError:
+                # No Jenkins version installed
+                pass
+        if jenkins_version is not None and parse_version(jenkins_version) < parse_version(
+            FIRST_JAVA_11_JENKINS_VERSION
+        ):
+            return APT_DEPENDENCIES["pre-jenkins-2.164"]
+        return APT_DEPENDENCIES["jenkins-2.164-and-later"]
+
+    def install_dependencies(self, jenkins_version=None):
+        """Install the deb dependencies of the Ubuntu series and Jenkins package.
+
+        Removes any dependencies that are no longer needed based on the Ubuntu series and version
+        of Jenkins to be installed and then installs dependencies based on Jenkins version
+        installed/ to be installed (assumed to be the latest LTS version if Jenkins is not
+        installed yet).
+
+        Args:
+            jenkins_version: The version of Jenkins to get the apt dependencies for. Based on the
+                Ubuntu series and installed/ anticipated to be installed Jenkins version if it is
+                None.
+
+        """
         hookenv.log("Installing jenkins dependencies and desired tools")
-        self._apt.queue_install(APT_DEPENDENCIES[self.distro_codename()])
+
+        # Remove any previous dependencies that are no longer needed
+        required_apt_dependencies = set(self.apt_dependencies(jenkins_version=jenkins_version))
+        self._apt.purge(
+            (
+                POSSIBLE_JRE_DEPENDENCIES
+                if self.distro_codename() != "xenial"
+                else POSSIBLE_JRE_DEPENDENCIES_XENIAL
+            )
+            - required_apt_dependencies
+        )
+
+        # Install depedencies based on Jenkins version
+        self._apt.queue_install(required_apt_dependencies)
+        self._apt.install_queued()
 
     def install_tools(self):
         """Install the configured tools."""
         tools = hookenv.config()["tools"].split()
         self._apt.queue_install(tools)
+
+    @staticmethod
+    def limit_jenkins_version(version):
+        """
+        Limit the version of Jenkins that can be installed.
+
+        Writes an entry into the /etc/apt/preferences file based on the following specification:
+        https://manpages.ubuntu.com/manpages/xenial/man5/apt_preferences.5.html
+
+        Args:
+            version: The Jenkins version to limit installation to.
+
+        """
+        hookenv.log("Limiting Jenkins version to %s" % version)
+        with open(paths.APT_PREFERENCES, "a") as apt_preferences:
+            apt_preferences.write(
+                "\n\nPackage: jenkins\nPin: version {}\nPin-Priority: 1000\n".format(version)
+            )
 
     def install_jenkins(self):
         """Install the Jenkins package."""
@@ -64,15 +144,19 @@ class Packages(object):
         config = hookenv.config()
         release = config["release"]
         if release == "bundle":
+            if self.distro_codename() == "xenial":
+                self.limit_jenkins_version(JENKINS_XENIAL_VERSION)
             self._install_from_bundle()
-        elif release.startswith('http'):
+        elif release.startswith("http"):
             self._install_from_remote_deb(release)
         else:
+            if self.distro_codename() == "xenial":
+                self.limit_jenkins_version(JENKINS_XENIAL_VERSION)
             self._setup_source(release)
         self._apt.queue_install(["jenkins"])
 
     def jenkins_version(self):
-        return self._apt.get_package_version('jenkins', full_version=True)
+        return self._apt.get_package_version("jenkins", full_version=True)
 
     def _install_from_bundle(self):
         """Install Jenkins from bundled package."""
@@ -89,8 +173,7 @@ class Packages(object):
             download_path = os.path.join(hookenv.charm_dir(), "files")
             self._bundle_download(download_path)
             bundle_path = os.path.join(download_path, "jenkins_%s_all.deb" % self._jc.core_version)
-        hookenv.log(
-            "Installing from bundled Jenkins package: %s:" % bundle_path)
+        hookenv.log("Installing from bundled Jenkins package: %s:" % bundle_path)
         self._install_local_deb(bundle_path)
 
     def _install_local_deb(self, filename):
@@ -102,7 +185,7 @@ class Packages(object):
         """Install Jenkins from http(s) deb file."""
         hookenv.log("Getting remote jenkins package: %s" % url)
         tempdir = tempfile.mkdtemp()
-        target = os.path.join(tempdir, 'jenkins.deb')
+        target = os.path.join(tempdir, "jenkins.deb")
         subprocess.check_call(("wget", "-q", "-O", target, url))
         self._install_local_deb(target)
         shutil.rmtree(tempdir)
@@ -130,20 +213,18 @@ class Packages(object):
         self._apt.add_source(source, key=key)
 
     def _bundle_download(self, path=None):
-        hookenv.log(
-            "Downloading bundle from %s" % self._jc.jenkins_repo)
+        hookenv.log("Downloading bundle from %s" % self._jc.jenkins_repo)
         self._jc.get_binary_package(path)
 
     def jenkins_upgradable(self):
         """
-            Verify if there's a new version of jenkins available.
-            Note: When bundle-site is not set the return will always
-            be True.
+        Verify if there's a new version of jenkins available.
+        Note: When bundle-site is not set the return will always
+        be True.
         """
         if hookenv.config()["bundle-site"] == "":
             return True
-        if (parse_version(self._jc.core_version) >
-                parse_version(self.jenkins_version())):
+        if parse_version(self._jc.core_version) > parse_version(self.jenkins_version()):
             return True
         return False
 

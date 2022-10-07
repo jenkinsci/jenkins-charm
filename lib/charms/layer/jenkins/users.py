@@ -27,16 +27,24 @@ class Users(object):
         # Save the password to a file. It's not used directly by this charm
         # but it's convenient for integration with third-party tools.
         host.write_file(
-            paths.ADMIN_PASSWORD, admin.password.encode("utf-8"),
-            owner="root", group="root", perms=0o0600)
+            paths.ADMIN_PASSWORD,
+            admin.password.encode("utf-8"),
+            owner="root",
+            group="root",
+            perms=0o0600,
+        )
 
         if not os.path.exists(paths.LAST_EXEC):
             # This mean it's the very first time we configure the user,
             # and we want to create this file in order to avoid Jenkins
             # presenting the setup wizard.
             host.write_file(
-                paths.LAST_EXEC, "{}\n".format(api.version()).encode("utf-8"),
-                owner="jenkins", group="nogroup", perms=0o0600)
+                paths.LAST_EXEC,
+                "{}\n".format(api.version()).encode("utf-8"),
+                owner="jenkins",
+                group="nogroup",
+                perms=0o0600,
+            )
 
     def _admin_data(self):
         """Get a named tuple holding configuration data for the admin user."""
@@ -50,4 +58,4 @@ class Users(object):
         return _User(username, password)
 
 
-_User = namedtuple("User", ["username", "password"])
+_User = namedtuple("_User", ["username", "password"])

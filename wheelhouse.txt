@@ -6,6 +6,8 @@ MarkupSafe<2.0.0
 certifi<=2021.10.8
 # Requests 2.26.0 no longer supports python 3.5
 requests<2.26.0
+# urllib3 1.26.10 no longer supports python 3.5
+urllib3<1.26.10
 # We require a version of python-jenkins that uses requests.
 python-jenkins>=0.4.16
 git+https://git.launchpad.net/jenkins-plugin-manager#egg=jenkins-plugin-manager

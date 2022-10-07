@@ -2,11 +2,23 @@ restart:
   description: Wait for all jobs to be completed and restart jenkins.
 upgrade:
   description: Upgrade jenkins package when using bundle.
+install-dependencies:
+  description: |
+    Install Jenkins dependencies for the specified Jenkins version (or the currently installed/
+    anticipated to be installed version if the Jenkins version is not specified). Primarily useful
+    during integration tests.
+  params:
+    jenkins_version:
+      type: string
+      description: The version of Jenkins to install dependencies for.
 quiet-down:
   description: Put Jenkins in a Quiet mode. In that mode Jenkins doesn’t start any build.
 cancel-quiet-down:
   description: Cancel quiet mode.
 update-plugins:
-  description: Install available updates for plugins and safe-restart jenkins. No-op if there aren't updates available.
+  description: |
+    Install available updates for plugins and safe-restart jenkins. No-op if there aren't updates
+    available.
 get-admin-credentials:
-  description: Retrieve the admin credentials, including the password which may have been auto-generated.
+  description: |
+    Retrieve the admin credentials, including the password which may have been auto-generated.

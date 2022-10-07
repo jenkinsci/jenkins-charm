@@ -1,0 +1,21 @@
+#!/usr/local/sbin/charm-env python3
+
+from charmhelpers.core.hookenv import (
+    action_fail,
+    action_set,
+    function_get,
+)
+
+import reactive.jenkins as Jenkins
+
+
+def install_dependencies():
+    """Install Jenkins dependencies and report success."""
+    Jenkins.install_dependencies(jenkins_version=function_get("jenkins_version"))
+    action_set({"output": "Dependencies have been installed", "outcome": "Success"})
+
+
+try:
+    install_dependencies()
+except Exception as e:
+    action_fail("Failed to install dependencies: {}".format(str(e)))

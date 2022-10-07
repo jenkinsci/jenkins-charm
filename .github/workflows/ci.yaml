@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  workflow_call:
+
+jobs:
+  unit-test:
+    name: Unit tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: python3 -m pip install tox
+      - name: Run tests
+        run: tox -e unit
+  integration-test-lxd:
+    strategy:
+      matrix:
+        series: [xenial, bionic, focal]
+        module: [agent, basic, nrpe, website]
+      fail-fast: false
+    name: Integration tests (lxd)
+    # [2022-09-29] The integration tests have to run on Ubuntu 18.04 to be able to support Xenial
+    runs-on: ubuntu-18.04
+    needs: [unit-test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup operator environment
+        uses: charmed-kubernetes/actions-operator@main
+        with:
+          provider: lxd
+        # [2022-09-29] Need to install Python 3.8 because that is what the tests run on and 18.04
+        # comes with Python 3.6
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+        # [2022-10-03] Use charm 2.x/stable as 3.x is not working
+      - name: Revert to charm 2.x
+        run: |
+          sudo snap remove charm
+          sudo snap install charm --channel=2.x/stable --classic
+      - name: Run integration tests
+        run: |
+          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}

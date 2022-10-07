@@ -1,4 +1,4 @@
-# Needed to support xenial per https://discourse.charmhub.io/t/removing-py27-p35-from-charm-helpers-library/5335
+# Needed to support xenial as per https://discourse.charmhub.io/t/removing-py27-p35-from-charm-helpers-library/5335
 charmhelpers<1.2.0
 flake8
 python-jenkins
