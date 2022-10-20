@@ -18,7 +18,6 @@ jobs:
     strategy:
       matrix:
         series: [xenial, bionic, focal]
-        module: [agent, basic, nrpe, website]
       fail-fast: false
     name: Integration tests (lxd)
     # [2022-09-29] The integration tests have to run on Ubuntu 18.04 to be able to support Xenial
@@ -43,4 +42,4 @@ jobs:
           sudo snap install charm --channel=2.x/stable --classic
       - name: Run integration tests
         run: |
-          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
+          tox -e integration -- --series ${{ matrix.series }}
