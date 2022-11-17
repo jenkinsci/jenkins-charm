@@ -80,9 +80,8 @@ async def app_jenkins_version(
 async def agent(ops_test: OpsTest, series: str):
     """Deploy machine agent and destroy it after tests complete."""
     agent_app_name = "jenkins-slave"
-    # Agent currently does not support xenial
     agent: Application = await ops_test.model.deploy(
-        agent_app_name, series=series if series != "xenial" else "bionic", channel="edge"
+        agent_app_name, series=series, channel="stable"
     )
     # Don't wait for active because the agent will start blocked
     await ops_test.model.wait_for_idle()
