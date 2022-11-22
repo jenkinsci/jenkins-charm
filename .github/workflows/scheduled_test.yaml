@@ -14,15 +14,23 @@ jobs:
     needs: [integration-test]
     if: ${{ inputs.notify && failure() }}
     runs-on: ubuntu-latest
+    env:
+      USERNAME: ${{ secrets.email_username }}
+      PASSWORD: ${{ secrets.email_password }}
     steps:
+      - name: Check credential exists
+        if: ${{ env.USERNAME == null || env.PASSWORD == null }}
+        run: |
+          echo "Missing email username and password as input for this workflow."
+          exit 1
       - name: Notify Failure
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 465
-          username: ${{ secrets.email_username }}
-          password: ${{ secrets.email_password }}
-          from: ${{ secrets.email_username }}
+          username: ${{ env.USERNAME }}
+          password: ${{ env.PASSWORD }}
+          from: ${{ env.USERNAME }}
           to: is-devops-team@canonical.com
-          subject: "[Scheduled Test] Jenkins Charm integration test ${{ github.repository }} has failed"
+          subject: "[Scheduled Test Failed] Jenkins Charm integration test ${{ github.repository }} has failed"
           body: "Scheduled Jenkins Charm integration test of ${{ github.repository }} has failed.\nRun ID: ${{ github.run_id}}\nRun Number: ${{ github.run_number }}\nRun Attempt: ${{ github.run_attempt}}\n${{ github.repositoryUrl }}"
