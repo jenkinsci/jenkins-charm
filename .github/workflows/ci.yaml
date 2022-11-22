@@ -18,3 +18,6 @@ jobs:
     name: Integration tests (lxd)
     needs: [unit-test]
     uses: ./.github/workflows/integration_test.yaml
+    with:
+      notify: false
+    secrets: inherit
