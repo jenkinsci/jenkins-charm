@@ -9,10 +9,8 @@ on:
     secrets:
       email_username:
         required: true
-        type: string
       email_password:
         required: true
-        type: string
 
 jobs:
   integration-test-lxd:
