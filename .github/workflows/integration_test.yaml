@@ -37,22 +37,3 @@ jobs:
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
-      - name: Notify on Failure
-        # TODO: Set to `failure()`.
-        if: ${{ notify && always() }}
-        uses: dawidd6/action-send-mail@v3
-        with:
-          # mail server settings
-          server_address: smtp.gmail.com
-          server_port: 465
-          # user credentials
-          username: ${{ secrets.email_username }}
-          password: ${{ secrets.email_password }}
-          # email subject
-          subject: ${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}
-          # email body as text
-          body: ${{ github.repository }} has ${{ job.status }}
-          # comma-separated string, send email to
-          to: andrew.liaw@canonical.com
-          # from email name
-          from: ${{ secrets.email_username }}
