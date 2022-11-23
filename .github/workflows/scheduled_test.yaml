@@ -33,4 +33,9 @@ jobs:
           from: ${{ env.USERNAME }}
           to: is-devops-team@canonical.com
           subject: "[Scheduled Test Failed] Jenkins Charm integration test ${{ github.repository }} has failed"
-          body: "Scheduled Jenkins Charm integration test of ${{ github.repository }} has failed.\nRun ID: ${{ github.run_id}}\nRun Number: ${{ github.run_number }}\nRun Attempt: ${{ github.run_attempt}}\n${{ github.repositoryUrl }}"
+          body: |
+            Scheduled Jenkins Charm integration test of ${{ github.repository }} has failed.
+            Run ID: ${{ github.run_id}}
+            Run Number: ${{ github.run_number }}
+            Run Attempt: ${{ github.run_attempt}}
+            URL: ${{ github.repositoryUrl }}
