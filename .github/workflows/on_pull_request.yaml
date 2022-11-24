@@ -1,9 +1,0 @@
-name: Test
-
-on:
-  pull_request:
-
-jobs:
-  tests:
-    name: Run Tests
-    uses: ./.github/workflows/ci.yaml

@@ -1,7 +1,7 @@
-name: CI
+name: test
 
 on:
-  workflow_call:
+  pull_request:
 
 jobs:
   unit-test:
@@ -14,7 +14,3 @@ jobs:
         run: python3 -m pip install tox
       - name: Run tests
         run: tox -e unit
-  integration-test-lxd:
-    name: Integration tests (lxd)
-    needs: [unit-test]
-    uses: ./.github/workflows/integration_test.yaml
