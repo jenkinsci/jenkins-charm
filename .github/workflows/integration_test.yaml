@@ -13,4 +13,5 @@ jobs:
     with:
       extra-arguments: -k ${{ matrix.module }}
       series: '["xenial", "bionic", "focal"]'
+      pre-run-script: files/pre-integration-test.sh
     secrets: inherit
