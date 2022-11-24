@@ -12,7 +12,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/setup-python@v4
-        with: python-version: '3.8'
+        with:
+          python-version: '3.8'
       - uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
         with:
           extra-arguments: -k ${{ matrix.module }}
