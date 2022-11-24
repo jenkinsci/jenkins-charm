@@ -12,5 +12,5 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     with:
       extra-arguments: -k ${{ matrix.module }}
-      series: [xenial, bionic, focal]
+      series: '["xenial", "bionic", "focal"]'
     secrets: inherit
