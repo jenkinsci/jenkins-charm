@@ -5,17 +5,12 @@ on:
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-18.04
     strategy:
       matrix:
         module: [agent, basic, nrpe, website]
       fail-fast: false
-    steps:
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-      - uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-        with:
-          extra-arguments: -k ${{ matrix.module }}
-          series: [xenial, bionic, focal]
-        secrets: inherit
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    with:
+      extra-arguments: -k ${{ matrix.module }}
+      series: [xenial, bionic, focal]
+    secrets: inherit
