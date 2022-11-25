@@ -1,11 +1,9 @@
 name: Scheduled Test
 
 on:
-  # TODO: Change back to schedule.
-  pull_request:
-  # schedule:
-  #   # Execute weekly on Monday UTC time. Offset time to avoid high load period on github servers.
-  #   - cron: "15 3 * * 1"
+  schedule:
+    # Execute weekly on Monday UTC time. Offset time to avoid high load period on github servers.
+    - cron: "15 3 * * 1"
 
 jobs:
   integration-test:
@@ -14,8 +12,7 @@ jobs:
   notify-on-failure:
     name: Notify on failure
     needs: [integration-test]
-    # TODO: Set to failure().
-    if: ${{ always() }}
+    if: ${{ failure() }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify Failure
