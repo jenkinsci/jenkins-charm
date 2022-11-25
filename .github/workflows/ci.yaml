@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  workflow_call:
+
+jobs:
+  unit-test:
+    name: Unit tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: python3 -m pip install tox
+      - name: Run tests
+        run: tox -e unit
+  integration-test-lxd:
+    name: Integration tests (lxd)
+    needs: [unit-test]
+    uses: ./.github/workflows/integration_test.yaml
