@@ -1,0 +1,33 @@
+name: Scheduled Test
+
+on:
+  schedule:
+    # Execute weekly on Monday UTC time. Offset time to avoid high load period on github servers.
+    - cron: "15 3 * * 1"
+
+jobs:
+  integration-test:
+    name: Integration tests (lxd)
+    uses: ./.github/workflows/integration_test.yaml
+  notify-on-failure:
+    name: Notify on failure
+    needs: [integration-test]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Failure
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.EMAIL_SERVER_ADDR }}
+          server_port: ${{ secrets.EMAIL_SERVER_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          from: ${{ secrets.EMAIL_USERNAME }}
+          to: is-devops-team@canonical.com
+          subject: "[Scheduled Test] Jenkins Charm integration test ${{ github.repository }} has ${{ job.status }}"
+          body: |
+            Scheduled Jenkins Charm integration test of ${{ github.repository }} has ${{ job.status }}.
+            Run ID: ${{ github.run_id}}
+            Run Number: ${{ github.run_number }}
+            Run Attempt: ${{ github.run_attempt}}
+            URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id}}
