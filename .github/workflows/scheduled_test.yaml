@@ -30,4 +30,4 @@ jobs:
             Run ID: ${{ github.run_id}}
             Run Number: ${{ github.run_number }}
             Run Attempt: ${{ github.run_attempt}}
-            URL: ${{ github.repositoryUrl }}
+            URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id}}
