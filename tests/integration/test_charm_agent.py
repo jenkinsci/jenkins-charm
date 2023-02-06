@@ -110,7 +110,7 @@ async def agent_related_to_jenkins(
 ):
     """Relate agent to Jenkins."""
     server_provides = "{}:master".format(app_name)
-    agent_provides = "jenkins-slave:slave"
+    agent_provides = "jenkins-agent:slave"
     await ops_test.model.add_relation(server_provides, agent_provides)
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 

@@ -1,17 +1,17 @@
 # Overview
 [![Build Status](https://travis-ci.org/jenkinsci/jenkins-charm.svg?branch=master)](https://travis-ci.org/jenkinsci/jenkins-charm) [![Coverage Status](https://coveralls.io/repos/github/jenkinsci/jenkins-charm/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/jenkins-charm?branch=master)
 
-This charm (along with its companion, jenkins-slave) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
+This charm (along with its companion, jenkins-agent) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
 
 This charm provides a Jenkins Server which can be accessed, after exposing, on `http://<master>:8080`.
 
 # Usage
 
-If you want to run jobs on separate nodes you will also need to deploy the jenkins-slave charm:
+If you want to run jobs on separate nodes you will also need to deploy the jenkins-agent charm:
 
     juju deploy jenkins
-    juju deploy -n 5 jenkins-slave
-    juju add-relation jenkins jenkins-slave
+    juju deploy -n 5 jenkins-agent
+    juju add-relation jenkins jenkins-agent
 
 Slaves will attempt to connect via JNLP on port 48484 by default. This is configurable, e.g.:
 
@@ -40,11 +40,11 @@ The Jenkins UI will be accessible on `http://<master>:8080`.
 
 ## Scale out Usage
 
-The main method to use the Jenkins service at scale is to add units to the jenkins-slave, as illustrated in the example usage:
+The main method to use the Jenkins service at scale is to add units to the jenkins-agent, as illustrated in the example usage:
 
-    juju deploy -n 5 jenkins-slave
+    juju deploy -n 5 jenkins-agent
 
-Here the "-n 5" is adding 5 additional units (instances) to the jenkins-slave. Of course that "5" can be as large as you wish or your cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
+Here the "-n 5" is adding 5 additional units (instances) to the jenkins-agent. Of course that "5" can be as large as you wish or your cloud provider supports. Additional information on scaling services with add-unit can be found at [Juju Scaling Docs](https://juju.ubuntu.com/docs/charms-scaling.html).
 
 ## Storage Support
 This charm includes Juju storage support which can be used in the standard way, for example:

@@ -303,10 +303,10 @@ class ApiTest(JenkinsTest):
             raise JenkinsException("error")
 
         self.fakes.jenkins.scripts[
-            "println(jenkins.model.Jenkins.getInstance().getComputer(\"jenkins-slave-0\").getJnlpMac())"] = "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2"
-        self.assertEqual(self.api.get_node_secret("jenkins-slave-0"), "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2")
+            "println(jenkins.model.Jenkins.getInstance().getComputer(\"jenkins-agent-0\").getJnlpMac())"] = "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2"
+        self.assertEqual(self.api.get_node_secret("jenkins-agent-0"), "23737cc9d891deaeb117fea094b62ee34cbedfd3478bf2209c97c390f73d48f2")
         self.fakes.jenkins.run_script = failure
-        self.assertFalse(self.api.get_node_secret("jenkins-slave-10"))
+        self.assertFalse(self.api.get_node_secret("jenkins-agent-10"))
 
     def test_set_update_center(self):
         """
