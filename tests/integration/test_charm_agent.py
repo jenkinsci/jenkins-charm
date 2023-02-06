@@ -6,10 +6,10 @@
 import asyncio
 
 import jenkins
-from ops.model import Application, ActiveStatus
-from packaging import version
 import pytest
 import pytest_asyncio
+from ops.model import ActiveStatus, Application
+from packaging import version
 from pytest_operator.plugin import OpsTest
 
 pytestmark = pytest.mark.agent
@@ -135,7 +135,9 @@ async def test_agent_relation(
 
     entity_id = agent_related_to_jenkins.units[0].entity_id.replace("/", "-")
     assert entity_id in nodes_offline_status
-    assert not nodes_offline_status[entity_id], "agent did not connect to jenkins"
+    assert not nodes_offline_status[
+        entity_id
+    ], f"agent did not connect to jenkins, {nodes_offline_status!r}"
 
 
 @pytest_asyncio.fixture(scope="function")
