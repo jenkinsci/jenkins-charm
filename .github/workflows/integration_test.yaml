@@ -30,5 +30,6 @@ jobs:
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 10
-        limit-access-to-actor: true
+        with:
+          timeout-minutes: 10
+          limit-access-to-actor: true
