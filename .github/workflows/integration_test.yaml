@@ -28,9 +28,7 @@ jobs:
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        if: ${{ failure() }}
-        with:
-          limit-access-to-actor: true
-          limit-access-to-users: jdkandersson
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 10
+        limit-access-to-actor: true
