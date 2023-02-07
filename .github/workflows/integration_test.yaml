@@ -27,4 +27,10 @@ jobs:
           python-version: '3.8'
       - name: Run integration tests
         run: |
-          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
+          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        if: ${{ failure() }}
+        with:
+          limit-access-to-actor: true
+          limit-access-to-users: jdkandersson
