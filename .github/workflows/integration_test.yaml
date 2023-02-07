@@ -29,6 +29,7 @@ jobs:
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
       - name: Setup tmate session
+        if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
         with:
           timeout-minutes: 10
