@@ -160,7 +160,7 @@ async def agent_downloading_jnlp_file_related_to_jenkins(
     await agent.set_config({"download_jnlp_file": str(True)})
 
     # Relate to Jenkins
-    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
+    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-agent:slave")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield agent

@@ -4,14 +4,13 @@ import re
 import shutil
 import subprocess
 import tempfile
-
 from glob import glob
-from testtools import try_import
-from pkg_resources import parse_version
+
 from charmhelpers.core import hookenv, host
 from charms.layer.jenkins import paths
-
 from jenkins_plugin_manager.core import JenkinsCore
+from pkg_resources import parse_version
+from testtools import try_import
 
 # XXX Wrap this import with try_import since layers code won't be available
 #     when running unit tests for this layer (and in such case import errors
