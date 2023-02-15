@@ -48,7 +48,7 @@ async def install_jenkins_version(
         pytest.param(None, id="latest LTS jenkins version"),
         # The following are the versions of Jenkins running in production in Canonical as of
         # 2022-09-21
-        pytest.param("2.361.1", id="jenkins version 2.361"),
+        pytest.param("2.361.4", id="jenkins version 2.361"),
         pytest.param("2.346.3", id="jenkins version 2.346"),
         pytest.param("2.332.4", id="jenkins version 2.332"),
         pytest.param("2.277.4", id="jenkins version 2.277"),
