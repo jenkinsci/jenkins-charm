@@ -9,13 +9,13 @@ jobs:
   integration-test:
     name: Integration tests (lxd)
     uses: ./.github/workflows/integration_test.yaml
-  notify-on-failure:
-    name: Notify on failure
+  notify-on-run:
+    name: Notify on run
     needs: [integration-test]
-    if: ${{ failure() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Notify Failure
+      - name: Notify
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.EMAIL_SERVER_ADDR }}
@@ -24,9 +24,9 @@ jobs:
           password: ${{ secrets.EMAIL_PASSWORD }}
           from: ${{ secrets.EMAIL_USERNAME }}
           to: is-devops-team@canonical.com
-          subject: "[Scheduled Test] Jenkins Charm integration test ${{ github.repository }} has ${{ job.status }}"
+          subject: "[Scheduled Test] Jenkins Charm integration test ${{ github.repository }} has ${{ needs.integration-test.result }}"
           body: |
-            Scheduled Jenkins Charm integration test of ${{ github.repository }} has ${{ job.status }}.
+            Scheduled Jenkins Charm integration test of ${{ github.repository }} has ${{ needs.integration-test.result }}.
             Run ID: ${{ github.run_id}}
             Run Number: ${{ github.run_number }}
             Run Attempt: ${{ github.run_attempt}}

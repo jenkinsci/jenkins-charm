@@ -6,10 +6,10 @@
 import asyncio
 
 import jenkins
-from ops.model import Application, ActiveStatus
-from packaging import version
 import pytest
 import pytest_asyncio
+from ops.model import ActiveStatus, Application
+from packaging import version
 from pytest_operator.plugin import OpsTest
 
 pytestmark = pytest.mark.agent
@@ -48,7 +48,7 @@ async def install_jenkins_version(
         pytest.param(None, id="latest LTS jenkins version"),
         # The following are the versions of Jenkins running in production in Canonical as of
         # 2022-09-21
-        pytest.param("2.361.1", id="jenkins version 2.361"),
+        pytest.param("2.361.4", id="jenkins version 2.361"),
         pytest.param("2.346.3", id="jenkins version 2.346"),
         pytest.param("2.332.4", id="jenkins version 2.332"),
         pytest.param("2.277.4", id="jenkins version 2.277"),
@@ -79,7 +79,7 @@ async def app_jenkins_version(
 @pytest_asyncio.fixture(scope="function")
 async def agent(ops_test: OpsTest, series: str):
     """Deploy machine agent and destroy it after tests complete."""
-    agent_app_name = "jenkins-slave"
+    agent_app_name = "jenkins-agent"
     agent: Application = await ops_test.model.deploy(
         agent_app_name, series=series, channel="stable"
     )
@@ -110,7 +110,7 @@ async def agent_related_to_jenkins(
 ):
     """Relate agent to Jenkins."""
     server_provides = "{}:master".format(app_name)
-    agent_provides = "jenkins-slave:slave"
+    agent_provides = "jenkins-agent:slave"
     await ops_test.model.add_relation(server_provides, agent_provides)
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
@@ -135,7 +135,9 @@ async def test_agent_relation(
 
     entity_id = agent_related_to_jenkins.units[0].entity_id.replace("/", "-")
     assert entity_id in nodes_offline_status
-    assert not nodes_offline_status[entity_id], "agent did not connect to jenkins"
+    assert not nodes_offline_status[
+        entity_id
+    ], f"agent did not connect to jenkins, {nodes_offline_status!r}"
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -158,7 +160,7 @@ async def agent_downloading_jnlp_file_related_to_jenkins(
     await agent.set_config({"download_jnlp_file": str(True)})
 
     # Relate to Jenkins
-    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-slave:slave")
+    await ops_test.model.add_relation("{}:master".format(app_name), "jenkins-agent:slave")
     await ops_test.model.wait_for_idle(status=ActiveStatus.name)
 
     yield agent
