@@ -27,10 +27,4 @@ jobs:
           python-version: '3.8'
       - name: Run integration tests
         run: |
-          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }} --keep-models
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          timeout-minutes: 10
-          limit-access-to-actor: true
+          tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
