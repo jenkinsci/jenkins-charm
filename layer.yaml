@@ -8,6 +8,13 @@ includes:
   - interface:nrpe-external-master
 options:
   basic:
-    packages: ['net-tools', 'python3-testtools', 'pwgen']
+    packages:
+      - 'build-essential'
+      - 'net-tools'
+      - 'pwgen'
+      - 'python3-setuptools'
+      - 'python3-testtools'
+      - 'python3-wheel'
+      - 'python3-yaml'
     include_system_packages: true
 repo: 'https://github.com/jenkinsci/jenkins-charm'

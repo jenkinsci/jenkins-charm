@@ -11,3 +11,12 @@ urllib3<1.26.10
 # We require a version of python-jenkins that uses requests.
 python-jenkins>=0.4.16
 git+https://git.launchpad.net/jenkins-plugin-manager#egg=jenkins-plugin-manager
+
+MarkupSafe<2.0.0;python_version < '3.6'
+MarkupSafe<2.1.0;python_version >= '3.6' and python_version <= '3.8' # py38, focal
+MarkupSafe;python_version > '3.8'
+setuptools<42;python_version <= '3.8.10'
+setuptools;python_version > '3.8'
+setuptools-scm;python_version > '3.8'
+setuptools-scm<=1.17.0;python_version <= '3.6'
+setuptools-scm-git-archive;python_version <= '3.6'
