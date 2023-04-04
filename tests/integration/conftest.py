@@ -40,7 +40,8 @@ async def app(ops_test: OpsTest, app_name: str, series: str):
     Builds the charm and deploys the charm.
     """
     charm = await ops_test.build_charm(".")
-    application = await ops_test.model.deploy(charm, application_name=app_name, series=series)
+    application = await ops_test.model.deploy(charm, application_name=app_name, series=series, constraints="container=lxd")
+
     # Jenkins takes a while to deploy, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 
