@@ -7,12 +7,12 @@ jobs:
   integration-test-lxd:
     strategy:
       matrix:
-        series: [xenial, bionic, focal]
+        # ubuntu 18.04 is no longer supported and hence xenial cannot be tested.
+        series: [bionic, focal]
         module: [agent, basic, nrpe, website]
       fail-fast: false
     name: Integration tests (lxd)
-    # [2022-09-29] The integration tests have to run on Ubuntu 18.04 to be able to support Xenial
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -21,11 +21,6 @@ jobs:
         with:
           provider: lxd
           charm-channel: 2.x/stable
-        # [2022-09-29] Need to install Python 3.8 because that is what the tests run on and 18.04
-        # comes with Python 3.6
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
