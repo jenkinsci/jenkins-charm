@@ -20,11 +20,12 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
+          charm-channel: 2.x/stable
         # [2022-09-29] Need to install Python 3.8 because that is what the tests run on and 18.04
         # comes with Python 3.6
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - name: Run integration tests
         run: |
           tox -e integration -- -k ${{ matrix.module }} --series ${{ matrix.series }}
