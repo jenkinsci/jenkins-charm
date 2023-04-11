@@ -7,7 +7,8 @@ jobs:
   integration-test-lxd:
     strategy:
       matrix:
-        # ubuntu 18.04 is no longer supported and hence xenial cannot be tested.
+        # ubuntu 18.04 is no longer supported on Github Action runnner instance types
+        # and hence xenial cannot be tested on Github Actions.
         series: [bionic, focal]
         module: [agent, basic, nrpe, website]
       fail-fast: false
@@ -21,8 +22,7 @@ jobs:
         with:
           provider: lxd
           charm-channel: 2.x/stable
-        # [2022-09-29] Need to install Python 3.8 because that is what the tests run on and 18.04
-        # comes with Python 3.6
+        # Python 3.8 is a required integreation test dependency.
       - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
