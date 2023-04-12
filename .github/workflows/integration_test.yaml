@@ -7,8 +7,8 @@ jobs:
   integration-test-lxd:
     strategy:
       matrix:
-        # ubuntu 18.04 is no longer supported on Github Action runnner instance types
-        # and hence xenial cannot be tested on Github Actions.
+        # ubuntu 18.04 is no longer supported on Github Action runner instance types
+        # and hence ubuntu versions older than bionic cannot be tested on Github Actions.
         series: [bionic, focal]
         module: [agent, basic, nrpe, website]
       fail-fast: false
