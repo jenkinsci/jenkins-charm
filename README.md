@@ -1,5 +1,8 @@
+[![CharmHub Badge](https://charmhub.io/jenkins/badge.svg)](https://charmhub.io/jenkins)
+[![Integration Test](https://github.com/jenkinsci/jenkins-charm/actions/workflows/integration_test.yaml/badge.svg)](https://github.com/jenkinsci/jenkins-charm/actions/workflows/integration_test.yaml)
+[![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
+
 # Overview
-[![Build Status](https://travis-ci.org/jenkinsci/jenkins-charm.svg?branch=master)](https://travis-ci.org/jenkinsci/jenkins-charm) [![Coverage Status](https://coveralls.io/repos/github/jenkinsci/jenkins-charm/badge.svg?branch=master)](https://coveralls.io/github/jenkinsci/jenkins-charm?branch=master)
 
 This charm (along with its companion, jenkins-agent) provides an easy way to deploy Jenkins on Ubuntu server and scale out Jenkins slaves.
 
