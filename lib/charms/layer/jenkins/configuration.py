@@ -1,10 +1,7 @@
 import os
 from urllib.parse import urlparse
 
-from charmhelpers.core import hookenv
-from charmhelpers.core import host
-from charmhelpers.core import templating
-
+from charmhelpers.core import hookenv, host, templating
 from charms.layer.jenkins import paths
 from charms.layer.jenkins.api import Api
 
@@ -54,7 +51,8 @@ class Configuration(object):
             config["proxy-hostname"],
             config["proxy-port"],
             config["proxy-username"],
-            config["proxy-password"]
+            config["proxy-password"],
+            config["no-proxy"]
         )
 
     def migrate(self):
