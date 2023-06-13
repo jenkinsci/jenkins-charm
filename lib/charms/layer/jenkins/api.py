@@ -44,7 +44,7 @@ Jenkins.instance.pluginManager.doSiteConfigure('{url}')
 """
 
 CONFIGURE_PROXY_NO_PROXY_WITH_AUTH_SCRIPT = """
-proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}', '{noproxyhosts}')
+proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}', '{no_proxy_hosts}')
 proxy.save()
 """
 
