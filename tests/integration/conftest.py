@@ -1,16 +1,18 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-from pathlib import Path
 import typing
+from pathlib import Path
+from secrets import token_hex
 
 import jenkins
-from ops.model import Application, ActiveStatus
 import pytest_asyncio
-from pytest import fixture, Config
-from pytest_operator.plugin import OpsTest
 import yaml
+from ops.model import ActiveStatus, Application
+from pytest import Config, fixture
+from pytest_operator.plugin import OpsTest
 
+from .config import ProxyConfig
 from .types import JenkinsCredentials
 
 
@@ -34,13 +36,36 @@ def app_name(metadata):
     yield metadata["name"]
 
 
+@fixture(scope="module")
+def proxy_config():
+    """The proxy configuration for jenkins application."""
+    return ProxyConfig(
+        proxy_hostname="localhost",
+        proxy_port=8080,
+        proxy_username="admin",
+        proxy_password=token_hex(16),
+        no_proxy="test.com, hello.world",
+    )
+
+
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str, series: str):
+async def app(ops_test: OpsTest, app_name: str, series: str, proxy_config: ProxyConfig):
     """Jenkins charm used for integration testing.
     Builds the charm and deploys the charm.
     """
     charm = await ops_test.build_charm(".")
-    application = await ops_test.model.deploy(charm, application_name=app_name, series=series)
+    application = await ops_test.model.deploy(
+        charm,
+        application_name=app_name,
+        series=series,
+        config={
+            "proxy-hostname": proxy_config.proxy_hostname,
+            "proxy-port": proxy_config.proxy_port,
+            "proxy-username": proxy_config.proxy_username,
+            "proxy-password": proxy_config.proxy_password,
+            "no-proxy": proxy_config.no_proxy,
+        },
+    )
     # Jenkins takes a while to deploy, setting timeout to 30 minutes
     await ops_test.model.wait_for_idle(timeout=30 * 60, status=ActiveStatus.name)
 

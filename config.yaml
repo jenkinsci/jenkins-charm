@@ -84,6 +84,14 @@ options:
       If a proxy is required for Jenkins to download plugins and updates and
       authentication is also required, set the password here. Ignored if
       proxy-hostname and proxy-password are not both also set.
+  no-proxy:
+    type: string
+    default: ""
+    description: |
+      If a proxy is configured but some hosts should not go through the proxy, 
+      set the hostnames here. Ignored if any of the proxy settings above are not
+      set. Separated by commas. "*" is the wild card host name(such as
+      "*.jenkins.io" or "www*.jenkins-ci.org").
   remove-unlisted-plugins:
     type: string
     default: "no"
