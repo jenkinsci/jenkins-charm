@@ -1,14 +1,12 @@
-import requests
 import time
 from distutils.version import LooseVersion
 from urllib.parse import urljoin, urlparse
 
 import jenkins
+import requests
 from charmhelpers.core import hookenv, unitdata
-
 from charmhelpers.core.decorators import retry_on_exception
 from charmhelpers.core.hookenv import ERROR
-
 from charms.layer.jenkins.credentials import Credentials
 from charms.layer.jenkins.packages import Packages
 
@@ -43,6 +41,11 @@ user.addProperty(property)
 # flake8: noqa
 SET_UPDATE_CENTER_SCRIPT = """
 Jenkins.instance.pluginManager.doSiteConfigure('{url}')
+"""
+
+CONFIGURE_PROXY_NO_PROXY_WITH_AUTH_SCRIPT = """
+proxy = new ProxyConfiguration('{hostname}', {port}, '{username}', '{password}', '{no_proxy_hosts}')
+proxy.save()
 """
 
 CONFIGURE_PROXY_WITH_AUTH_SCRIPT = """
@@ -105,10 +108,22 @@ class Api(object):
             return False
         return version
 
-    def configure_proxy(self, hostname=None, port=None, username=None, password=None):
+    def configure_proxy(
+        self, hostname=None, port=None, username=None, password=None, no_proxy_hosts=None
+    ):
         """Configure (or disable) a system proxy."""
         client = self._make_client()
-        if username and password and hostname and port:
+        if hostname and port and no_proxy_hosts:
+            client.run_script(
+                CONFIGURE_PROXY_NO_PROXY_WITH_AUTH_SCRIPT.format(
+                    hostname=hostname,
+                    port=port,
+                    username=username or "",
+                    password=password or "",
+                    no_proxy_hosts=no_proxy_hosts,
+                )
+            )
+        elif username and password and hostname and port:
             client.run_script(
                 CONFIGURE_PROXY_WITH_AUTH_SCRIPT.format(
                     hostname=hostname, port=port, username=username, password=password

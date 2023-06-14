@@ -3,11 +3,14 @@
 
 """Tests for jenkins website."""
 
-import requests
+import jenkins
 import pytest
 import pytest_asyncio
+import requests
+from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
-from ops.model import Application, ActiveStatus
+
+from .config import ProxyConfig
 
 pytestmark = pytest.mark.website
 
@@ -42,3 +45,22 @@ async def test_jenkins_website_behind_proxy(app: Application, haproxy: Applicati
 
     assert response.status_code == 403
     assert "Authentication required" in response.text
+
+
+@pytest.mark.asyncio
+async def test_jenkins_proxy_configuration(
+    jenkins_url: str, jenkins_cli: jenkins.Jenkins, proxy_config: ProxyConfig
+):
+    """
+    arrange: given jenkins running with proxy configuration
+    act: when the jenkins advanced configuration page is fetched
+    assert: the proxy settings are configured
+    """
+    r = requests.Request("GET", f"{jenkins_url}/manage/pluginManager/advanced")
+    res = jenkins_cli.jenkins_request(r)
+
+    advanced_page = str(res.content, encoding="utf-8")
+    assert proxy_config.proxy_hostname in advanced_page
+    assert proxy_config.proxy_password not in advanced_page
+    assert str(proxy_config.proxy_port) in advanced_page
+    assert proxy_config.no_proxy in advanced_page
