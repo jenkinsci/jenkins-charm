@@ -113,13 +113,13 @@ class Api(object):
     ):
         """Configure (or disable) a system proxy."""
         client = self._make_client()
-        if username and password and hostname and port and no_proxy_hosts:
+        if hostname and port and no_proxy_hosts:
             client.run_script(
                 CONFIGURE_PROXY_NO_PROXY_WITH_AUTH_SCRIPT.format(
                     hostname=hostname,
                     port=port,
-                    username=username,
-                    password=password,
+                    username=username or "",
+                    password=password or "",
                     no_proxy_hosts=no_proxy_hosts,
                 )
             )
