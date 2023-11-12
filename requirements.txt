@@ -6,4 +6,4 @@ git+https://git.launchpad.net/jenkins-plugin-manager
 # 2023-05-10
 # There is a bug with requests library https://github.com/psf/requests/issues/6443 on version
 # 2.30.0. Pin the dependency to 2.29.0 until the issue is resolved.
-requests==2.29.0
+requests==2.31.0
