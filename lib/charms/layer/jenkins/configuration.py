@@ -78,7 +78,7 @@ class Configuration(object):
                        the prefix config is unset.
         """
         # Since version 2.332.1 Jenkins is not loading env vars from the default config file
-        overrides_content = '# This file is managed by Juju. Do not edit manually.\n[Service]\nEnvironment="JENKINS_PREFIX={}"\n'.format(prefix)
+        overrides_content = '# This file is managed by Juju. Do not edit manually.\n[Service]\nEnvironment="JENKINS_PREFIX={}"\nTimeoutSec=900\n'.format(prefix)
 
         host.mkdir(os.path.dirname(paths.SERVICE_CONFIG_FILE_OVERRIDE), perms=0o751)
         with open(os.open(paths.SERVICE_CONFIG_FILE_OVERRIDE, os.O_CREAT | os.O_WRONLY, 0o644), 'w') as overrides_file:
