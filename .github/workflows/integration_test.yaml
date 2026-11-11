@@ -22,6 +22,7 @@ jobs:
         with:
           provider: lxd
           charm-channel: 2.x/stable
+          juju-channel: 2.9/stable
         # Python 3.8 is a required integreation test dependency.
       - uses: actions/setup-python@v4
         with:
